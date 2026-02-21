@@ -211,6 +211,26 @@ export function EditorSidebar({
               ))}
             </div>
           )}
+          {cropRatio !== 'original' && (
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() =>
+                  applyChange({
+                    cropRatio: 'original',
+                    customCrop: null,
+                  })
+                }
+                className="flex-1 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+              >
+                Reset Crop
+              </button>
+            </div>
+          )}
+          {cropRatio !== 'original' && (
+            <p className="mt-3 text-xs text-zinc-500">
+              Drag the crop handles on the image to adjust. The crop is applied live to the canvas and will be included when you download or share.
+            </p>
+          )}
         </div>
 
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">

@@ -2,8 +2,8 @@ let styleNet = null
 let transformNet = null
 let _tf = null
 
-const STYLE_NET_URL = 'https://storage.googleapis.com/magenta-js/image/style_transfer/style_net/model.json'
-const TRANSFORM_NET_URL = 'https://storage.googleapis.com/magenta-js/image/style_transfer/transformer_net/model.json'
+const STYLE_NET_URL = 'https://reiinakano.github.io/arbitrary-image-stylization-tfjs/saved_model_style_js/model.json'
+const TRANSFORM_NET_URL = 'https://reiinakano.github.io/arbitrary-image-stylization-tfjs/saved_model_transformer_separable_js/model.json'
 
 async function getTf() {
   if (!_tf) _tf = await import('@tensorflow/tfjs')
