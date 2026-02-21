@@ -27,6 +27,22 @@ export const INITIAL_EDIT_STATE = {
   brushColor: '#ffffff',
   brushSize: 5,
   brushOpacity: 1,
+  hsl: {
+    red: { h: 0, s: 0, l: 0 },
+    orange: { h: 0, s: 0, l: 0 },
+    yellow: { h: 0, s: 0, l: 0 },
+    green: { h: 0, s: 0, l: 0 },
+    cyan: { h: 0, s: 0, l: 0 },
+    blue: { h: 0, s: 0, l: 0 },
+    purple: { h: 0, s: 0, l: 0 },
+    magenta: { h: 0, s: 0, l: 0 },
+  },
+  curves: {
+    rgb: [[0, 0], [1, 1]],
+    red: [[0, 0], [1, 1]],
+    green: [[0, 0], [1, 1]],
+    blue: [[0, 0], [1, 1]],
+  },
 }
 
 export const FILTER_PRESETS = [

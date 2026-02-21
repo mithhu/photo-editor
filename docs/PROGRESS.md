@@ -52,3 +52,7 @@
 - [x] Resize on export with aspect ratio lock
 - [x] Estimated file size preview
 - [x] Error handling — file type, size limits (20MB/8192px), corrupted file detection
+
+### Smart Features & Persistence (v0.6)
+- [x] Auto-enhance — one-click histogram analysis to auto-adjust brightness, contrast, exposure, saturation
+- [x] Project save/load — auto-save to localStorage every 10s, save on unload, restore prompt on upload screen

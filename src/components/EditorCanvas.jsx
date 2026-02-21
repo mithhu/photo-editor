@@ -2,6 +2,7 @@ import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
+import { buildCurveLUT } from '../utils/curvesUtils'
 
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
@@ -31,6 +32,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     rotation, flipH, flipV, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
     shapeOverlays,
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
+    hsl,
+    curves,
   } = editState
 
   const cropActive = cropRatio !== 'original'
@@ -60,7 +63,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const shadowBrightness = shadows
   const fullAdjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
   const adjustmentFilter = isComparing ? 'none' : fullAdjustmentFilter
-  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0)
+  const hasHSL = hsl && Object.values(hsl).some(c => c.h !== 0 || c.s !== 0 || c.l !== 0)
+  const hasCurves = curves && Object.entries(curves).some(([, pts]) =>
+    pts.length > 2 || (pts.length === 2 && (pts[0][0] !== 0 || pts[0][1] !== 0 || pts[1][0] !== 1 || pts[1][1] !== 1))
+  )
+  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -114,6 +121,15 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       const d = imgData.data
       const warmShift = warmth * 30
       const tintShift = tint * 30
+
+      let rgbLUT, rLUT, gLUT, bLUT
+      if (hasCurves) {
+        rgbLUT = buildCurveLUT(curves.rgb)
+        rLUT = buildCurveLUT(curves.red)
+        gLUT = buildCurveLUT(curves.green)
+        bLUT = buildCurveLUT(curves.blue)
+      }
+
       for (let i = 0; i < d.length; i += 4) {
         d[i] = Math.min(255, Math.max(0, d[i] + warmShift))
         d[i + 2] = Math.min(255, Math.max(0, d[i + 2] - warmShift))
@@ -141,6 +157,66 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           d[i] = Math.min(255, Math.max(0, ((d[i] / 255 - 0.5) * factor + 0.5) * 255))
           d[i + 1] = Math.min(255, Math.max(0, ((d[i + 1] / 255 - 0.5) * factor + 0.5) * 255))
           d[i + 2] = Math.min(255, Math.max(0, ((d[i + 2] / 255 - 0.5) * factor + 0.5) * 255))
+        }
+        if (hasHSL) {
+          let r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255
+          const max = Math.max(r, g, b), min = Math.min(r, g, b)
+          let h, s, l = (max + min) / 2
+
+          if (max === min) {
+            h = s = 0
+          } else {
+            const delta = max - min
+            s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min)
+            if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6
+            else if (max === g) h = ((b - r) / delta + 2) / 6
+            else h = ((r - g) / delta + 4) / 6
+          }
+
+          const hDeg = h * 360
+          let colorKey = null
+          if (hDeg < 15 || hDeg >= 345) colorKey = 'red'
+          else if (hDeg < 45) colorKey = 'orange'
+          else if (hDeg < 75) colorKey = 'yellow'
+          else if (hDeg < 150) colorKey = 'green'
+          else if (hDeg < 195) colorKey = 'cyan'
+          else if (hDeg < 255) colorKey = 'blue'
+          else if (hDeg < 300) colorKey = 'purple'
+          else colorKey = 'magenta'
+
+          const adj = hsl[colorKey]
+          if (adj && (adj.h !== 0 || adj.s !== 0 || adj.l !== 0)) {
+            h = (h + adj.h * 0.1 + 1) % 1
+            s = Math.min(1, Math.max(0, s + adj.s * 0.5))
+            l = Math.min(1, Math.max(0, l + adj.l * 0.3))
+
+            let r2, g2, b2
+            if (s === 0) {
+              r2 = g2 = b2 = l
+            } else {
+              const hue2rgb = (p, q, t) => {
+                if (t < 0) t += 1
+                if (t > 1) t -= 1
+                if (t < 1 / 6) return p + (q - p) * 6 * t
+                if (t < 1 / 2) return q
+                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+                return p
+              }
+              const q2 = l < 0.5 ? l * (1 + s) : l + s - l * s
+              const p2 = 2 * l - q2
+              r2 = hue2rgb(p2, q2, h + 1 / 3)
+              g2 = hue2rgb(p2, q2, h)
+              b2 = hue2rgb(p2, q2, h - 1 / 3)
+            }
+            d[i] = Math.round(r2 * 255)
+            d[i + 1] = Math.round(g2 * 255)
+            d[i + 2] = Math.round(b2 * 255)
+          }
+        }
+        if (hasCurves) {
+          d[i] = rLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i])))]]
+          d[i + 1] = gLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 1])))]]
+          d[i + 2] = bLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 2])))]]
         }
       }
       ctx.putImageData(imgData, 0, 0)
@@ -266,7 +342,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves])
 
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current

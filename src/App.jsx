@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { INITIAL_EDIT_STATE } from './constants'
 import { useEditHistory } from './hooks/useEditHistory'
+import { useProjectSave } from './hooks/useProjectSave'
+import { analyzeAndEnhance } from './utils/autoEnhance'
 import {
   ImageUpload,
   EditorHeader,
@@ -18,8 +20,16 @@ export default function App() {
   const [isComparing, setIsComparing] = useState(false)
   const canvasRef = useRef(null)
 
+  const [hasSavedProject, setHasSavedProject] = useState(() => {
+    try {
+      const raw = localStorage.getItem('photo-editor-project')
+      return raw ? !!JSON.parse(raw).imageSrc : false
+    } catch { return false }
+  })
+
   const {
     editState,
+    setEditState,
     applyChange,
     applySliderChange,
     undo,
@@ -30,6 +40,8 @@ export default function App() {
     historyIndex,
     historyLength,
   } = useEditHistory(INITIAL_EDIT_STATE)
+
+  const { clear, restore } = useProjectSave(imageSrc, editState, setEditState, setImageSrc)
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -75,9 +87,17 @@ export default function App() {
     reset()
   }
 
+  const handleAutoEnhance = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const suggested = analyzeAndEnhance(canvas)
+    applyChange(suggested)
+  }
+
   const handleNewImage = () => {
     setImageSrc(null)
     reset()
+    clear()
   }
 
   const handleDownload = () => setShowExportDialog(true)
@@ -87,6 +107,15 @@ export default function App() {
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
         <h1 className="text-3xl font-bold text-amber-500 mb-2">Photo Editor</h1>
         <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
+        {hasSavedProject && (
+          <div className="mb-4 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-center">
+            <p className="text-zinc-300 text-sm mb-2">You have an unsaved project</p>
+            <div className="flex gap-2 justify-center">
+              <button onClick={() => { restore(); setHasSavedProject(false) }} className="px-4 py-2 bg-amber-500 text-zinc-900 rounded-lg text-sm font-medium">Restore</button>
+              <button onClick={() => { clear(); setHasSavedProject(false) }} className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-lg text-sm">Discard</button>
+            </div>
+          </div>
+        )}
         <div className="w-full max-w-md">
           <ImageUpload onImageLoad={handleImageLoad} loading={uploadLoading} onLoadingChange={setUploadLoading} />
         </div>
@@ -103,6 +132,7 @@ export default function App() {
         canRedo={canRedo}
         onCompareStart={() => setIsComparing(true)}
         onCompareEnd={() => setIsComparing(false)}
+        onAutoEnhance={handleAutoEnhance}
         onNewImage={handleNewImage}
         onDownload={handleDownload}
         onShare={() => setShowShareModal(true)}

@@ -1,4 +1,6 @@
 import { Slider } from './Slider'
+import { HSLPanel } from './HSLPanel'
+import { CurvesPanel } from './CurvesPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 
@@ -59,6 +61,29 @@ export function EditorSidebar({
           Reset Adjustments
         </button>
       </div>
+
+      <HSLPanel
+        hsl={editState.hsl}
+        onChange={(colorId, channel, value) =>
+          applyChange((s) => ({
+            ...s,
+            hsl: {
+              ...s.hsl,
+              [colorId]: { ...s.hsl[colorId], [channel]: value },
+            },
+          }))
+        }
+      />
+
+      <CurvesPanel
+        curves={editState.curves}
+        onChange={(channel, points) =>
+          applyChange((s) => ({
+            ...s,
+            curves: { ...s.curves, [channel]: points },
+          }))
+        }
+      />
 
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
         <h3 className="text-sm font-semibold text-zinc-300 mb-4">Crop</h3>
@@ -198,6 +223,7 @@ export function EditorSidebar({
             max={50}
             step={1}
             defaultValue={5}
+            unit="px"
           />
           <Slider
             label="Opacity"

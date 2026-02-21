@@ -91,7 +91,7 @@
 - [ ] **Background removal** — TensorFlow.js or Remove.bg-style API
 - [ ] **Upscaling** — 2x/4x upscale
 - [ ] **Denoise** — Reduce noise
-- [ ] **Auto-enhance** — One-click balance (exposure, contrast, color)
+- [x] **Auto-enhance** — One-click balance (exposure, contrast, color)
 - [ ] **Object removal** — Inpainting (API or model)
 
 ### 3.2 Smart Suggestions
@@ -137,9 +137,9 @@
 
 ### 5.2 Cloud & Sync
 
-- [ ] Save projects to localStorage / IndexedDB
+- [x] Save projects to localStorage / IndexedDB
 - [ ] Optional cloud save (auth + backend)
-- [ ] Project versioning / auto-save
+- [x] Project versioning / auto-save
 
 ### 5.3 Sharing & Collaboration
 
