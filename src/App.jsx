@@ -226,7 +226,7 @@ export default function App() {
             onClick={() => setMode('batch')}
             className="w-full mt-2 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-purple-500/50 rounded-xl text-zinc-300 hover:text-purple-400 transition-colors"
           >
-            Batch Process
+            Edit Multiple Photos
           </button>
         </div>
       </div>

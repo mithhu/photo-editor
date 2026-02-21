@@ -73,7 +73,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
             onClick={onBatch}
             className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
           >
-            Batch
+            Edit Multiple
           </button>
           <button
             onClick={onShare}
@@ -128,7 +128,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
                 onClick={() => { onBatch?.(); closeMenu() }}
                 className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-zinc-700"
               >
-                Batch Process
+                Edit Multiple
               </button>
               <button
                 onClick={() => { onShare(); closeMenu() }}

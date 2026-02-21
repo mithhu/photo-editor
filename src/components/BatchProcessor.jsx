@@ -71,7 +71,7 @@ export function BatchProcessor({ editState, onBack }) {
           <button onClick={onBack} className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors">
             ← Back
           </button>
-          <h1 className="text-xl font-bold text-amber-500">Batch Process</h1>
+          <h1 className="text-xl font-bold text-amber-500">Edit Multiple Photos</h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500">
