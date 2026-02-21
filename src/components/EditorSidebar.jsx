@@ -20,6 +20,11 @@ export function EditorSidebar({
     vibrance,
     cropRatio,
     preset,
+    drawingMode,
+    brushColor,
+    brushSize,
+    brushOpacity,
+    brushStrokes,
   } = editState
 
   const ratioLabels = { original: 'Original', '1:1': '1:1', '4:5': '4:5', '16:9': '16:9', '9:16': '9:16', '3:4': '3:4', '2:3': '2:3', custom: 'Custom' }
@@ -141,6 +146,66 @@ export function EditorSidebar({
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-4">Drawing</h3>
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => applyChange({ drawingMode: drawingMode === 'brush' ? null : 'brush' })}
+            className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+              drawingMode === 'brush' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+            }`}
+          >
+            Brush
+          </button>
+          <button
+            onClick={() => applyChange({ drawingMode: drawingMode === 'eraser' ? null : 'eraser' })}
+            className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+              drawingMode === 'eraser' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+            }`}
+          >
+            Eraser
+          </button>
+        </div>
+        {drawingMode === 'brush' && (
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-sm text-zinc-400">Color</span>
+            <input
+              type="color"
+              value={brushColor}
+              onChange={(e) => applyChange({ brushColor: e.target.value })}
+              className="w-8 h-8 rounded cursor-pointer border border-zinc-700"
+            />
+            <span className="text-xs text-zinc-500">{brushColor}</span>
+          </div>
+        )}
+        <div className="space-y-4">
+          <Slider
+            label="Size"
+            value={brushSize}
+            onChange={(v) => applySliderChange('brushSize', v)}
+            min={1}
+            max={50}
+            step={1}
+          />
+          <Slider
+            label="Opacity"
+            value={brushOpacity}
+            onChange={(v) => applySliderChange('brushOpacity', v)}
+            min={0.1}
+            max={1}
+            step={0.05}
+          />
+        </div>
+        {brushStrokes?.length > 0 && (
+          <button
+            onClick={() => applyChange({ brushStrokes: [] })}
+            className="mt-4 w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+          >
+            Clear All Drawings
+          </button>
         )}
       </div>
 

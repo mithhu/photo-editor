@@ -16,6 +16,11 @@ export const INITIAL_EDIT_STATE = {
   panY: 0,
   textOverlays: [],
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
+  brushStrokes: [],
+  drawingMode: null, // 'brush' | 'eraser' | null
+  brushColor: '#ffffff',
+  brushSize: 5,
+  brushOpacity: 1,
 }
 
 export const FILTER_PRESETS = [

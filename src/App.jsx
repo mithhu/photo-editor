@@ -87,6 +87,7 @@ export default function App() {
           editState={editState}
           canvasRef={canvasRef}
           onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
+          onApplyChange={applyChange}
         />
         <EditorSidebar
           editState={editState}

@@ -2,11 +2,13 @@ import { useRef, useCallback, useEffect, useState } from 'react'
 import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 
-export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }) {
+export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isDrawing, setIsDrawing] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
+  const currentStrokeRef = useRef(null)
   const [containerSize, setContainerSize] = useState(null)
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
     brightness, contrast, saturation, exposure, highlights, shadows,
     warmth, tint, vibrance,
     rotation, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
+    brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
   } = editState
 
   const presetFilter = FILTER_PRESETS.find((p) => p.id === preset)?.filter || ''
@@ -103,6 +106,32 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
       ctx.putImageData(imgData, 0, 0)
     }
 
+    const allStrokes = currentStrokeRef.current
+      ? [...(brushStrokes || []), currentStrokeRef.current]
+      : (brushStrokes || [])
+
+    if (allStrokes.length) {
+      allStrokes.forEach((stroke) => {
+        if (!stroke.points || stroke.points.length < 2) return
+        ctx.save()
+        ctx.globalAlpha = stroke.opacity ?? 1
+        if (stroke.tool === 'eraser') {
+          ctx.globalCompositeOperation = 'destination-out'
+        }
+        ctx.strokeStyle = stroke.color ?? '#ffffff'
+        ctx.lineWidth = stroke.size ?? 5
+        ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
+        ctx.beginPath()
+        ctx.moveTo(stroke.points[0].x * displayW, stroke.points[0].y * displayH)
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x * displayW, stroke.points[i].y * displayH)
+        }
+        ctx.stroke()
+        ctx.restore()
+      })
+    }
+
     if (textOverlays?.length) {
       textOverlays.forEach((t) => {
         ctx.save()
@@ -114,11 +143,21 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
         ctx.restore()
       })
     }
-  }, [rotation, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, containerSize])
+  }, [rotation, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, containerSize, brushStrokes])
 
   useEffect(() => {
     drawCanvas()
   }, [drawCanvas, imageSrc])
+
+  const getCanvasPoint = useCallback((e) => {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+    }
+  }, [canvasRef])
 
   const handleWheel = useCallback(
     (e) => {
@@ -133,15 +172,38 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
 
   const handleMouseDown = useCallback(
     (e) => {
+      if (drawingMode) {
+        const pt = getCanvasPoint(e)
+        if (!pt) return
+        setIsDrawing(true)
+        currentStrokeRef.current = {
+          points: [pt],
+          color: drawingMode === 'eraser' ? '#000000' : brushColor,
+          size: brushSize,
+          opacity: brushOpacity,
+          tool: drawingMode,
+        }
+        return
+      }
       if (!onZoomPanChange) return
       setIsDragging(true)
       dragStartRef.current = { x: e.clientX, y: e.clientY, panX, panY }
     },
-    [panX, panY, onZoomPanChange],
+    [panX, panY, onZoomPanChange, drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint],
   )
 
   const handleMouseMove = useCallback(
     (e) => {
+      if (isDrawing && currentStrokeRef.current) {
+        const pt = getCanvasPoint(e)
+        if (!pt) return
+        currentStrokeRef.current = {
+          ...currentStrokeRef.current,
+          points: [...currentStrokeRef.current.points, pt],
+        }
+        drawCanvas()
+        return
+      }
       if (!isDragging || !onZoomPanChange) return
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
@@ -151,10 +213,23 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
         panY: dragStartRef.current.panY + dy,
       })
     },
-    [isDragging, zoom, onZoomPanChange],
+    [isDragging, isDrawing, zoom, onZoomPanChange, getCanvasPoint, drawCanvas],
   )
 
-  const handleMouseUp = useCallback(() => setIsDragging(false), [])
+  const handleMouseUp = useCallback(() => {
+    if (isDrawing && currentStrokeRef.current && onApplyChange) {
+      const finishedStroke = currentStrokeRef.current
+      currentStrokeRef.current = null
+      setIsDrawing(false)
+      onApplyChange((s) => ({
+        ...s,
+        brushStrokes: [...(s.brushStrokes || []), finishedStroke],
+      }))
+      return
+    }
+    setIsDragging(false)
+  }, [isDrawing, onApplyChange])
+
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
@@ -170,7 +245,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
       className="min-w-0 min-h-[60vw] lg:min-h-0 lg:flex-1 relative bg-zinc-900/50 rounded-xl p-4 overflow-hidden flex items-center justify-center"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
-      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      style={{ cursor: drawingMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab' }}
     >
       <div
         className="flex-shrink-0"
