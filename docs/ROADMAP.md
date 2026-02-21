@@ -47,7 +47,7 @@
 
 - [ ] **TypeScript** — Add types for state, props, canvas APIs
 - [x] **Image size limits** — Warn/cap large uploads (20MB, 8192px)
-- [ ] **Responsive layout** — Mobile-friendly toolbar and sidebar
+- [x] **Responsive layout** — Mobile-friendly toolbar and sidebar
 
 ---
 
@@ -118,9 +118,9 @@
 - [x] **Social sharing** — Twitter/X, Facebook, WhatsApp, Instagram buttons
 - [x] Quality slider (JPEG compression) + format selection (PNG/JPEG/WEBP)
 - [x] Resize on export with aspect ratio lock
-- [ ] Preset formats — Instagram Square, Story, YouTube thumbnail
+- [x] Preset formats — IG Square, Story, Post, FB Cover, YT Thumb, Twitter
 - [ ] Bulk export for collages
-- [ ] Optional watermark
+- [x] Optional watermark — text, position, opacity
 
 ---
 

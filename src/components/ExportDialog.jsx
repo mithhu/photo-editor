@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
+const EXPORT_PRESETS = [
+  { id: 'original', label: 'Original', w: null, h: null },
+  { id: 'ig-square', label: 'IG Square', w: 1080, h: 1080 },
+  { id: 'ig-story', label: 'IG Story', w: 1080, h: 1920 },
+  { id: 'ig-post', label: 'IG Post', w: 1080, h: 1350 },
+  { id: 'fb-cover', label: 'FB Cover', w: 820, h: 312 },
+  { id: 'yt-thumb', label: 'YT Thumb', w: 1280, h: 720 },
+  { id: 'twitter', label: 'Twitter', w: 1200, h: 675 },
+]
+
 const FORMATS = [
   { id: 'png', label: 'PNG', mimeType: 'image/png', ext: 'png', hasQuality: false },
   { id: 'jpeg', label: 'JPEG', mimeType: 'image/jpeg', ext: 'jpg', hasQuality: true },
@@ -31,10 +41,15 @@ export function ExportDialog({ canvasRef, onClose }) {
   const [format, setFormat] = useState('png')
   const [quality, setQuality] = useState(DEFAULT_QUALITY)
   const [estimatedSize, setEstimatedSize] = useState(null)
+  const [selectedPreset, setSelectedPreset] = useState('original')
   const [resize, setResize] = useState(false)
   const [resizeW, setResizeW] = useState(0)
   const [resizeH, setResizeH] = useState(0)
   const [lockRatio, setLockRatio] = useState(true)
+  const [watermark, setWatermark] = useState(false)
+  const [watermarkText, setWatermarkText] = useState('Photo Editor')
+  const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
+  const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
   const aspectRatioRef = useRef(1)
   const initRef = useRef(false)
 
@@ -76,15 +91,29 @@ export function ExportDialog({ canvasRef, onClose }) {
     setEstimatedSize(computeSize(canvasRef.current, currentFormat, val))
   }
 
+  const handlePresetSelect = (preset) => {
+    setSelectedPreset(preset.id)
+    if (preset.id === 'original') {
+      setResize(false)
+    } else {
+      setResize(true)
+      setResizeW(preset.w)
+      setResizeH(preset.h)
+      setLockRatio(false)
+    }
+  }
+
   const handleWidthChange = (w) => {
     const clamped = Math.max(1, Math.round(w))
     setResizeW(clamped)
+    setSelectedPreset(null)
     if (lockRatio) setResizeH(Math.max(1, Math.round(clamped / aspectRatioRef.current)))
   }
 
   const handleHeightChange = (h) => {
     const clamped = Math.max(1, Math.round(h))
     setResizeH(clamped)
+    setSelectedPreset(null)
     if (lockRatio) setResizeW(Math.max(1, Math.round(clamped * aspectRatioRef.current)))
   }
 
@@ -100,10 +129,45 @@ export function ExportDialog({ canvasRef, onClose }) {
     return tmp
   }
 
+  const applyWatermark = (sourceCanvas) => {
+    if (!watermark || !watermarkText) return sourceCanvas
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = sourceCanvas.width
+    tempCanvas.height = sourceCanvas.height
+    const tempCtx = tempCanvas.getContext('2d')
+    tempCtx.drawImage(sourceCanvas, 0, 0)
+
+    const fontSize = Math.max(14, tempCanvas.width * 0.03)
+    tempCtx.font = `${fontSize}px sans-serif`
+    tempCtx.fillStyle = `rgba(255,255,255,${watermarkOpacity})`
+    tempCtx.textBaseline = 'bottom'
+
+    const padding = fontSize
+    let x, y
+    if (watermarkPosition === 'bottom-right') {
+      tempCtx.textAlign = 'right'
+      x = tempCanvas.width - padding
+      y = tempCanvas.height - padding
+    } else if (watermarkPosition === 'bottom-left') {
+      tempCtx.textAlign = 'left'
+      x = padding
+      y = tempCanvas.height - padding
+    } else {
+      tempCtx.textAlign = 'center'
+      tempCtx.textBaseline = 'middle'
+      x = tempCanvas.width / 2
+      y = tempCanvas.height / 2
+    }
+    tempCtx.fillText(watermarkText, x, y)
+
+    return tempCanvas
+  }
+
   const handleDownload = () => {
     if (!canvasRef?.current || !currentFormat) return
-    const exportCanvas = getExportCanvas()
+    let exportCanvas = getExportCanvas()
     if (!exportCanvas) return
+    exportCanvas = applyWatermark(exportCanvas)
     const { mimeType, ext } = currentFormat
     const dataUrl = currentFormat.hasQuality
       ? exportCanvas.toDataURL(mimeType, quality / 100)
@@ -138,6 +202,25 @@ export function ExportDialog({ canvasRef, onClose }) {
 
         <div className="px-5 pb-5 space-y-4">
           <div>
+            <span className="text-sm text-zinc-400 block mb-2">Presets</span>
+            <div className="flex flex-wrap gap-1.5">
+              {EXPORT_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  onClick={() => handlePresetSelect(preset)}
+                  className={`py-1.5 px-2.5 rounded-lg text-xs font-medium transition-colors ${
+                    selectedPreset === preset.id
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                      : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <span className="text-sm text-zinc-400 block mb-2">Format</span>
             <div className="flex gap-2">
               {FORMATS.map((f) => (
@@ -161,7 +244,11 @@ export function ExportDialog({ canvasRef, onClose }) {
               <input
                 type="checkbox"
                 checked={resize}
-                onChange={(e) => setResize(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setResize(checked)
+                  if (!checked) setSelectedPreset('original')
+                }}
                 className="accent-amber-500 w-4 h-4 rounded"
               />
               <span className="text-sm text-zinc-300">Resize</span>
@@ -195,6 +282,71 @@ export function ExportDialog({ canvasRef, onClose }) {
                     value={resizeH}
                     onChange={(e) => handleHeightChange(Number(e.target.value))}
                     className="w-full bg-zinc-800 border border-zinc-700 px-2 py-1.5 rounded-lg text-sm text-zinc-200 tabular-nums"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={watermark}
+                onChange={(e) => setWatermark(e.target.checked)}
+                className="accent-amber-500 w-4 h-4 rounded"
+              />
+              <span className="text-sm text-zinc-300">Add watermark</span>
+            </label>
+            {watermark && (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="text-xs text-zinc-500 block mb-1">Text</label>
+                  <input
+                    type="text"
+                    value={watermarkText}
+                    onChange={(e) => setWatermarkText(e.target.value)}
+                    placeholder="Photo Editor"
+                    className="w-full bg-zinc-800 border border-zinc-700 px-2 py-1.5 rounded-lg text-sm text-zinc-200"
+                  />
+                </div>
+                <div>
+                  <span className="text-xs text-zinc-500 block mb-2">Position</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: 'bottom-right', label: 'Bottom Right' },
+                      { id: 'bottom-left', label: 'Bottom Left' },
+                      { id: 'center', label: 'Center' },
+                    ].map((pos) => (
+                      <button
+                        key={pos.id}
+                        onClick={() => setWatermarkPosition(pos.id)}
+                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-colors ${
+                          watermarkPosition === pos.id
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                            : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
+                        }`}
+                      >
+                        {pos.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-zinc-400">Opacity</span>
+                    <span className="text-zinc-300 tabular-nums">
+                      {Math.round(watermarkOpacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={0.8}
+                    step={0.05}
+                    value={watermarkOpacity}
+                    onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
+                    className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
                   />
                 </div>
               </div>

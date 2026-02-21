@@ -11,6 +11,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const [isDrawing, setIsDrawing] = useState(false)
   const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const currentStrokeRef = useRef(null)
+  const touchRef = useRef({ lastDistance: 0, startPanX: 0, startPanY: 0 })
   const [containerSize, setContainerSize] = useState(null)
 
   useEffect(() => {
@@ -30,7 +31,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     brightness, contrast, saturation, exposure, highlights, shadows,
     warmth, tint, vibrance, clarity, dehaze, vignette,
     rotation, flipH, flipV, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
-    shapeOverlays,
+    shapeOverlays, layerVisibility,
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
     hsl,
     curves,
@@ -262,6 +263,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
     if (shapeOverlays?.length) {
       shapeOverlays.forEach((shape) => {
+        if (layerVisibility?.[shape.id] === false) return
         const cx = (shape.x ?? 0.5) * displayW
         const cy = (shape.y ?? 0.5) * displayH
         const size = shape.size ?? 40
@@ -332,6 +334,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
     if (textOverlays?.length) {
       textOverlays.forEach((t) => {
+        if (layerVisibility?.[t.id] === false) return
         ctx.save()
         ctx.font = `${t.fontSize ?? 32}px sans-serif`
         ctx.fillStyle = t.color ?? '#ffffff'
@@ -342,7 +345,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves])
 
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current
@@ -361,6 +364,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     return {
       x: (e.clientX - rect.left) / rect.width,
       y: (e.clientY - rect.top) / rect.height,
+    }
+  }, [canvasRef])
+
+  const getCanvasPointFromTouch = useCallback((touch) => {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: (touch.clientX - rect.left) / rect.width,
+      y: (touch.clientY - rect.top) / rect.height,
     }
   }, [canvasRef])
 
@@ -435,6 +448,103 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     setIsDragging(false)
   }, [isDrawing, onApplyChange])
 
+  // --- Touch event handlers ---
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      if (drawingMode) {
+        e.preventDefault()
+        const pt = getCanvasPointFromTouch(touch)
+        if (!pt) return
+        setIsDrawing(true)
+        currentStrokeRef.current = {
+          points: [pt],
+          color: drawingMode === 'eraser' ? '#000000' : brushColor,
+          size: brushSize,
+          opacity: brushOpacity,
+          tool: drawingMode,
+        }
+      } else {
+        e.preventDefault()
+        setIsDragging(true)
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY, panX, panY }
+      }
+    } else if (e.touches.length === 2) {
+      e.preventDefault()
+      setIsDragging(false)
+      setIsDrawing(false)
+      currentStrokeRef.current = null
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      touchRef.current.lastDistance = Math.sqrt(dx * dx + dy * dy)
+      touchRef.current.startPanX = panX
+      touchRef.current.startPanY = panY
+    }
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch])
+
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0]
+      if (isDrawing && currentStrokeRef.current) {
+        e.preventDefault()
+        const pt = getCanvasPointFromTouch(touch)
+        if (!pt) return
+        currentStrokeRef.current = {
+          ...currentStrokeRef.current,
+          points: [...currentStrokeRef.current.points, pt],
+        }
+        drawCanvas()
+      } else if (isDragging && onZoomPanChange) {
+        e.preventDefault()
+        const dx = touch.clientX - dragStartRef.current.x
+        const dy = touch.clientY - dragStartRef.current.y
+        onZoomPanChange({
+          zoom,
+          panX: dragStartRef.current.panX + dx,
+          panY: dragStartRef.current.panY + dy,
+        })
+      }
+    } else if (e.touches.length === 2 && onZoomPanChange) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const distance = Math.sqrt(dx * dx + dy * dy)
+      const prev = touchRef.current.lastDistance
+      if (prev > 0) {
+        const scale = distance / prev
+        const newZoom = Math.max(0.5, Math.min(4, zoom * scale))
+        onZoomPanChange({ zoom: newZoom, panX, panY })
+      }
+      touchRef.current.lastDistance = distance
+    }
+  }, [isDrawing, isDragging, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, drawCanvas])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (e.touches.length === 0) {
+      if (isDrawing && currentStrokeRef.current && onApplyChange) {
+        const finishedStroke = currentStrokeRef.current
+        currentStrokeRef.current = null
+        setIsDrawing(false)
+        onApplyChange((s) => ({
+          ...s,
+          brushStrokes: [...(s.brushStrokes || []), finishedStroke],
+        }))
+        return
+      }
+      setIsDragging(false)
+      touchRef.current.lastDistance = 0
+    } else if (e.touches.length === 1) {
+      // Went from two fingers to one — reset for single-finger pan
+      touchRef.current.lastDistance = 0
+      const touch = e.touches[0]
+      if (!drawingMode) {
+        setIsDragging(true)
+        dragStartRef.current = { x: touch.clientX, y: touch.clientY, panX, panY }
+      }
+    }
+  }, [isDrawing, onApplyChange, drawingMode, panX, panY])
+
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseup', handleMouseUp)
@@ -447,9 +557,12 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   return (
     <div
       ref={containerRef}
-      className="min-w-0 min-h-[60vw] lg:min-h-0 lg:flex-1 relative bg-zinc-900/50 rounded-xl p-4 overflow-hidden flex items-center justify-center"
+      className="min-w-0 min-h-[60vw] lg:min-h-0 lg:flex-1 relative bg-zinc-900/50 rounded-xl p-4 overflow-hidden flex items-center justify-center touch-none"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       style={{ cursor: drawingMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab' }}
     >
       <div

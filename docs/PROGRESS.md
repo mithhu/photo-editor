@@ -50,9 +50,18 @@
 - [x] Export dialog — format selection (PNG/JPEG/WEBP)
 - [x] Quality slider for JPEG/WEBP exports
 - [x] Resize on export with aspect ratio lock
+- [x] Preset export formats — IG Square, IG Story, IG Post, FB Cover, YT Thumb, Twitter
+- [x] Watermark on export — text, position (bottom-right/left, center), opacity
 - [x] Estimated file size preview
 - [x] Error handling — file type, size limits (20MB/8192px), corrupted file detection
 
 ### Smart Features & Persistence (v0.6)
 - [x] Auto-enhance — one-click histogram analysis to auto-adjust brightness, contrast, exposure, saturation
 - [x] Project save/load — auto-save to localStorage every 10s, save on unload, restore prompt on upload screen
+
+### Responsive & Mobile (v0.7)
+- [x] Responsive header — mobile overflow "⋯" menu for secondary actions, undo/redo always visible
+- [x] Mobile tab navigation — sidebar sections organized into swipeable tabs (Adjust, Color, Crop, Draw, Layers, Filters)
+- [x] Touch support — single-touch drawing/pan, two-finger pinch-to-zoom on canvas
+- [x] Scroll prevention — `touch-none` on canvas to prevent page scroll during editing
+- [x] Click-outside dismissal — mobile header menu closes on outside tap
