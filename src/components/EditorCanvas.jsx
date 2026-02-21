@@ -4,6 +4,7 @@ import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
 import { buildCurveLUT } from '../utils/curvesUtils'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
+import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
 
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
@@ -39,6 +40,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     colorGrade,
     splitTone,
     masks,
+    filmEmulation,
+    filmIntensity,
+    filmGrain,
   } = editState
 
   const cropActive = cropRatio !== 'original'
@@ -76,7 +80,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     (c) => (c?.r !== 0 || c?.g !== 0 || c?.b !== 0)
   )
   const hasSplitTone = splitTone && (splitTone.highlightSat > 0 || splitTone.shadowSat > 0)
-  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone)
+  const hasFilmEmulation = !isComparing && !!filmEmulation
+  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -273,7 +278,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           }
         }
       }
+
+      if (hasFilmEmulation) {
+        applyFilmEmulation(imgData, filmEmulation, filmIntensity ?? 1)
+      }
+
       ctx.putImageData(imgData, 0, 0)
+    }
+
+    if (!isComparing && filmGrain > 0) {
+      addFilmGrain(ctx, canvas.width, canvas.height, filmGrain)
     }
 
     if (!isComparing && vignette > 0) {
@@ -467,7 +481,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 

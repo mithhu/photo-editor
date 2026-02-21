@@ -57,6 +57,9 @@ export const INITIAL_EDIT_STATE = {
     balance: 0,
   },
   masks: [],
+  filmEmulation: null, // film emulation preset id (e.g. 'koji', 'portra')
+  filmIntensity: 1, // 0-1 blend strength
+  filmGrain: 0, // 0-1 grain amount
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */

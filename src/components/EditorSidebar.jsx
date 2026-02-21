@@ -10,6 +10,7 @@ import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
+import { FILM_EMULATIONS } from '../utils/filmEmulation'
 
 const MOBILE_TABS = [
   { id: 'ai', label: 'AI' },
@@ -594,9 +595,61 @@ export function EditorSidebar({
         <TemplatePanel applyChange={applyChange} editState={editState} />
       </div>
 
-      {/* Filters tab: Filters + History */}
+      {/* Filters tab: Film Emulations + Filters + History */}
       <div className={activeTab !== 'filters' ? 'hidden lg:block' : ''}>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-4">Film Emulation</h3>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <button
+              onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
+              className={`py-2 px-3 text-xs rounded-lg transition-colors ${
+                !editState.filmEmulation
+                  ? 'bg-amber-500 text-zinc-900 font-medium'
+                  : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+            >
+              None
+            </button>
+            {FILM_EMULATIONS.map((em) => (
+              <button
+                key={em.id}
+                onClick={() => applyChange({ filmEmulation: em.id, filmGrain: em.id === 'koji' ? 0.06 : (editState.filmGrain || 0) })}
+                className={`py-2 px-2 text-xs rounded-lg transition-colors ${
+                  editState.filmEmulation === em.id
+                    ? 'bg-amber-500 text-zinc-900 font-medium'
+                    : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+                title={em.description}
+              >
+                {em.name}
+              </button>
+            ))}
+          </div>
+          {editState.filmEmulation && (
+            <div className="space-y-3">
+              <Slider
+                label="Intensity"
+                value={editState.filmIntensity ?? 1}
+                onChange={(v) => applySliderChange('filmIntensity', v)}
+                min={0.1}
+                max={1}
+                step={0.05}
+                defaultValue={1}
+              />
+              <Slider
+                label="Film Grain"
+                value={editState.filmGrain ?? 0}
+                onChange={(v) => applySliderChange('filmGrain', v)}
+                min={0}
+                max={0.3}
+                step={0.01}
+                defaultValue={0}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
           <div className="grid grid-cols-3 gap-2">
             {FILTER_PRESETS.map((p) => (
