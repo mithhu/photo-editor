@@ -71,7 +71,7 @@ export function BatchProcessor({ editState, onBack }) {
           <button onClick={onBack} className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors">
             ← Back
           </button>
-          <h1 className="text-xl font-bold text-amber-500">Edit Multiple Photos</h1>
+          <h1 className="text-xl font-bold text-indigo-400">Edit Multiple Photos</h1>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-500">
@@ -81,7 +81,7 @@ export function BatchProcessor({ editState, onBack }) {
             <button
               onClick={downloadAll}
               disabled={downloading}
-              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50"
             >
               {downloading ? 'Downloading...' : 'Download All'}
             </button>
@@ -93,7 +93,7 @@ export function BatchProcessor({ editState, onBack }) {
         {files.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full">
             <p className="text-zinc-500 mb-4">Select images to apply current edits to all of them</p>
-            <label className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-xl cursor-pointer transition-colors">
+            <label className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-zinc-900 font-medium rounded-xl cursor-pointer transition-colors">
               Select Images
               <input type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" />
             </label>

@@ -331,7 +331,7 @@ export function TemplatePanel({ applyChange, editState }) {
           <button
             type="button"
             onClick={() => setShowSaveForm(true)}
-            className="w-full py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-dashed border-zinc-600 hover:border-amber-500/50 transition-colors"
+            className="w-full py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-dashed border-zinc-600 hover:border-indigo-500/50 transition-colors"
           >
             + Save Current as Template
           </button>
@@ -342,14 +342,14 @@ export function TemplatePanel({ applyChange, editState }) {
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
               placeholder="Template name..."
-              className="flex-1 bg-zinc-800 text-sm text-zinc-200 rounded-lg px-3 py-2 border border-zinc-700 focus:border-amber-500 outline-none"
+              className="flex-1 bg-zinc-800 text-sm text-zinc-200 rounded-lg px-3 py-2 border border-zinc-700 focus:border-indigo-500 outline-none"
               autoFocus
               onKeyDown={(e) => e.key === 'Enter' && saveTemplate()}
             />
             <button
               type="button"
               onClick={saveTemplate}
-              className="px-3 py-2 bg-amber-500 text-zinc-900 rounded-lg text-xs font-medium"
+              className="px-3 py-2 bg-indigo-500 text-zinc-900 rounded-lg text-xs font-medium"
             >
               Save
             </button>
@@ -374,7 +374,7 @@ export function TemplatePanel({ applyChange, editState }) {
                 <button
                   type="button"
                   onClick={() => applyCustomTemplate(t)}
-                  className="w-full p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-amber-500/50"
+                  className="w-full p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-indigo-500/50"
                 >
                   <span className="text-2xl block mb-1">🎨</span>
                   <span className="text-xs text-zinc-300 truncate block">{t.name}</span>
@@ -404,7 +404,7 @@ export function TemplatePanel({ applyChange, editState }) {
             onClick={() => setActiveCategory(cat.id)}
             className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
               activeCategory === cat.id
-                ? 'bg-amber-500 text-zinc-900'
+                ? 'bg-indigo-500 text-zinc-900'
                 : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
             }`}
           >
@@ -420,7 +420,7 @@ export function TemplatePanel({ applyChange, editState }) {
             key={template.id}
             type="button"
             onClick={() => template.apply(applyChange)}
-            className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-amber-500/50"
+            className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-indigo-500/50"
           >
             <span className="text-2xl block mb-1">{template.preview}</span>
             <span className="text-xs text-zinc-300">{template.name}</span>

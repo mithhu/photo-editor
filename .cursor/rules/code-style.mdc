@@ -26,7 +26,7 @@ Follow these conventions in all new code. Full guide: `docs/CODE_STYLE.md`
 
 ## Styling
 - Tailwind only; no CSS modules or styled-components
-- Use semantic classes: `text-zinc-400`, `bg-zinc-900`, `accent-amber-500`
+- Use semantic classes: `text-zinc-400`, `bg-zinc-900`, `accent-indigo-500`
 - Responsive: `lg:` for sidebar layout changes
 
 ## File Organization

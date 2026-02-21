@@ -165,7 +165,7 @@ export function ShareModal({ canvasRef, onClose }) {
 
         <div className="px-3 pb-3 flex flex-col gap-1">
           {hasNativeShare && (
-            <button onClick={handleNativeShare} className={`${btnClass} bg-amber-500/10 hover:bg-amber-500/20 text-amber-400`}>
+            <button onClick={handleNativeShare} className={`${btnClass} bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400`}>
               <ShareIcon />
               <span className="font-medium">Share...</span>
             </button>

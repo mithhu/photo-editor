@@ -147,7 +147,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const [healCursor, setHealCursor] = useState(null)
   const healingRef = useRef({ active: false, offset: null, snapshotData: null })
   const [pickerBadge, setPickerBadge] = useState(null)
-  const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY }
+  const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY, resizing?, initDist?, initSize? }
 
   useEffect(() => {
     const el = containerRef.current
@@ -1134,16 +1134,33 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
     } else if (e.touches.length === 2) {
       e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+
+      // If already dragging an overlay, switch to pinch-resize
+      if (draggingRef.current) {
+        const d = draggingRef.current
+        const key = d.type === 'text' ? 'textOverlays' : 'shapeOverlays'
+        const sizeKey = d.type === 'text' ? 'fontSize' : 'size'
+        const items = d.type === 'text' ? textOverlays : shapeOverlays
+        const item = items?.find((o) => o.id === d.id)
+        d.resizing = true
+        d.initDist = dist
+        d.initSize = item?.[sizeKey] ?? (d.type === 'text' ? 32 : 40)
+        d.sizeKey = sizeKey
+        d.stateKey = key
+        return
+      }
+
       setIsDrawing(false)
       currentStrokeRef.current = null
       healingRef.current.active = false
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      touchRef.current.lastDistance = Math.sqrt(dx * dx + dy * dy)
+      touchRef.current.lastDistance = dist
       touchRef.current.startPanX = panX
       touchRef.current.startPanY = panY
     }
-  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay])
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay, textOverlays, shapeOverlays])
 
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1 && isDrawing && healingRef.current.active) {
@@ -1179,6 +1196,24 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           item.id === d.id ? { ...item, x: newX, y: newY } : item
         ),
       }))
+    } else if (e.touches.length === 2 && draggingRef.current?.resizing && onApplyChange) {
+      e.preventDefault()
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const d = draggingRef.current
+      if (d.initDist > 0) {
+        const scale = dist / d.initDist
+        const minSize = d.type === 'text' ? 12 : 10
+        const maxSize = d.type === 'text' ? 200 : 300
+        const newSize = Math.round(Math.max(minSize, Math.min(maxSize, d.initSize * scale)))
+        onApplyChange((s) => ({
+          ...s,
+          [d.stateKey]: (s[d.stateKey] || []).map((item) =>
+            item.id === d.id ? { ...item, [d.sizeKey]: newSize } : item
+          ),
+        }))
+      }
     } else if (e.touches.length === 2 && onZoomPanChange) {
       e.preventDefault()
       const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -1267,7 +1302,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="text-center">
             <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-zinc-800 animate-pulse" />
-            <div className="animate-spin w-6 h-6 border-2 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-2" />
+            <div className="animate-spin w-6 h-6 border-2 border-zinc-600 border-t-indigo-500 rounded-full mx-auto mb-2" />
             <p className="text-xs text-zinc-500">Preparing canvas...</p>
           </div>
         </div>

@@ -158,7 +158,7 @@ export function EditorSidebar({
               <button
                 onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'linear' } }))}
                 className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
-                  editState.tiltShift?.mode === 'linear' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                  editState.tiltShift?.mode === 'linear' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
               >
                 Linear
@@ -166,7 +166,7 @@ export function EditorSidebar({
               <button
                 onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'radial' } }))}
                 className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
-                  editState.tiltShift?.mode === 'radial' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                  editState.tiltShift?.mode === 'radial' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
               >
                 Radial
@@ -235,7 +235,7 @@ export function EditorSidebar({
               <button
                 onClick={() => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, enabled: !s.selectiveColor?.enabled } }))}
                 className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                  editState.selectiveColor?.enabled ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                  editState.selectiveColor?.enabled ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
               >
                 {editState.selectiveColor?.enabled ? 'On' : 'Off'}
@@ -295,7 +295,7 @@ export function EditorSidebar({
                   }
                   className={`py-1.5 px-3 text-xs rounded-lg transition-colors ${
                     editState.lightLeak?.type === ll.id
-                      ? 'bg-amber-500 text-zinc-900 font-medium'
+                      ? 'bg-indigo-500 text-zinc-900 font-medium'
                       : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                   }`}
                 >
@@ -389,7 +389,7 @@ export function EditorSidebar({
                   })
                 }
                 className={`py-2 px-3 text-xs rounded-lg transition-colors ${
-                  cropRatio === r ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                  cropRatio === r ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
               >
                 {ratioLabels[r] ?? r}
@@ -472,13 +472,13 @@ export function EditorSidebar({
           <div className="flex gap-2 mt-2">
             <button
               onClick={() => applyChange((s) => ({ ...s, flipH: !s.flipH }))}
-              className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipH ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
+              className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipH ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
             >
               ↔ Flip H
             </button>
             <button
               onClick={() => applyChange((s) => ({ ...s, flipV: !s.flipV }))}
-              className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipV ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
+              className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipV ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
             >
               ↕ Flip V
             </button>
@@ -569,7 +569,7 @@ export function EditorSidebar({
             <button
               onClick={() => applyChange((s) => ({ ...s, resize: { ...s.resize, lockAspect: !s.resize?.lockAspect } }))}
               className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                editState.resize?.lockAspect ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                editState.resize?.lockAspect ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
             >
               {editState.resize?.lockAspect ? '🔒 Locked' : '🔓 Unlocked'}
@@ -607,7 +607,7 @@ export function EditorSidebar({
                 }
                 className={`py-2 px-1 text-[11px] rounded-lg transition-colors text-center ${
                   editState.frame?.type === fp.id
-                    ? 'bg-amber-500 text-zinc-900 font-medium'
+                    ? 'bg-indigo-500 text-zinc-900 font-medium'
                     : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
               >
@@ -654,7 +654,7 @@ export function EditorSidebar({
             <button
               onClick={() => applyChange({ drawingMode: drawingMode === 'brush' ? null : 'brush' })}
               className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'brush' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                drawingMode === 'brush' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
             >
               Brush
@@ -662,7 +662,7 @@ export function EditorSidebar({
             <button
               onClick={() => applyChange({ drawingMode: drawingMode === 'eraser' ? null : 'eraser' })}
               className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'eraser' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                drawingMode === 'eraser' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
             >
               Eraser
@@ -670,7 +670,7 @@ export function EditorSidebar({
             <button
               onClick={() => applyChange({ drawingMode: drawingMode === 'heal' ? null : 'heal', healSource: null })}
               className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'heal' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                drawingMode === 'heal' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
             >
               Heal
@@ -678,7 +678,7 @@ export function EditorSidebar({
             <button
               onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
               className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'picker' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                drawingMode === 'picker' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
               title="Pick a color from the image"
             >
@@ -697,7 +697,7 @@ export function EditorSidebar({
               </div>
               <button
                 onClick={() => applyChange({ brushColor: editState.pickedColor })}
-                className="text-xs text-amber-400 hover:text-amber-300 shrink-0"
+                className="text-xs text-indigo-400 hover:text-indigo-300 shrink-0"
               >
                 Use as brush
               </button>
@@ -713,7 +713,7 @@ export function EditorSidebar({
               {editState.healSource && (
                 <button
                   onClick={() => applyChange({ healSource: null })}
-                  className="mt-1 text-xs text-amber-400 hover:text-amber-300"
+                  className="mt-1 text-xs text-indigo-400 hover:text-indigo-300"
                 >
                   Reset source
                 </button>
@@ -807,50 +807,59 @@ export function EditorSidebar({
             />
           </div>
           {(editState.shapeOverlays || []).length > 0 && (
-            <div className="space-y-2 max-h-48 overflow-y-auto mt-4">
+            <div className="space-y-3 max-h-64 overflow-y-auto mt-4">
               {(editState.shapeOverlays || []).map((shape, i) => (
-                <div key={shape.id ?? i} className="flex flex-wrap gap-2 items-center">
-                  <span className="text-xs text-zinc-400 w-20 shrink-0 capitalize flex items-center gap-1">
-                    {shape.type === 'sticker' ? `${shape.emoji || ''} Sticker` : shape.type?.replace('-', ' ')}
-                  </span>
+                <div key={shape.id ?? i} className="bg-zinc-800/50 rounded-lg p-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-zinc-400 capitalize flex items-center gap-1">
+                      {shape.type === 'sticker' ? `${shape.emoji || ''} Sticker` : shape.type?.replace('-', ' ')}
+                    </span>
+                    <button
+                      onClick={() =>
+                        applyChange((s) => ({
+                          ...s,
+                          shapeOverlays: (s.shapeOverlays || []).filter((_, j) => j !== i),
+                        }))
+                      }
+                      className="text-red-400 hover:text-red-300 text-sm"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-500 w-8">Size</span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={300}
+                      value={shape.size ?? 40}
+                      onChange={(e) => {
+                        const v = Number(e.target.value)
+                        applyChange((s) => ({
+                          ...s,
+                          shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, size: v } : o)),
+                        }))
+                      }}
+                      className="flex-1 accent-indigo-500"
+                    />
+                    <span className="text-[10px] text-zinc-400 w-8 text-right">{shape.size ?? 40}</span>
+                  </div>
                   {shape.type !== 'sticker' && (
-                  <input
-                    type="color"
-                    value={shape.color ?? '#ffffff'}
-                    onChange={(e) =>
-                      applyChange((s) => ({
-                        ...s,
-                        shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, color: e.target.value } : o)),
-                      }))
-                    }
-                    className="w-8 h-8 rounded cursor-pointer"
-                  />
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-zinc-500 w-8">Color</span>
+                      <input
+                        type="color"
+                        value={shape.color ?? '#ffffff'}
+                        onChange={(e) =>
+                          applyChange((s) => ({
+                            ...s,
+                            shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, color: e.target.value } : o)),
+                          }))
+                        }
+                        className="w-7 h-7 rounded cursor-pointer"
+                      />
+                    </div>
                   )}
-                  <input
-                    type="number"
-                    min={10}
-                    max={200}
-                    value={shape.size ?? 40}
-                    onChange={(e) => {
-                      const v = Number(e.target.value)
-                      applyChange((s) => ({
-                        ...s,
-                        shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, size: Math.max(10, Math.min(200, v)) } : o)),
-                      }))
-                    }}
-                    className="w-14 bg-zinc-800 px-2 py-1 rounded text-sm text-zinc-200"
-                  />
-                  <button
-                    onClick={() =>
-                      applyChange((s) => ({
-                        ...s,
-                        shapeOverlays: (s.shapeOverlays || []).filter((_, j) => j !== i),
-                      }))
-                    }
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
             </div>
@@ -936,19 +945,19 @@ export function EditorSidebar({
                         <div className="flex gap-1">
                           <button
                             onClick={() => toggleProp('fontWeight', 'bold', 'normal')}
-                            className={`px-2 py-1 text-xs rounded ${t.fontWeight === 'bold' ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                            className={`px-2 py-1 text-xs rounded ${t.fontWeight === 'bold' ? 'bg-indigo-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
                           >
                             <b>B</b>
                           </button>
                           <button
                             onClick={() => toggleProp('fontStyle', 'italic', 'normal')}
-                            className={`px-2 py-1 text-xs rounded ${t.fontStyle === 'italic' ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                            className={`px-2 py-1 text-xs rounded ${t.fontStyle === 'italic' ? 'bg-indigo-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
                           >
                             <i>I</i>
                           </button>
                           <button
                             onClick={() => toggleProp('textShadow', true, false)}
-                            className={`px-2 py-1 text-xs rounded ${t.textShadow ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                            className={`px-2 py-1 text-xs rounded ${t.textShadow ? 'bg-indigo-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
                           >
                             Shadow
                           </button>
@@ -957,8 +966,8 @@ export function EditorSidebar({
                           label="Size"
                           value={t.fontSize ?? 32}
                           onChange={(v) => updateText('fontSize', Math.round(v))}
-                          min={12}
-                          max={120}
+                          min={8}
+                          max={200}
                           step={1}
                           defaultValue={32}
                           unit="px"
@@ -1054,7 +1063,7 @@ export function EditorSidebar({
               onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
               className={`py-2 px-3 text-xs rounded-lg transition-colors ${
                 !editState.filmEmulation
-                  ? 'bg-amber-500 text-zinc-900 font-medium'
+                  ? 'bg-indigo-500 text-zinc-900 font-medium'
                   : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
               }`}
             >
@@ -1066,7 +1075,7 @@ export function EditorSidebar({
                 onClick={() => applyChange({ filmEmulation: em.id, filmGrain: em.id === 'koji' ? 0.06 : (editState.filmGrain || 0) })}
                 className={`py-2 px-2 text-xs rounded-lg transition-colors ${
                   editState.filmEmulation === em.id
-                    ? 'bg-amber-500 text-zinc-900 font-medium'
+                    ? 'bg-indigo-500 text-zinc-900 font-medium'
                     : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
                 }`}
                 title={em.description}
@@ -1111,7 +1120,7 @@ export function EditorSidebar({
                 <div
                   className={`w-[48px] h-[48px] rounded-lg overflow-hidden border-2 transition-colors ${
                     preset === p.id
-                      ? 'border-amber-500'
+                      ? 'border-indigo-500'
                       : 'border-zinc-700 group-hover:border-zinc-500'
                   }`}
                 >
@@ -1129,7 +1138,7 @@ export function EditorSidebar({
                 <span
                   className={`text-[10px] leading-tight transition-colors ${
                     preset === p.id
-                      ? 'text-amber-400 font-medium'
+                      ? 'text-indigo-400 font-medium'
                       : 'text-zinc-400 group-hover:text-zinc-300'
                   }`}
                 >
@@ -1152,7 +1161,7 @@ export function EditorSidebar({
           {editState.lutName ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 p-2.5 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
-                <span className="text-xs text-amber-400 font-mono truncate flex-1">{editState.lutName}</span>
+                <span className="text-xs text-indigo-400 font-mono truncate flex-1">{editState.lutName}</span>
                 <button
                   onClick={() => applyChange((s) => ({ ...s, lut: null, lutName: null }))}
                   className="text-xs text-red-400 hover:text-red-300 shrink-0"
@@ -1170,7 +1179,7 @@ export function EditorSidebar({
           ) : (
             <button
               onClick={() => lutInputRef.current?.click()}
-              className="w-full py-2.5 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors"
+              className="w-full py-2.5 text-sm bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg transition-colors"
             >
               Import .cube File
             </button>
@@ -1192,7 +1201,7 @@ export function EditorSidebar({
                 return (
                   <div
                     key={i}
-                    className={`text-xs px-2 py-1.5 rounded ${isCurrent ? 'bg-amber-500/20 text-amber-400' : 'text-zinc-500'}`}
+                    className={`text-xs px-2 py-1.5 rounded ${isCurrent ? 'bg-indigo-500/20 text-indigo-400' : 'text-zinc-500'}`}
                   >
                     {label}
                   </div>

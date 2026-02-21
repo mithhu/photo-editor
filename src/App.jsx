@@ -34,7 +34,7 @@ function EditorFallback() {
   return (
     <div className="flex-1 flex items-center justify-center text-zinc-500">
       <div className="text-center">
-        <div className="animate-spin w-8 h-8 border-2 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-3" />
+        <div className="animate-spin w-8 h-8 border-2 border-zinc-600 border-t-indigo-500 rounded-full mx-auto mb-3" />
         <p className="text-sm">Loading editor...</p>
       </div>
     </div>
@@ -219,25 +219,25 @@ export default function App() {
         {uploadLoading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm">
             <div className="text-center">
-              <div className="animate-spin w-10 h-10 border-3 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-4" />
+              <div className="animate-spin w-10 h-10 border-3 border-zinc-600 border-t-indigo-500 rounded-full mx-auto mb-4" />
               <p className="text-sm text-zinc-300">Loading image...</p>
             </div>
           </div>
         )}
         {swRegistration && (
-          <div className="fixed top-0 inset-x-0 flex items-center justify-center gap-3 px-4 py-2 bg-amber-500 text-zinc-900 text-sm font-medium z-50">
+          <div className="fixed top-0 inset-x-0 flex items-center justify-center gap-3 px-4 py-2 bg-indigo-500 text-zinc-900 text-sm font-medium z-50">
             <span>A new version is available!</span>
-            <button onClick={handleUpdate} className="px-3 py-1 bg-zinc-900 text-amber-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors">Update Now</button>
+            <button onClick={handleUpdate} className="px-3 py-1 bg-zinc-900 text-indigo-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors">Update Now</button>
             <button onClick={() => setSwRegistration(null)} className="text-zinc-800 hover:text-zinc-900 text-lg leading-none">×</button>
           </div>
         )}
-        <h1 className="text-3xl font-bold text-amber-500 mb-2">PhotosAI</h1>
+        <h1 className="text-3xl font-bold text-indigo-400 mb-2">PhotosAI</h1>
         <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
         {hasSavedProject && (
           <div className="mb-4 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-center">
             <p className="text-zinc-300 text-sm mb-2">You have an unsaved project</p>
             <div className="flex gap-2 justify-center">
-              <button onClick={() => { restore(); setHasSavedProject(false) }} className="px-4 py-2 bg-amber-500 text-zinc-900 rounded-lg text-sm font-medium">Restore</button>
+              <button onClick={() => { restore(); setHasSavedProject(false) }} className="px-4 py-2 bg-indigo-500 text-zinc-900 rounded-lg text-sm font-medium">Restore</button>
               <button onClick={() => { clear(); setHasSavedProject(false) }} className="px-4 py-2 bg-zinc-700 text-zinc-300 rounded-lg text-sm">Discard</button>
             </div>
           </div>
@@ -247,14 +247,14 @@ export default function App() {
           {installPrompt && (
             <button
               onClick={handleInstall}
-              className="mt-4 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg text-sm transition-colors w-full"
+              className="mt-4 px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg text-sm transition-colors w-full"
             >
               Install App for Offline Use
             </button>
           )}
           <button
             onClick={() => setMode('collage')}
-            className="w-full mt-4 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-amber-500/50 rounded-xl text-zinc-300 hover:text-amber-400 transition-colors"
+            className="w-full mt-4 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-indigo-500/50 rounded-xl text-zinc-300 hover:text-indigo-400 transition-colors"
           >
             Create Collage
           </button>
@@ -278,11 +278,11 @@ export default function App() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       {swRegistration && (
-        <div className="flex items-center justify-center gap-3 px-4 py-2 bg-amber-500 text-zinc-900 text-sm font-medium">
+        <div className="flex items-center justify-center gap-3 px-4 py-2 bg-indigo-500 text-zinc-900 text-sm font-medium">
           <span>A new version is available!</span>
           <button
             onClick={handleUpdate}
-            className="px-3 py-1 bg-zinc-900 text-amber-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors"
+            className="px-3 py-1 bg-zinc-900 text-indigo-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors"
           >
             Update Now
           </button>

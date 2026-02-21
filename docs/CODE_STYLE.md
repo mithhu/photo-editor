@@ -81,13 +81,13 @@ export function EditorSidebar({ editState, applyChange, applySliderChange }) {
 ## 4. Styling (Tailwind)
 
 - **Tailwind only.** No CSS modules, styled-components, or inline styles (except dynamic values).
-- **Color palette:** `zinc` for UI, `amber` for accent/primary actions.
+- **Color palette:** `zinc` for UI, `indigo` for accent/primary actions.
 - **Semantic classes:**
   - `text-zinc-300`, `text-zinc-400` — body/secondary text
   - `bg-zinc-900`, `bg-zinc-800` — panels, cards
   - `border-zinc-700`, `border-zinc-800` — borders
-  - `accent-amber-500` — sliders, checkboxes
-  - `bg-amber-500` — primary buttons (Download)
+  - `accent-indigo-500` — sliders, checkboxes
+  - `bg-indigo-500` — primary buttons (Download)
 - **Responsive:** Use `lg:` for layout shifts (e.g. sidebar: `lg:w-80`).
 
 ---

@@ -92,7 +92,7 @@ export function MaskPanel({ masks = [], onMasksChange }) {
             className="p-3 rounded-lg bg-zinc-800/80 border border-zinc-700 space-y-3"
           >
             <div className="flex justify-between items-center">
-              <span className="text-xs font-medium text-amber-400 capitalize">
+              <span className="text-xs font-medium text-indigo-400 capitalize">
                 {mask.type === 'radial' ? 'Radial' : 'Linear'} Mask {index + 1}
               </span>
               <button
@@ -210,7 +210,7 @@ export function MaskPanel({ masks = [], onMasksChange }) {
                 type="checkbox"
                 checked={!!mask.invert}
                 onChange={(e) => updateMask(index, { invert: e.target.checked })}
-                className="rounded accent-amber-500"
+                className="rounded accent-indigo-500"
               />
               Invert mask
             </label>

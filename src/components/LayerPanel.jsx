@@ -27,7 +27,7 @@ export function LayerPanel({ textOverlays, shapeOverlays, layerVisibility, onReo
             <div key={layer.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-zinc-800/50 group">
               <span className="text-xs text-zinc-500 w-5 text-center">{layer.icon}</span>
               <span className="flex-1 text-xs text-zinc-300 truncate">{layer.label}</span>
-              <button onClick={() => onToggleVisibility(layer.id)} className={`text-xs ${isVisible ? 'text-zinc-400' : 'text-zinc-600'} hover:text-amber-400`} title={isVisible ? 'Hide' : 'Show'}>
+              <button onClick={() => onToggleVisibility(layer.id)} className={`text-xs ${isVisible ? 'text-zinc-400' : 'text-zinc-600'} hover:text-indigo-400`} title={isVisible ? 'Hide' : 'Show'}>
                 {isVisible ? '👁' : '👁‍🗨'}
               </button>
               <button onClick={() => onReorder(layer.layerType, layer.originalIndex, layer.originalIndex - 1)} className="text-xs text-zinc-500 hover:text-zinc-300" title="Move up">↑</button>

@@ -26,7 +26,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
 
   return (
     <header className="relative z-50 flex items-center justify-between px-3 py-2 lg:px-4 lg:py-3 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-sm">
-      <h1 className="text-lg lg:text-xl font-bold text-amber-500">PhotosAI</h1>
+      <h1 className="text-lg lg:text-xl font-bold text-indigo-400">PhotosAI</h1>
 
       <div className="flex items-center gap-2">
         {/* Undo / Redo — always visible */}
@@ -54,7 +54,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
           <button
             onClick={onToggleCompare}
             title="Compare original vs edited"
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${showCompare ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}`}
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${showCompare ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}`}
           >
             Compare
           </button>
@@ -66,7 +66,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
           </button>
           <button
             onClick={onAutoEnhance}
-            className="px-4 py-2 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg transition-colors"
           >
             Auto Enhance
           </button>
@@ -90,7 +90,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
           </button>
           <button
             onClick={onDownload}
-            className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors"
+            className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 text-zinc-900 font-medium rounded-lg transition-colors"
           >
             Download
           </button>
@@ -115,7 +115,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
             <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
               <button
                 onClick={() => { onToggleCompare?.(); closeMenu() }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${showCompare ? 'text-amber-400' : 'text-zinc-300'}`}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${showCompare ? 'text-indigo-400' : 'text-zinc-300'}`}
               >
                 {showCompare ? '✓ Compare' : 'Compare'}
               </button>
@@ -151,7 +151,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
               </button>
               <button
                 onClick={() => { onDownload(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-amber-400 hover:bg-zinc-700 font-medium"
+                className="w-full text-left px-4 py-2 text-sm text-indigo-400 hover:bg-zinc-700 font-medium"
               >
                 Download
               </button>

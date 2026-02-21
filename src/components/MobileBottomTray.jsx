@@ -190,7 +190,7 @@ export function MobileBottomTray({
                 <button
                   onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'linear' } }))}
                   className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
-                    editState.tiltShift?.mode === 'linear' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    editState.tiltShift?.mode === 'linear' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   Linear
@@ -198,7 +198,7 @@ export function MobileBottomTray({
                 <button
                   onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'radial' } }))}
                   className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
-                    editState.tiltShift?.mode === 'radial' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    editState.tiltShift?.mode === 'radial' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   Radial
@@ -243,7 +243,7 @@ export function MobileBottomTray({
                 <button
                   onClick={() => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, enabled: !s.selectiveColor?.enabled } }))}
                   className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                    editState.selectiveColor?.enabled ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    editState.selectiveColor?.enabled ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   {editState.selectiveColor?.enabled ? 'On' : 'Off'}
@@ -302,7 +302,7 @@ export function MobileBottomTray({
                       }))
                     }
                     className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                      editState.lightLeak?.type === ll.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                      editState.lightLeak?.type === ll.id ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                     }`}
                   >
                     {ll.name}
@@ -341,7 +341,7 @@ export function MobileBottomTray({
                 <button
                   onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
                   className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                    !editState.filmEmulation ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    !editState.filmEmulation ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   None
@@ -351,7 +351,7 @@ export function MobileBottomTray({
                     key={em.id}
                     onClick={() => applyChange({ filmEmulation: em.id, filmGrain: em.id === 'koji' ? 0.06 : (editState.filmGrain || 0) })}
                     className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                      editState.filmEmulation === em.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                      editState.filmEmulation === em.id ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                     }`}
                   >
                     {em.name}
@@ -376,7 +376,7 @@ export function MobileBottomTray({
                   >
                     <div
                       className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-colors ${
-                        preset === p.id ? 'border-amber-500' : 'border-zinc-700'
+                        preset === p.id ? 'border-indigo-500' : 'border-zinc-700'
                       }`}
                     >
                       {filterPreviews[p.id] ? (
@@ -392,7 +392,7 @@ export function MobileBottomTray({
                     </div>
                     <span
                       className={`text-[10px] leading-tight ${
-                        preset === p.id ? 'text-amber-400 font-medium' : 'text-zinc-400'
+                        preset === p.id ? 'text-indigo-400 font-medium' : 'text-zinc-400'
                       }`}
                     >
                       {p.name}
@@ -413,7 +413,7 @@ export function MobileBottomTray({
               {editState.lutName ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 p-2 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
-                    <span className="text-xs text-amber-400 font-mono truncate flex-1">{editState.lutName}</span>
+                    <span className="text-xs text-indigo-400 font-mono truncate flex-1">{editState.lutName}</span>
                     <button
                       onClick={() => applyChange((s) => ({ ...s, lut: null, lutName: null }))}
                       className="text-xs text-red-400 hover:text-red-300 shrink-0"
@@ -431,7 +431,7 @@ export function MobileBottomTray({
               ) : (
                 <button
                   onClick={() => lutInputRef.current?.click()}
-                  className="w-full py-2 text-xs bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg"
+                  className="w-full py-2 text-xs bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg"
                 >
                   Import .cube File
                 </button>
@@ -483,7 +483,7 @@ export function MobileBottomTray({
               <button
                 onClick={() => applyChange((s) => ({ ...s, resize: { ...s.resize, lockAspect: !s.resize?.lockAspect } }))}
                 className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                  editState.resize?.lockAspect ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                  editState.resize?.lockAspect ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                 }`}
               >
                 {editState.resize?.lockAspect ? '🔒 Locked' : '🔓 Unlocked'}
@@ -555,7 +555,7 @@ export function MobileBottomTray({
                   key={r}
                   onClick={() => applyChange({ cropRatio: r, customCrop: r === 'custom' ? { x: 0, y: 0, w: 1, h: 1 } : null })}
                   className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                    cropRatio === r ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    cropRatio === r ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   {ratioLabels[r] ?? r}
@@ -579,13 +579,13 @@ export function MobileBottomTray({
               <button onClick={() => applyChange((s) => ({ ...s, rotation: (s.rotation + 90) % 360 }))} className="flex-1 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg">↻ 90°</button>
               <button
                 onClick={() => applyChange((s) => ({ ...s, flipH: !s.flipH }))}
-                className={`flex-1 py-2 text-sm rounded-lg ${editState.flipH ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`flex-1 py-2 text-sm rounded-lg ${editState.flipH ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
               >
                 ↔
               </button>
               <button
                 onClick={() => applyChange((s) => ({ ...s, flipV: !s.flipV }))}
-                className={`flex-1 py-2 text-sm rounded-lg ${editState.flipV ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`flex-1 py-2 text-sm rounded-lg ${editState.flipV ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
               >
                 ↕
               </button>
@@ -625,7 +625,7 @@ export function MobileBottomTray({
                     }))
                   }
                   className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                    editState.frame?.type === fp.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    editState.frame?.type === fp.id ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
                   }`}
                 >
                   {fp.name}
@@ -692,25 +692,25 @@ export function MobileBottomTray({
             <div className="flex gap-2">
               <button
                 onClick={() => applyChange({ drawingMode: drawingMode === 'brush' ? null : 'brush' })}
-                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'brush' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'brush' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
               >
                 Brush
               </button>
               <button
                 onClick={() => applyChange({ drawingMode: drawingMode === 'eraser' ? null : 'eraser' })}
-                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'eraser' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'eraser' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
               >
                 Eraser
               </button>
               <button
                 onClick={() => applyChange({ drawingMode: drawingMode === 'heal' ? null : 'heal', healSource: null })}
-                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'heal' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`flex-1 py-2 text-sm rounded-lg ${drawingMode === 'heal' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
               >
                 Heal
               </button>
               <button
                 onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
-                className={`shrink-0 w-10 h-10 text-sm rounded-lg ${drawingMode === 'picker' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                className={`shrink-0 w-10 h-10 text-sm rounded-lg ${drawingMode === 'picker' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
                 title="Pick color"
               >
                 💧
@@ -730,7 +730,7 @@ export function MobileBottomTray({
                 <span className="text-xs font-mono text-zinc-200">{editState.pickedColor}</span>
                 <button
                   onClick={() => applyChange({ brushColor: editState.pickedColor })}
-                  className="ml-auto text-[10px] text-amber-400 hover:text-amber-300"
+                  className="ml-auto text-[10px] text-indigo-400 hover:text-indigo-300"
                 >
                   Use as brush
                 </button>
@@ -746,7 +746,7 @@ export function MobileBottomTray({
                 {editState.healSource && (
                   <button
                     onClick={() => applyChange({ healSource: null })}
-                    className="mt-1 text-xs text-amber-400 hover:text-amber-300"
+                    className="mt-1 text-xs text-indigo-400 hover:text-indigo-300"
                   >
                     Reset source
                   </button>
@@ -946,7 +946,7 @@ export function MobileBottomTray({
         >
           <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur-xl px-4 pt-2 pb-1.5 flex items-center justify-between border-b border-zinc-800/50">
             {subPanel ? (
-              <button onClick={() => setSubPanel(null)} className="text-xs text-amber-400">← Back</button>
+              <button onClick={() => setSubPanel(null)} className="text-xs text-indigo-400">← Back</button>
             ) : (
               <span className="text-xs font-medium text-zinc-300 capitalize">{activeCategory}</span>
             )}
@@ -967,7 +967,7 @@ export function MobileBottomTray({
               onClick={() => toggleCategory(cat.id)}
               className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-colors min-w-[44px] ${
                 activeCategory === cat.id
-                  ? 'text-amber-400'
+                  ? 'text-indigo-400'
                   : 'text-zinc-400 active:text-zinc-200'
               }`}
             >

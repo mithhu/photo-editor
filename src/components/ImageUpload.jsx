@@ -71,7 +71,7 @@ export function ImageUpload({ onImageLoad, loading, onLoadingChange }) {
   return (
     <div className="space-y-3">
       <div
-        className="relative border-2 border-dashed border-zinc-600 rounded-xl p-12 text-center cursor-pointer transition-colors hover:border-amber-500/50 hover:bg-zinc-800/30"
+        className="relative border-2 border-dashed border-zinc-600 rounded-xl p-12 text-center cursor-pointer transition-colors hover:border-indigo-500/50 hover:bg-zinc-800/30"
         style={{ borderColor: isDragging ? 'rgba(245,158,11,0.5)' : undefined, backgroundColor: isDragging ? 'rgba(39,39,42,0.5)' : undefined }}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -93,7 +93,7 @@ export function ImageUpload({ onImageLoad, loading, onLoadingChange }) {
             <div className="text-zinc-400 text-4xl mb-3 animate-pulse">⏳</div>
             <p className="text-zinc-300 text-lg">Loading image...</p>
             <div className="mt-4 h-1.5 bg-zinc-700 rounded-full overflow-hidden max-w-xs mx-auto">
-              <div className="h-full bg-amber-500 rounded-full animate-pulse w-2/3" />
+              <div className="h-full bg-indigo-500 rounded-full animate-pulse w-2/3" />
             </div>
           </>
         ) : (

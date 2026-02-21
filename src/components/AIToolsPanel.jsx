@@ -221,7 +221,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           <button
             onClick={handleSmartCrop}
             disabled={smartCropLoading || !imageSrc}
-            className="w-full py-2.5 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 text-sm bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {smartCropLoading ? 'Detecting subjects...' : 'Smart Crop'}
           </button>
@@ -280,7 +280,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
               step={0.05}
               value={styleStrength}
               onChange={(e) => setStyleStrength(Number(e.target.value))}
-              className="w-full accent-amber-500"
+              className="w-full accent-indigo-500"
               disabled={styleLoading}
             />
           </div>
@@ -291,7 +291,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
                 key={preset.id}
                 onClick={() => handleStyleTransfer(styleImages[preset.id])}
                 disabled={styleLoading || !imageSrc}
-                className="group relative overflow-hidden rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative overflow-hidden rounded-lg border border-zinc-700 hover:border-indigo-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <img
                   src={styleImages[preset.id]}
@@ -323,9 +323,9 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           </div>
 
           {styleStatus && (
-            <div className="flex items-center gap-2 bg-amber-500/10 rounded-lg p-2 border border-amber-500/20">
-              <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
-              <span className="text-xs text-amber-400">{styleStatus}</span>
+            <div className="flex items-center gap-2 bg-indigo-500/10 rounded-lg p-2 border border-indigo-500/20">
+              <div className="w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin shrink-0" />
+              <span className="text-xs text-indigo-400">{styleStatus}</span>
             </div>
           )}
 

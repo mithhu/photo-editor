@@ -210,7 +210,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                   onClick={() => handlePresetSelect(preset)}
                   className={`py-1.5 px-2.5 rounded-lg text-xs font-medium transition-colors ${
                     selectedPreset === preset.id
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50'
                       : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
                   }`}
                 >
@@ -229,7 +229,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                   onClick={() => handleFormatChange(f.id)}
                   className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
                     format === f.id
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50'
                       : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
                   }`}
                 >
@@ -249,7 +249,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                   setResize(checked)
                   if (!checked) setSelectedPreset('original')
                 }}
-                className="accent-amber-500 w-4 h-4 rounded"
+                className="accent-indigo-500 w-4 h-4 rounded"
               />
               <span className="text-sm text-zinc-300">Resize</span>
             </label>
@@ -268,7 +268,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                 <button
                   onClick={() => setLockRatio((v) => !v)}
                   className={`mb-0.5 p-1.5 rounded-lg text-sm transition-colors ${
-                    lockRatio ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-500'
+                    lockRatio ? 'bg-indigo-500/20 text-indigo-400' : 'bg-zinc-800 text-zinc-500'
                   }`}
                   title={lockRatio ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
                 >
@@ -294,7 +294,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                 type="checkbox"
                 checked={watermark}
                 onChange={(e) => setWatermark(e.target.checked)}
-                className="accent-amber-500 w-4 h-4 rounded"
+                className="accent-indigo-500 w-4 h-4 rounded"
               />
               <span className="text-sm text-zinc-300">Add watermark</span>
             </label>
@@ -323,7 +323,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                         onClick={() => setWatermarkPosition(pos.id)}
                         className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-colors ${
                           watermarkPosition === pos.id
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                            ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50'
                             : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
                         }`}
                       >
@@ -346,7 +346,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                     step={0.05}
                     value={watermarkOpacity}
                     onChange={(e) => setWatermarkOpacity(Number(e.target.value))}
-                    className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                    className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
                   />
                 </div>
               </div>
@@ -365,7 +365,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                 max={100}
                 value={quality}
                 onChange={(e) => handleQualityChange(Number(e.target.value))}
-                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
             </div>
           )}
@@ -379,7 +379,7 @@ export function ExportDialog({ canvasRef, onClose }) {
           <div className="flex gap-2 pt-2">
             <button
               onClick={handleDownload}
-              className="flex-1 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-zinc-900 font-medium transition-colors"
+              className="flex-1 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-zinc-900 font-medium transition-colors"
             >
               Download
             </button>

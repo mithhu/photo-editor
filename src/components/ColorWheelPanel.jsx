@@ -22,7 +22,7 @@ export function ColorWheelPanel({ colorGrade, onChange }) {
                   <button
                     type="button"
                     onClick={() => onChange(id, { r: 0, g: 0, b: 0 })}
-                    className="text-xs text-zinc-500 hover:text-amber-400"
+                    className="text-xs text-zinc-500 hover:text-indigo-400"
                   >
                     ↺
                   </button>

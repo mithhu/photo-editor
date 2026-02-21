@@ -24,7 +24,7 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
             <button
               type="button"
               onClick={() => onChange(defaultVal)}
-              className="text-zinc-500 hover:text-amber-400 text-xs ml-1"
+              className="text-zinc-500 hover:text-indigo-400 text-xs ml-1"
               title="Reset"
             >
               ↺
@@ -39,7 +39,7 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-amber-500"
+        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
       />
     </div>
   )

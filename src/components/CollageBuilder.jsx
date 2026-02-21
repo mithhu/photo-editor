@@ -181,7 +181,7 @@ export function CollageBuilder({ onComplete, onBack }) {
       }
       return (
         <div
-          className="w-full h-full border-2 border-dashed border-zinc-600 flex items-center justify-center text-zinc-500 text-2xl hover:border-amber-500 hover:text-amber-500 transition-colors"
+          className="w-full h-full border-2 border-dashed border-zinc-600 flex items-center justify-center text-zinc-500 text-2xl hover:border-indigo-500 hover:text-indigo-400 transition-colors"
           style={{ borderRadius: `${radius}px` }}
         >
           +
@@ -284,7 +284,7 @@ export function CollageBuilder({ onComplete, onBack }) {
       if (l.id === 'left-right') {
         return (
           <div
-            className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-amber-500' : 'border-zinc-600 hover:border-zinc-500'}`}
+            className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
             style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', padding: '2px' }}
           >
             <div className="row-span-2 bg-zinc-500 rounded-sm" />
@@ -295,7 +295,7 @@ export function CollageBuilder({ onComplete, onBack }) {
       }
       return (
         <div
-          className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-amber-500' : 'border-zinc-600 hover:border-zinc-500'}`}
+          className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
           style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', padding: '2px' }}
         >
           <div className="bg-zinc-500 rounded-sm" />
@@ -311,7 +311,7 @@ export function CollageBuilder({ onComplete, onBack }) {
     }
     return (
       <div
-        className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-amber-500' : 'border-zinc-600 hover:border-zinc-500'}`}
+        className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
         style={{ gridTemplateColumns: `repeat(${l.cols}, 1fr)`, gap: '2px', padding: '2px' }}
       >
         {cells}
@@ -328,7 +328,7 @@ export function CollageBuilder({ onComplete, onBack }) {
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-1 text-zinc-400 hover:text-amber-400 transition-colors text-sm"
+            className="flex items-center gap-1 text-zinc-400 hover:text-indigo-400 transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -340,7 +340,7 @@ export function CollageBuilder({ onComplete, onBack }) {
         <button
           onClick={createCollage}
           disabled={!canCreate || creating}
-          className="px-5 py-2 bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 font-semibold rounded-lg text-sm transition-colors"
+          className="px-5 py-2 bg-indigo-500 hover:bg-indigo-400 disabled:bg-zinc-700 disabled:text-zinc-500 text-zinc-900 font-semibold rounded-lg text-sm transition-colors"
         >
           {creating ? 'Creating…' : 'Create Collage'}
         </button>
@@ -400,7 +400,7 @@ export function CollageBuilder({ onComplete, onBack }) {
                   onClick={() => setOutputSize(s)}
                   className={`px-2 py-1.5 rounded text-xs transition-colors ${
                     outputSize.id === s.id
-                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                      ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/50'
                       : 'bg-zinc-800 text-zinc-400 border border-zinc-700 hover:border-zinc-600'
                   }`}
                 >
@@ -422,7 +422,7 @@ export function CollageBuilder({ onComplete, onBack }) {
               max={20}
               value={gap}
               onChange={(e) => setGap(Number(e.target.value))}
-              className="w-full accent-amber-500"
+              className="w-full accent-indigo-500"
             />
           </div>
 
@@ -440,7 +440,7 @@ export function CollageBuilder({ onComplete, onBack }) {
               max={20}
               value={radius}
               onChange={(e) => setRadius(Number(e.target.value))}
-              className="w-full accent-amber-500"
+              className="w-full accent-indigo-500"
             />
           </div>
 
