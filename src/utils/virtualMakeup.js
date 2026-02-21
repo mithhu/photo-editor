@@ -1,9 +1,11 @@
 /**
  * Virtual makeup using face mesh landmarks.
  * Applies color overlays to specific face regions (lips, cheeks, eyes).
+ *
+ * All functions accept keypoints directly — caller handles face detection.
  */
 
-import { detectFaceLandmarks, FACE_REGIONS } from './faceMesh'
+import { FACE_REGIONS } from './faceMesh'
 
 function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
@@ -14,9 +16,6 @@ function hexToRgb(hex) {
   } : { r: 180, g: 60, b: 80 }
 }
 
-/**
- * Draw a filled polygon from face mesh keypoints onto a temporary canvas.
- */
 function drawRegion(ctx, keypoints, indices) {
   const pts = indices.map(i => keypoints[i]).filter(Boolean)
   if (pts.length < 3) return
@@ -30,13 +29,6 @@ function drawRegion(ctx, keypoints, indices) {
   ctx.fill()
 }
 
-/**
- * Apply lipstick color to lips.
- * @param {HTMLCanvasElement} canvas
- * @param {Array} keypoints
- * @param {string} color - Hex color
- * @param {number} opacity - 0-100
- */
 function applyLipstick(canvas, keypoints, color, opacity) {
   if (opacity <= 0) return
 
@@ -50,7 +42,6 @@ function applyLipstick(canvas, keypoints, color, opacity) {
   octx.fillStyle = `rgba(${r},${g},${b},1)`
   drawRegion(octx, keypoints, FACE_REGIONS.lips)
 
-  // Feather the edges
   const feathered = new OffscreenCanvas(canvas.width, canvas.height)
   const fctx = feathered.getContext('2d')
   fctx.filter = 'blur(3px)'
@@ -61,7 +52,6 @@ function applyLipstick(canvas, keypoints, color, opacity) {
   ctx.drawImage(feathered, 0, 0)
   ctx.globalCompositeOperation = 'source-over'
 
-  // Add color overlay for richer tone
   ctx.globalCompositeOperation = 'color'
   ctx.globalAlpha = alpha * 0.5
   ctx.drawImage(feathered, 0, 0)
@@ -69,9 +59,6 @@ function applyLipstick(canvas, keypoints, color, opacity) {
   ctx.globalAlpha = 1
 }
 
-/**
- * Apply blush to cheeks.
- */
 function applyBlush(canvas, keypoints, color, opacity) {
   if (opacity <= 0) return
 
@@ -86,7 +73,6 @@ function applyBlush(canvas, keypoints, color, opacity) {
   drawRegion(octx, keypoints, FACE_REGIONS.leftCheek)
   drawRegion(octx, keypoints, FACE_REGIONS.rightCheek)
 
-  // Heavy feather for natural blend
   const feathered = new OffscreenCanvas(canvas.width, canvas.height)
   const fctx = feathered.getContext('2d')
   fctx.filter = 'blur(15px)'
@@ -99,9 +85,6 @@ function applyBlush(canvas, keypoints, color, opacity) {
   ctx.globalAlpha = 1
 }
 
-/**
- * Apply eyeliner along eye contours.
- */
 function applyEyeliner(canvas, keypoints, color, opacity) {
   if (opacity <= 0) return
 
@@ -118,7 +101,6 @@ function applyEyeliner(canvas, keypoints, color, opacity) {
   octx.lineJoin = 'round'
 
   for (const eyeRegion of [FACE_REGIONS.leftEye, FACE_REGIONS.rightEye]) {
-    // Top eyelid contour (upper half of eye points)
     const pts = eyeRegion.slice(0, Math.ceil(eyeRegion.length / 2))
       .map(i => keypoints[i]).filter(Boolean)
     if (pts.length < 2) continue
@@ -131,7 +113,6 @@ function applyEyeliner(canvas, keypoints, color, opacity) {
     octx.stroke()
   }
 
-  // Feather slightly
   const feathered = new OffscreenCanvas(canvas.width, canvas.height)
   const fctx = feathered.getContext('2d')
   fctx.filter = 'blur(1px)'
@@ -142,9 +123,6 @@ function applyEyeliner(canvas, keypoints, color, opacity) {
   ctx.globalAlpha = 1
 }
 
-/**
- * Apply eyeshadow above the upper eyelid.
- */
 function applyEyeshadow(canvas, keypoints, color, opacity) {
   if (opacity <= 0) return
 
@@ -155,7 +133,6 @@ function applyEyeshadow(canvas, keypoints, color, opacity) {
   const overlay = new OffscreenCanvas(canvas.width, canvas.height)
   const octx = overlay.getContext('2d')
 
-  // Eye shadow region: above the eye between eyebrow and upper eyelid
   for (const [eyeRegion, browRegion] of [
     [FACE_REGIONS.leftEye, FACE_REGIONS.leftEyebrow],
     [FACE_REGIONS.rightEye, FACE_REGIONS.rightEyebrow],
@@ -167,10 +144,8 @@ function applyEyeshadow(canvas, keypoints, color, opacity) {
 
     octx.fillStyle = `rgba(${r},${g},${b},1)`
     octx.beginPath()
-    // Trace upper eyelid forward
     octx.moveTo(eyePts[0].x, eyePts[0].y)
     for (const p of eyePts) octx.lineTo(p.x, p.y)
-    // Trace eyebrow backward
     for (let i = browPts.length - 1; i >= 0; i--) {
       octx.lineTo(browPts[i].x, browPts[i].y)
     }
@@ -178,7 +153,6 @@ function applyEyeshadow(canvas, keypoints, color, opacity) {
     octx.fill()
   }
 
-  // Heavy feather for diffuse look
   const feathered = new OffscreenCanvas(canvas.width, canvas.height)
   const fctx = feathered.getContext('2d')
   fctx.filter = 'blur(8px)'
@@ -192,12 +166,10 @@ function applyEyeshadow(canvas, keypoints, color, opacity) {
 }
 
 /**
- * Apply all makeup effects to a canvas.
- * @param {HTMLCanvasElement} canvas
- * @param {Object} settings
- * @returns {Promise<boolean>}
+ * Apply all makeup effects to a canvas using pre-detected keypoints.
+ * Does NOT call face detection — caller provides keypoints.
  */
-export async function applyVirtualMakeup(canvas, settings) {
+export function applyMakeupToCanvas(canvas, keypoints, settings) {
   const {
     lipstick = { color: '#cc3355', opacity: 0 },
     blush = { color: '#e88899', opacity: 0 },
@@ -205,23 +177,10 @@ export async function applyVirtualMakeup(canvas, settings) {
     eyeshadow = { color: '#886699', opacity: 0 },
   } = settings
 
-  const hasEffect = lipstick.opacity > 0 || blush.opacity > 0 ||
-    eyeliner.opacity > 0 || eyeshadow.opacity > 0
-
-  if (!hasEffect) return false
-
-  const faces = await detectFaceLandmarks(canvas)
-  if (!faces?.length) return false
-
-  for (const face of faces) {
-    const kp = face.keypoints
-    if (lipstick.opacity > 0) applyLipstick(canvas, kp, lipstick.color, lipstick.opacity)
-    if (blush.opacity > 0) applyBlush(canvas, kp, blush.color, blush.opacity)
-    if (eyeliner.opacity > 0) applyEyeliner(canvas, kp, eyeliner.color, eyeliner.opacity)
-    if (eyeshadow.opacity > 0) applyEyeshadow(canvas, kp, eyeshadow.color, eyeshadow.opacity)
-  }
-
-  return true
+  if (lipstick.opacity > 0) applyLipstick(canvas, keypoints, lipstick.color, lipstick.opacity)
+  if (blush.opacity > 0) applyBlush(canvas, keypoints, blush.color, blush.opacity)
+  if (eyeliner.opacity > 0) applyEyeliner(canvas, keypoints, eyeliner.color, eyeliner.opacity)
+  if (eyeshadow.opacity > 0) applyEyeshadow(canvas, keypoints, eyeshadow.color, eyeshadow.opacity)
 }
 
 export const MAKEUP_PRESETS = {

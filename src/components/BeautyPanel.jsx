@@ -126,6 +126,7 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
                 min={0}
                 max={s.max}
                 step={1}
+                unit="%"
                 value={beauty[s.key]}
                 onChange={v => updateBeauty(s.key, v)}
               />
@@ -144,6 +145,7 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
               min={0}
               max={s.max}
               step={1}
+              unit="%"
               value={faceReshape[s.key]}
               onChange={v => updateReshape(s.key, v)}
             />
@@ -178,6 +180,7 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
                 min={0}
                 max={100}
                 step={1}
+                unit="%"
                 value={makeup[item.key].opacity}
                 onChange={v => updateMakeup(item.key, 'opacity', v)}
               />

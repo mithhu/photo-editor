@@ -9,6 +9,7 @@ import { applyGrain } from '../utils/grain'
 import { applyLightLeak } from '../utils/lightLeaks'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
+import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup } from '../utils/beautyPipeline'
 
 function drawFrame(ctx, displayW, displayH, frame) {
   if (!frame || frame.type === 'none') return
@@ -458,7 +459,20 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       ctx.scale(scale, scale)
       ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
       ctx.translate(-sw / 2, -sh / 2)
+
+      // Draw base image, then overlay beauty result if available
       ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
+
+      const beautyCanvas = beautyResultRef.current
+      if (beautyCanvas) {
+        const bScale = beautyCanvas.width / w
+        const bsx = sx * bScale
+        const bsy = sy * bScale
+        const bsw = sw * bScale
+        const bsh = sh * bScale
+        ctx.drawImage(beautyCanvas, bsx, bsy, bsw, bsh, 0, 0, sw, sh)
+      }
+
       ctx.restore()
 
     const hasComplexOps = hasPresetOps || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
@@ -825,6 +839,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     }
   }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasPresetOps, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
 
+  // Beauty pipeline refs — declared early so handleImageLoad can clear them
+  const beautyTimerRef = useRef(null)
+  const beautyResultRef = useRef(null)
+  const beautyRunIdRef = useRef(0)
+
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
   useEffect(() => { redrawRef.current = throttledDraw }, [throttledDraw])
@@ -833,6 +852,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     const img = imageRef.current
     if (img) setImageDims({ w: img.naturalWidth, h: img.naturalHeight })
     setLoadedSrc(imageSrc)
+    beautyResultRef.current = null
+    beautyRunIdRef.current++
     throttledDraw()
   }, [throttledDraw, imageSrc])
 
@@ -840,41 +861,44 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     throttledDraw()
   }, [throttledDraw, imageSrc])
 
-  // Apply beauty/reshape/makeup effects asynchronously after main draw
-  const beautyTimerRef = useRef(null)
-  const hasBeauty = beauty && (beauty.smooth > 0 || beauty.blemish > 0 || beauty.evenness > 0 || beauty.brightenEyes > 0 || beauty.teethWhiten > 0)
-  const hasReshape = faceReshape && (faceReshape.slimFace > 0 || faceReshape.biggerEyes > 0 || faceReshape.noseSlim > 0 || faceReshape.jawline > 0)
-  const hasMakeup = makeup && (makeup.lipstick?.opacity > 0 || makeup.blush?.opacity > 0 || makeup.eyeliner?.opacity > 0 || makeup.eyeshadow?.opacity > 0)
+  const hasBeautyEffect = hasActiveBeauty(beauty) || hasActiveReshape(faceReshape) || hasActiveMakeup(makeup)
 
   useEffect(() => {
-    if (!hasBeauty && !hasReshape && !hasMakeup) return
     if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
 
+    if (!hasBeautyEffect) {
+      const hadResult = beautyResultRef.current !== null
+      beautyResultRef.current = null
+      beautyRunIdRef.current++
+      if (hadResult) redrawRef.current?.()
+      return
+    }
+
     beautyTimerRef.current = setTimeout(async () => {
-      const canvas = canvasRef.current
-      if (!canvas) return
+      const img = imageRef.current
+      if (!img || !img.complete || img.naturalWidth === 0) return
+
+      const myRunId = ++beautyRunIdRef.current
+
       try {
-        if (hasBeauty) {
-          const { applyBeautyFilters } = await import('../utils/beautyFilters')
-          await applyBeautyFilters(canvas, beauty)
-        }
-        if (hasReshape) {
-          const { applyFaceReshape } = await import('../utils/faceReshape')
-          await applyFaceReshape(canvas, faceReshape)
-        }
-        if (hasMakeup) {
-          const { applyVirtualMakeup } = await import('../utils/virtualMakeup')
-          await applyVirtualMakeup(canvas, makeup)
+        const { runBeautyPipeline } = await import('../utils/beautyPipeline')
+        const result = await runBeautyPipeline(img, beauty, faceReshape, makeup)
+
+        if (beautyRunIdRef.current !== myRunId) return
+
+        if (result) {
+          beautyResultRef.current = result.canvas
+          redrawRef.current?.()
         }
       } catch {
-        // Face detection may fail silently — no face in image
+        // Face detection may fail — no face in image, or model loading issue
       }
-    }, 500)
+    }, 300)
 
     return () => {
       if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
     }
-  }, [hasBeauty, hasReshape, hasMakeup, beauty, faceReshape, makeup, canvasRef])
+  }, [hasBeautyEffect, beauty, faceReshape, makeup])
 
   const getCanvasPoint = useCallback((e) => {
     const canvas = canvasRef.current

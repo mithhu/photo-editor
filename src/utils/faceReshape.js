@@ -1,24 +1,16 @@
 /**
  * Face reshaping using face mesh landmark displacement.
  * Applies subtle warping (mesh-based) to reshape facial features.
+ *
+ * All functions accept keypoints directly — caller handles face detection.
  */
 
-import { detectFaceLandmarks, FACE_REGIONS } from './faceMesh'
+import { FACE_REGIONS } from './faceMesh'
 
 function clamp(v, min, max) {
   return v < min ? min : v > max ? max : v
 }
 
-/**
- * Apply a radial displacement to pixels around a center point.
- * @param {ImageData} src - Source image
- * @param {ImageData} dst - Destination image (modified in-place)
- * @param {number} cx - Center x
- * @param {number} cy - Center y
- * @param {number} radius - Effect radius
- * @param {number} dx - Displacement x
- * @param {number} dy - Displacement y
- */
 function displace(src, dst, cx, cy, radius, dx, dy) {
   const { width, height } = src
   const sd = src.data
@@ -35,7 +27,6 @@ function displace(src, dst, cx, cy, radius, dx, dy) {
       const distSq = (x - cx) ** 2 + (y - cy) ** 2
       if (distSq >= r2) continue
 
-      // Smooth falloff
       const factor = 1 - Math.sqrt(distSq) / radius
       const weight = factor * factor
 
@@ -53,21 +44,16 @@ function displace(src, dst, cx, cy, radius, dx, dy) {
   }
 }
 
-/**
- * Slim face by pushing jawline points inward.
- */
 function applySlimFace(src, dst, keypoints, amount) {
   if (amount <= 0) return
 
   const jaw = FACE_REGIONS.jawline.map(i => keypoints[i]).filter(Boolean)
   if (jaw.length < 5) return
 
-  // Find face center
   let sumX = 0
   jaw.forEach(p => { sumX += p.x })
   const cx = sumX / jaw.length
 
-  // Face width estimate
   const faceWidth = Math.abs(jaw[0].x - jaw[jaw.length - 1].x) || 100
 
   const strength = amount / 100
@@ -79,9 +65,6 @@ function applySlimFace(src, dst, keypoints, amount) {
   }
 }
 
-/**
- * Make eyes appear larger by expanding the eye region outward.
- */
 function applyBiggerEyes(src, dst, keypoints, amount) {
   if (amount <= 0) return
 
@@ -96,7 +79,6 @@ function applyBiggerEyes(src, dst, keypoints, amount) {
     cx /= pts.length
     cy /= pts.length
 
-    // Eye size estimate
     let maxDist = 0
     pts.forEach(p => {
       const d = Math.sqrt((p.x - cx) ** 2 + (p.y - cy) ** 2)
@@ -106,7 +88,6 @@ function applyBiggerEyes(src, dst, keypoints, amount) {
     const radius = maxDist * 2.5
     const scale = strength * 0.15
 
-    // Push pixels outward from eye center (magnify effect)
     const { width, height } = src
     const sd = src.data
     const dd = dst.data
@@ -141,9 +122,6 @@ function applyBiggerEyes(src, dst, keypoints, amount) {
   }
 }
 
-/**
- * Slim nose by pushing nose sides inward.
- */
 function applyNoseSlim(src, dst, keypoints, amount) {
   if (amount <= 0) return
 
@@ -156,14 +134,10 @@ function applyNoseSlim(src, dst, keypoints, amount) {
   const noseWidth = Math.abs(noseLeft.x - noseRight.x)
   const radius = noseWidth * 0.8
 
-  // Push left side rightward, right side leftward
   displace(src, dst, noseLeft.x, noseLeft.y, radius, -noseWidth * strength * 0.06, 0)
   displace(src, dst, noseRight.x, noseRight.y, radius, noseWidth * strength * 0.06, 0)
 }
 
-/**
- * Sharpen jawline by pulling jaw points slightly downward and outward.
- */
 function applyJawline(src, dst, keypoints, amount) {
   if (amount <= 0) return
 
@@ -182,37 +156,23 @@ function applyJawline(src, dst, keypoints, amount) {
 }
 
 /**
- * Apply face reshaping to a canvas.
- * @param {HTMLCanvasElement} canvas
- * @param {Object} settings - { slimFace, biggerEyes, noseSlim, jawline }
- * @returns {Promise<boolean>}
+ * Apply face reshaping to ImageData using pre-detected keypoints.
+ * Does NOT call face detection — caller provides keypoints.
+ * @returns {ImageData} the modified destination image data
  */
-export async function applyFaceReshape(canvas, settings) {
+export function applyReshapeToImageData(srcData, keypoints, settings) {
   const { slimFace = 0, biggerEyes = 0, noseSlim = 0, jawline = 0 } = settings
 
-  if (slimFace === 0 && biggerEyes === 0 && noseSlim === 0 && jawline === 0) {
-    return false
-  }
-
-  const faces = await detectFaceLandmarks(canvas)
-  if (!faces?.length) return false
-
-  const ctx = canvas.getContext('2d')
-  const srcData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const dstData = new ImageData(
     new Uint8ClampedArray(srcData.data),
-    canvas.width,
-    canvas.height
+    srcData.width,
+    srcData.height,
   )
 
-  for (const face of faces) {
-    const kp = face.keypoints
-    if (slimFace > 0) applySlimFace(srcData, dstData, kp, slimFace)
-    if (biggerEyes > 0) applyBiggerEyes(srcData, dstData, kp, biggerEyes)
-    if (noseSlim > 0) applyNoseSlim(srcData, dstData, kp, noseSlim)
-    if (jawline > 0) applyJawline(srcData, dstData, kp, jawline)
-  }
+  if (slimFace > 0) applySlimFace(srcData, dstData, keypoints, slimFace)
+  if (biggerEyes > 0) applyBiggerEyes(srcData, dstData, keypoints, biggerEyes)
+  if (noseSlim > 0) applyNoseSlim(srcData, dstData, keypoints, noseSlim)
+  if (jawline > 0) applyJawline(srcData, dstData, keypoints, jawline)
 
-  ctx.putImageData(dstData, 0, 0)
-  return true
+  return dstData
 }

@@ -1,38 +1,97 @@
 /**
  * Face mesh detection using MediaPipe Face Mesh via TensorFlow.js.
  * Returns 468 3D landmarks per detected face.
+ *
+ * Includes robust error handling, singleton model loading, and
+ * a loading promise that callers can await for UI indicators.
  */
 
 let detector = null
+let loadingPromise = null
+let loadFailed = false
 
+/**
+ * Load the face mesh model. Returns the same promise if already loading.
+ * Caches the detector for reuse across calls.
+ */
 export async function loadFaceMesh() {
   if (detector) return detector
+  if (loadFailed) return null
 
-  const tf = await import('@tensorflow/tfjs')
-  await tf.ready()
+  if (loadingPromise) return loadingPromise
 
-  const faceLandmarksDetection = await import('@tensorflow-models/face-landmarks-detection')
+  loadingPromise = (async () => {
+    try {
+      const tf = await import('@tensorflow/tfjs')
+      await tf.ready()
 
-  detector = await faceLandmarksDetection.createDetector(
-    faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
-    {
-      runtime: 'tfjs',
-      refineLandmarks: true,
-      maxFaces: 4,
+      const faceLandmarksDetection = await import('@tensorflow-models/face-landmarks-detection')
+
+      detector = await faceLandmarksDetection.createDetector(
+        faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh,
+        {
+          runtime: 'tfjs',
+          refineLandmarks: true,
+          maxFaces: 4,
+        }
+      )
+
+      return detector
+    } catch (err) {
+      console.error('[FaceMesh] Model failed to load:', err)
+      loadFailed = true
+      return null
+    } finally {
+      loadingPromise = null
     }
-  )
+  })()
 
-  return detector
+  return loadingPromise
 }
 
 /**
  * Detect face landmarks from an image element or canvas.
- * @param {HTMLImageElement|HTMLCanvasElement} input
+ * Returns empty array if model isn't available or detection fails.
+ * @param {HTMLImageElement|HTMLCanvasElement|OffscreenCanvas} input
  * @returns {Promise<Array<{keypoints: Array<{x:number,y:number,z:number,name?:string}>}>>}
  */
 export async function detectFaceLandmarks(input) {
-  const det = await loadFaceMesh()
-  return det.estimateFaces(input)
+  try {
+    const det = await loadFaceMesh()
+    if (!det) {
+      console.warn('[FaceMesh] Detector not available')
+      return []
+    }
+
+    // OffscreenCanvas isn't supported by TF.js — convert to a regular canvas
+    if (typeof OffscreenCanvas !== 'undefined' && input instanceof OffscreenCanvas) {
+      const tempCanvas = document.createElement('canvas')
+      tempCanvas.width = input.width
+      tempCanvas.height = input.height
+      const tCtx = tempCanvas.getContext('2d')
+      tCtx.drawImage(input, 0, 0)
+      return await det.estimateFaces(tempCanvas)
+    }
+
+    return await det.estimateFaces(input)
+  } catch (err) {
+    console.warn('[FaceMesh] Detection failed:', err.message)
+    return []
+  }
+}
+
+/**
+ * Check if the face mesh model is currently loading.
+ */
+export function isFaceMeshLoading() {
+  return loadingPromise !== null
+}
+
+/**
+ * Check if the face mesh model loaded successfully.
+ */
+export function isFaceMeshReady() {
+  return detector !== null
 }
 
 /**

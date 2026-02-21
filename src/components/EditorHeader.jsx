@@ -9,8 +9,19 @@ function KeyboardIcon() {
   )
 }
 
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, onToggleCompare, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll, onOpenShortcuts }) {
+function ShareIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+      <polyline points="16 6 12 2 8 6" />
+      <line x1="12" y1="2" x2="12" y2="15" />
+    </svg>
+  )
+}
+
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, onToggleCompare, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll, onOpenShortcuts, canvasRef }) {
   const [showMenu, setShowMenu] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const menuRef = useRef(null)
 
   const closeMenu = useCallback(() => setShowMenu(false), [])
@@ -23,6 +34,31 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
     document.addEventListener('pointerdown', handleClickOutside)
     return () => document.removeEventListener('pointerdown', handleClickOutside)
   }, [showMenu, closeMenu])
+
+  const handleNativeShare = useCallback(async () => {
+    const canvas = canvasRef?.current
+    if (!canvas) { onShare?.(); return }
+
+    if (!navigator.share || !navigator.canShare) {
+      onShare?.()
+      return
+    }
+
+    setSharing(true)
+    try {
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+      const file = new File([blob], 'photosai-edit.png', { type: 'image/png' })
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'PhotosAI Edit' })
+      } else {
+        onShare?.()
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') onShare?.()
+    } finally {
+      setSharing(false)
+    }
+  }, [canvasRef, onShare])
 
   return (
     <header className="relative z-50 flex items-center justify-between px-3 py-1.5 lg:px-5 lg:py-2 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-md">
@@ -113,41 +149,55 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
           </button>
         </div>
 
-        {/* Mobile overflow menu */}
-        <div className="lg:hidden relative" ref={menuRef}>
+        {/* Mobile: Share button + overflow menu */}
+        <div className="lg:hidden flex items-center gap-0.5">
           <button
-            onClick={() => setShowMenu(!showMenu)}
+            onClick={handleNativeShare}
+            disabled={sharing}
+            title="Share"
+            className="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-zinc-800 rounded-md transition-colors disabled:opacity-50"
+          >
+            {sharing ? (
+              <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" opacity="0.3" /><path d="M12 2a10 10 0 019.75 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            ) : (
+              <ShareIcon />
+            )}
+          </button>
+          <button
+            onClick={onDownload}
+            title="Export"
             className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
           >
-            <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor"><circle cx="4" cy="10" r="1.5" /><circle cx="10" cy="10" r="1.5" /><circle cx="16" cy="10" r="1.5" /></svg>
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
           </button>
-          {showMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 py-1 min-w-[170px] backdrop-blur-xl">
-              <button onClick={() => { onToggleCompare?.(); closeMenu() }} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-800 ${showCompare ? 'text-indigo-400' : 'text-zinc-300'}`}>
-                {showCompare ? '✓ Compare' : 'Compare'}
-              </button>
-              <button onClick={() => { onAutoEnhance?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
-                Enhance
-              </button>
-              <button onClick={() => { onResetAll?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800">
-                Reset All
-              </button>
-              <div className="h-px bg-zinc-800 my-1" />
-              <button onClick={() => { onNewImage(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
-                New Image
-              </button>
-              <button onClick={() => { onBatch?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
-                Edit Multiple
-              </button>
-              <button onClick={() => { onShare(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
-                Share
-              </button>
-              <div className="h-px bg-zinc-800 my-1" />
-              <button onClick={() => { onDownload(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-indigo-400 hover:bg-zinc-800 font-medium">
-                Export
-              </button>
-            </div>
-          )}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
+            >
+              <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor"><circle cx="4" cy="10" r="1.5" /><circle cx="10" cy="10" r="1.5" /><circle cx="16" cy="10" r="1.5" /></svg>
+            </button>
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 py-1 min-w-[170px] backdrop-blur-xl">
+                <button onClick={() => { onToggleCompare?.(); closeMenu() }} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-800 ${showCompare ? 'text-indigo-400' : 'text-zinc-300'}`}>
+                  {showCompare ? '✓ Compare' : 'Compare'}
+                </button>
+                <button onClick={() => { onAutoEnhance?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
+                  Enhance
+                </button>
+                <button onClick={() => { onResetAll?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800">
+                  Reset All
+                </button>
+                <div className="h-px bg-zinc-800 my-1" />
+                <button onClick={() => { onNewImage(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
+                  New Image
+                </button>
+                <button onClick={() => { onBatch?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
+                  Edit Multiple
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>

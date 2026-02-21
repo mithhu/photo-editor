@@ -334,6 +334,7 @@ export default function App() {
         onBatch={() => setMode('batch')}
         onResetAll={reset}
         onOpenShortcuts={() => setShowShortcutsOverlay(true)}
+        canvasRef={canvasRef}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row lg:gap-4 lg:p-4 min-h-0 overflow-hidden relative">

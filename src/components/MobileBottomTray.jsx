@@ -22,19 +22,23 @@ const StickerPanel = lazy(() => import('./StickerPanel').then((m) => ({ default:
 const LayerPanel = lazy(() => import('./LayerPanel').then((m) => ({ default: m.LayerPanel })))
 const BeautyPanel = lazy(() => import('./BeautyPanel').then((m) => ({ default: m.BeautyPanel })))
 
-const CATEGORIES = [
-  { id: 'adjust', icon: '☀', label: 'Adjust' },
-  { id: 'beauty', icon: '✨', label: 'Beauty' },
+const PRIMARY_TABS = [
   { id: 'filters', icon: '✦', label: 'Filters' },
+  { id: 'beauty', icon: '✨', label: 'Beauty' },
+  { id: 'ai', icon: '⚡', label: 'AI' },
   { id: 'crop', icon: '⬡', label: 'Crop' },
+  { id: 'draw', icon: '✎', label: 'Draw' },
+]
+
+const MORE_TABS = [
+  { id: 'adjust', icon: '☀', label: 'Adjust' },
+  { id: 'color', icon: '🎨', label: 'Color' },
   { id: 'resize', icon: '↔', label: 'Resize' },
   { id: 'frames', icon: '▣', label: 'Frames' },
-  { id: 'color', icon: '🎨', label: 'Color' },
-  { id: 'draw', icon: '✎', label: 'Draw' },
   { id: 'layers', icon: '◫', label: 'Layers' },
-  { id: 'ai', icon: '⚡', label: 'AI' },
-  { id: 'templates', icon: '▦', label: 'More' },
+  { id: 'templates', icon: '▦', label: 'Templates' },
 ]
+
 
 function PanelLoader() {
   return <div className="flex items-center justify-center py-4 text-zinc-500 text-xs">Loading...</div>
@@ -52,7 +56,9 @@ export function MobileBottomTray({
 }) {
   const [activeCategory, setActiveCategory] = useState(null)
   const [subPanel, setSubPanel] = useState(null)
+  const [showMore, setShowMore] = useState(false)
   const panelRef = useRef(null)
+  const moreRef = useRef(null)
   const [expandedTextId, setExpandedTextId] = useState(null)
   const [lutError, setLutError] = useState(null)
   const [imageDims, setImageDims] = useState(null)
@@ -120,6 +126,7 @@ export function MobileBottomTray({
   }, [applyChange, editState.resize?.lockAspect, imageDims])
 
   const toggleCategory = useCallback((id) => {
+    setShowMore(false)
     setActiveCategory((prev) => {
       if (prev === id) return null
       setSubPanel(null)
@@ -127,17 +134,31 @@ export function MobileBottomTray({
     })
   }, [])
 
+  const isMoreTabActive = MORE_TABS.some((t) => t.id === activeCategory)
+
   useEffect(() => {
-    if (!activeCategory) return
+    if (!activeCategory && !showMore) return
     const handleBack = (e) => {
       if (e.key === 'Escape') {
         setActiveCategory(null)
         setSubPanel(null)
+        setShowMore(false)
       }
     }
     window.addEventListener('keydown', handleBack)
     return () => window.removeEventListener('keydown', handleBack)
-  }, [activeCategory])
+  }, [activeCategory, showMore])
+
+  useEffect(() => {
+    if (!showMore) return
+    const handleOutsideClick = (e) => {
+      if (moreRef.current && !moreRef.current.contains(e.target)) {
+        setShowMore(false)
+      }
+    }
+    document.addEventListener('pointerdown', handleOutsideClick)
+    return () => document.removeEventListener('pointerdown', handleOutsideClick)
+  }, [showMore])
 
   const renderPanel = () => {
     switch (activeCategory) {
@@ -1332,23 +1353,59 @@ export function MobileBottomTray({
         </div>
       )}
 
-      {/* Category icon bar */}
+      {/* More overflow grid */}
+      {showMore && (
+        <div
+          ref={moreRef}
+          className="pointer-events-auto bg-zinc-900/90 backdrop-blur-xl border-t border-zinc-700/50 rounded-t-2xl px-4 pt-3 pb-2"
+        >
+          <div className="grid grid-cols-3 gap-2">
+            {MORE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => toggleCategory(tab.id)}
+                className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-colors ${
+                  activeCategory === tab.id
+                    ? 'bg-indigo-500/15 text-indigo-400'
+                    : 'text-zinc-400 active:bg-zinc-800 hover:bg-zinc-800/50'
+                }`}
+              >
+                <span className="text-xl leading-none">{tab.icon}</span>
+                <span className="text-[11px] leading-tight">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Primary tab bar */}
       <div className="pointer-events-auto bg-zinc-900/85 backdrop-blur-xl border-t border-zinc-700/50 safe-area-bottom">
-        <div className="flex overflow-x-auto scrollbar-hide px-1 py-2 gap-0.5">
-          {CATEGORIES.map((cat) => (
+        <div className="flex justify-around px-1 py-2">
+          {PRIMARY_TABS.map((cat) => (
             <button
               key={cat.id}
               onClick={() => toggleCategory(cat.id)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors flex-shrink-0 min-w-[48px] ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-[48px] ${
                 activeCategory === cat.id
                   ? 'text-indigo-400'
                   : 'text-zinc-400 active:text-zinc-200'
               }`}
             >
               <span className="text-lg leading-none">{cat.icon}</span>
-              <span className="text-[10px] leading-tight whitespace-nowrap">{cat.label}</span>
+              <span className="text-[10px] leading-tight">{cat.label}</span>
             </button>
           ))}
+          <button
+            onClick={() => setShowMore((v) => !v)}
+            className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-[48px] ${
+              showMore || isMoreTabActive
+                ? 'text-indigo-400'
+                : 'text-zinc-400 active:text-zinc-200'
+            }`}
+          >
+            <span className="text-lg leading-none">⋯</span>
+            <span className="text-[10px] leading-tight">More</span>
+          </button>
         </div>
       </div>
     </div>
