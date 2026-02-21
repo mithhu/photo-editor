@@ -25,27 +25,28 @@
 - [x] **Zoom & Pan** — Pinch/scroll zoom, drag to pan on canvas
 - [x] **Reset individual controls** — Per-slider reset vs full reset
 - [ ] **Loading states** — Skeletons, progress for large images
-- [ ] **Error handling** — Invalid files, unsupported formats, export failures
+- [x] **Error handling** — Invalid files, unsupported formats, export failures
 
 ### 1.2 More Adjustments
 
 - [x] Exposure
 - [x] Highlights & Shadows
-- [ ] Warmth / Tint
-- [ ] Clarity / Dehaze
-- [ ] Vibrance (vs saturation)
+- [x] Warmth / Tint
+- [x] Clarity / Dehaze
+- [x] Vibrance (vs saturation)
+- [x] Vignette
 
 ### 1.3 Advanced Crop
 
 - [x] Custom crop (numeric x, y, w, h)
 - [x] More ratios: 9:16, 3:4, 2:3
-- [ ] Resizable crop handles (visual)
-- [ ] Free crop with custom dimensions
+- [x] Resizable crop handles (visual)
+- [x] Free crop with custom dimensions
 
 ### 1.4 Technical
 
 - [ ] **TypeScript** — Add types for state, props, canvas APIs
-- [ ] **Image size limits** — Warn/cap large uploads (e.g. 20MB, 8192px)
+- [x] **Image size limits** — Warn/cap large uploads (20MB, 8192px)
 - [ ] **Responsive layout** — Mobile-friendly toolbar and sidebar
 
 ---
@@ -57,13 +58,13 @@
 ### 2.1 Layers & Composition
 
 - [x] **Text overlay** — Add text with content, color
-- [ ] **Stickers / shapes** — Basic shapes, simple stickers
+- [x] **Stickers / shapes** — Basic shapes (circle, square, triangle, star, heart, arrows)
 - [ ] **Layer panel** — Reorder, toggle visibility, delete
 
 ### 2.2 Drawing & Brushes
 
-- [ ] **Brush tool** — Draw with adjustable size, opacity, color
-- [ ] **Eraser**
+- [x] **Brush tool** — Draw with adjustable size, opacity, color
+- [x] **Eraser**
 - [ ] **Healing brush** — Clone/stamp (simplified)
 
 ### 2.3 Curves & Color Grading
@@ -115,7 +116,8 @@
 
 - [x] **Share modal** — native OS share sheet (Web Share API), copy to clipboard
 - [x] **Social sharing** — Twitter/X, Facebook, WhatsApp, Instagram buttons
-- [ ] Quality slider (JPEG compression)
+- [x] Quality slider (JPEG compression) + format selection (PNG/JPEG/WEBP)
+- [x] Resize on export with aspect ratio lock
 - [ ] Preset formats — Instagram Square, Story, YouTube thumbnail
 - [ ] Bulk export for collages
 - [ ] Optional watermark
