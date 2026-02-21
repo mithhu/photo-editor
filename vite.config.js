@@ -5,11 +5,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/proxy-wiki': {
-        target: 'https://upload.wikimedia.org',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/proxy-wiki/, ''),
-      },
       '/proxy-style-models': {
         target: 'https://reiinakano.github.io',
         changeOrigin: true,

@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { removeBackground } from '../utils/backgroundRemoval'
 import { detectSubjects, computeSmartCrop } from '../utils/smartCrop'
 import { applyStyleTransfer, STYLE_PRESETS } from '../utils/styleTransfer'
 import { suggestFilters } from '../utils/filterSuggestions'
+import { getStyleImages } from '../utils/styleImages'
 
 export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChange }) {
   const [bgLoading, setBgLoading] = useState(false)
@@ -22,6 +23,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
   const [suggestLoading, setSuggestLoading] = useState(false)
 
   const styleFileRef = useRef(null)
+  const styleImages = useMemo(() => getStyleImages(), [])
 
   const handleRemoveBackground = async () => {
     if (!imageSrc) return
@@ -214,15 +216,14 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
             {STYLE_PRESETS.map((preset) => (
               <button
                 key={preset.id}
-                onClick={() => handleStyleTransfer(preset.url)}
+                onClick={() => handleStyleTransfer(styleImages[preset.id])}
                 disabled={styleLoading || !imageSrc}
                 className="group relative overflow-hidden rounded-lg border border-zinc-700 hover:border-amber-500/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <img
-                  src={preset.url}
+                  src={styleImages[preset.id]}
                   alt={preset.name}
                   className="w-full h-12 object-cover"
-                  crossOrigin="anonymous"
                 />
                 <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-1.5 py-1 text-[10px] text-zinc-200 font-medium">
                   {preset.name}
