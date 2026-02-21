@@ -222,8 +222,91 @@ const TEMPLATES = [
   },
 ]
 
-export function TemplatePanel({ applyChange }) {
+const CUSTOM_TEMPLATES_KEY = 'photo-editor-custom-templates'
+
+export function TemplatePanel({ applyChange, editState }) {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [customTemplates, setCustomTemplates] = useState(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_TEMPLATES_KEY)
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  })
+  const [showSaveForm, setShowSaveForm] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+
+  const saveTemplate = () => {
+    if (!templateName.trim() || !editState) return
+    const {
+      preset,
+      brightness,
+      contrast,
+      saturation,
+      exposure,
+      highlights,
+      shadows,
+      warmth,
+      tint,
+      vibrance,
+      clarity,
+      dehaze,
+      vignette,
+      colorGrade,
+      splitTone,
+      hsl,
+      curves,
+      masks,
+      textOverlays,
+      shapeOverlays,
+    } = editState
+
+    const newTemplate = {
+      id: `custom-${Date.now()}`,
+      name: templateName.trim(),
+      category: 'custom',
+      state: {
+        preset,
+        brightness,
+        contrast,
+        saturation,
+        exposure,
+        highlights,
+        shadows,
+        warmth,
+        tint,
+        vibrance,
+        clarity,
+        dehaze,
+        vignette,
+        colorGrade,
+        splitTone,
+        hsl,
+        curves,
+        masks,
+        textOverlays,
+        shapeOverlays,
+      },
+      createdAt: Date.now(),
+    }
+
+    const updated = [newTemplate, ...customTemplates]
+    setCustomTemplates(updated)
+    localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(updated))
+    setTemplateName('')
+    setShowSaveForm(false)
+  }
+
+  const deleteCustomTemplate = (id) => {
+    const updated = customTemplates.filter((t) => t.id !== id)
+    setCustomTemplates(updated)
+    localStorage.setItem(CUSTOM_TEMPLATES_KEY, JSON.stringify(updated))
+  }
+
+  const applyCustomTemplate = (template) => {
+    applyChange((s) => ({ ...s, ...template.state }))
+  }
 
   const categories = [
     { id: 'all', label: 'All' },
@@ -241,6 +324,76 @@ export function TemplatePanel({ applyChange }) {
   return (
     <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
       <h3 className="text-sm font-semibold text-zinc-300 mb-3">Templates</h3>
+
+      {/* Save as Template */}
+      <div className="mb-3">
+        {!showSaveForm ? (
+          <button
+            type="button"
+            onClick={() => setShowSaveForm(true)}
+            className="w-full py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-dashed border-zinc-600 hover:border-amber-500/50 transition-colors"
+          >
+            + Save Current as Template
+          </button>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="Template name..."
+              className="flex-1 bg-zinc-800 text-sm text-zinc-200 rounded-lg px-3 py-2 border border-zinc-700 focus:border-amber-500 outline-none"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && saveTemplate()}
+            />
+            <button
+              type="button"
+              onClick={saveTemplate}
+              className="px-3 py-2 bg-amber-500 text-zinc-900 rounded-lg text-xs font-medium"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowSaveForm(false)}
+              className="px-2 py-2 bg-zinc-700 text-zinc-300 rounded-lg text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* My Templates */}
+      {customTemplates.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-xs text-zinc-500 font-medium mb-2">My Templates</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {customTemplates.map((t) => (
+              <div key={t.id} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => applyCustomTemplate(t)}
+                  className="w-full p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-amber-500/50"
+                >
+                  <span className="text-2xl block mb-1">🎨</span>
+                  <span className="text-xs text-zinc-300 truncate block">{t.name}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    deleteCustomTemplate(t.id)
+                  }}
+                  className="absolute top-1 right-1 w-5 h-5 bg-red-500/80 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Category tabs */}
       <div className="flex gap-1 mb-3 overflow-x-auto">

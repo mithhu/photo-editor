@@ -571,7 +571,7 @@ export function EditorSidebar({
 
       {/* Templates tab */}
       <div className={activeTab !== 'templates' ? 'hidden lg:block' : ''}>
-        <TemplatePanel applyChange={applyChange} />
+        <TemplatePanel applyChange={applyChange} editState={editState} />
       </div>
 
       {/* Filters tab: Filters + History */}

@@ -1,17 +1,36 @@
-import { useState, useRef, useEffect } from 'react'
+import { lazy, Suspense, useState, useRef, useEffect } from 'react'
 import { INITIAL_EDIT_STATE } from './constants'
 import { useEditHistory } from './hooks/useEditHistory'
 import { useProjectSave } from './hooks/useProjectSave'
 import { analyzeAndEnhance } from './utils/autoEnhance'
-import {
-  ImageUpload,
-  EditorHeader,
-  EditorCanvas,
-  EditorSidebar,
-  ShareModal,
-  ExportDialog,
-  CollageBuilder,
-} from './components'
+import { ImageUpload, EditorHeader } from './components'
+
+const EditorCanvas = lazy(() =>
+  import('./components/EditorCanvas').then((m) => ({ default: m.EditorCanvas }))
+)
+const EditorSidebar = lazy(() =>
+  import('./components/EditorSidebar').then((m) => ({ default: m.EditorSidebar }))
+)
+const ShareModal = lazy(() =>
+  import('./components/ShareModal').then((m) => ({ default: m.ShareModal }))
+)
+const ExportDialog = lazy(() =>
+  import('./components/ExportDialog').then((m) => ({ default: m.ExportDialog }))
+)
+const CollageBuilder = lazy(() =>
+  import('./components/CollageBuilder').then((m) => ({ default: m.CollageBuilder }))
+)
+
+function EditorFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center text-zinc-500">
+      <div className="text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-3" />
+        <p className="text-sm">Loading editor...</p>
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
@@ -106,13 +125,15 @@ export default function App() {
 
   if (mode === 'collage') {
     return (
-      <CollageBuilder
-        onComplete={(dataUrl) => {
-          setImageSrc(dataUrl)
-          setMode('editor')
-        }}
-        onBack={() => setMode('editor')}
-      />
+      <Suspense fallback={<EditorFallback />}>
+        <CollageBuilder
+          onComplete={(dataUrl) => {
+            setImageSrc(dataUrl)
+            setMode('editor')
+          }}
+          onBack={() => setMode('editor')}
+        />
+      </Suspense>
     )
   }
 
@@ -159,48 +180,51 @@ export default function App() {
       />
 
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">
-        <EditorCanvas
-          imageSrc={imageSrc}
-          editState={editState}
-          canvasRef={canvasRef}
-          isComparing={isComparing}
-          onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
-          onApplyChange={applyChange}
-        />
-        <EditorSidebar
-          editState={editState}
-          applyChange={applyChange}
-          applySliderChange={applySliderChange}
-          onAddText={() =>
-            applyChange((s) => ({
-              ...s,
-              textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
-            }))
-          }
-          historyIndex={historyIndex}
-          historyLength={historyLength}
-          imageSrc={imageSrc}
-          onImageReplace={(newSrc) => {
-            setImageSrc(newSrc)
-          }}
-          canvasRef={canvasRef}
-          onApplyChange={applyChange}
-        />
+        <Suspense fallback={<EditorFallback />}>
+          <EditorCanvas
+            imageSrc={imageSrc}
+            editState={editState}
+            canvasRef={canvasRef}
+            isComparing={isComparing}
+            onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
+            onApplyChange={applyChange}
+          />
+          <EditorSidebar
+            editState={editState}
+            applyChange={applyChange}
+            applySliderChange={applySliderChange}
+            onAddText={() =>
+              applyChange((s) => ({
+                ...s,
+                textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
+              }))
+            }
+            historyIndex={historyIndex}
+            historyLength={historyLength}
+            imageSrc={imageSrc}
+            onImageReplace={(newSrc) => {
+              setImageSrc(newSrc)
+            }}
+            canvasRef={canvasRef}
+            onApplyChange={applyChange}
+          />
+        </Suspense>
       </div>
 
-      {showShareModal && (
-        <ShareModal
-          canvasRef={canvasRef}
-          onClose={() => setShowShareModal(false)}
-        />
-      )}
-
-      {showExportDialog && (
-        <ExportDialog
-          canvasRef={canvasRef}
-          onClose={() => setShowExportDialog(false)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {showShareModal && (
+          <ShareModal
+            canvasRef={canvasRef}
+            onClose={() => setShowShareModal(false)}
+          />
+        )}
+        {showExportDialog && (
+          <ExportDialog
+            canvasRef={canvasRef}
+            onClose={() => setShowExportDialog(false)}
+          />
+        )}
+      </Suspense>
     </div>
   )
 }

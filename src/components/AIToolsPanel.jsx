@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { removeBackground } from '../utils/backgroundRemoval'
 import { detectSubjects, computeSmartCrop } from '../utils/smartCrop'
 import { applyStyleTransfer, STYLE_PRESETS } from '../utils/styleTransfer'
+import { suggestFilters } from '../utils/filterSuggestions'
 
 export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChange }) {
   const [bgLoading, setBgLoading] = useState(false)
@@ -16,6 +17,9 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
   const [styleStatus, setStyleStatus] = useState(null)
   const [styleError, setStyleError] = useState(null)
   const [styleStrength, setStyleStrength] = useState(0.8)
+
+  const [suggestions, setSuggestions] = useState(null)
+  const [suggestLoading, setSuggestLoading] = useState(false)
 
   const styleFileRef = useRef(null)
 
@@ -92,6 +96,21 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     if (!file) return
     const url = URL.createObjectURL(file)
     handleStyleTransfer(url)
+  }
+
+  const handleSuggestFilters = () => {
+    if (!canvasRef?.current) return
+    setSuggestLoading(true)
+    setTimeout(() => {
+      try {
+        const results = suggestFilters(canvasRef.current)
+        setSuggestions(results)
+      } catch {
+        setSuggestions(null)
+      } finally {
+        setSuggestLoading(false)
+      }
+    }, 50)
   }
 
   return (
@@ -230,6 +249,33 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
             <p className="text-xs text-red-400">{styleError}</p>
           )}
         </div>
+      </div>
+
+      {/* Filter Suggestions */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <h4 className="text-xs text-zinc-400 font-medium mb-2">Filter Suggestions</h4>
+        <button
+          onClick={handleSuggestFilters}
+          disabled={suggestLoading}
+          className="w-full py-2 text-sm bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg transition-colors disabled:opacity-50"
+        >
+          {suggestLoading ? 'Analyzing...' : 'Analyze Image'}
+        </button>
+        {suggestions && (
+          <div className="mt-2 space-y-1">
+            {suggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => onApplyChange?.((state) => ({ ...state, preset: s.preset }))}
+                className="w-full flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors text-left"
+              >
+                <span className="text-xs text-zinc-200 font-medium capitalize">{s.filter}</span>
+                <span className="text-xs text-zinc-500 flex-1">{s.reason}</span>
+                <span className="text-xs text-emerald-400">{Math.round(s.confidence * 100)}%</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
