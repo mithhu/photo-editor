@@ -1,4 +1,4 @@
-# Photo Editor — Coding Style Guide
+# PhotosAI — Coding Style Guide
 
 > For AI agents and developers. Follow these conventions in future work.
 

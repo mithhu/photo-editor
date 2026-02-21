@@ -1,5 +1,5 @@
-const APP_URL = 'https://github.com/mithhu/photo-editor'
-const SHARE_TEXT = 'Check out my edit — made with Photo Editor'
+const APP_URL = 'https://photosai.vercel.app'
+const SHARE_TEXT = 'Check out my edit — made with PhotosAI'
 
 export function canvasToBlob(canvas) {
   return new Promise((resolve, reject) => {
@@ -29,7 +29,7 @@ export async function shareNative(canvas) {
   }
   await navigator.share({
     files: [file],
-    title: 'Photo Editor',
+    title: 'PhotosAI',
     text: SHARE_TEXT,
   })
 }

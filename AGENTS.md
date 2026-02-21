@@ -1,6 +1,6 @@
 # Agent Instructions
 
-When working on this photo editor codebase:
+When working on the PhotosAI codebase:
 
 1. **Read the style guide:** `docs/CODE_STYLE.md`
 2. **Follow project rules:** `.cursor/rules/code-style.mdc` (Cursor loads this automatically)

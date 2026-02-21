@@ -55,7 +55,7 @@ export default function App() {
 
   const [hasSavedProject, setHasSavedProject] = useState(() => {
     try {
-      const raw = localStorage.getItem('photo-editor-project')
+      const raw = localStorage.getItem('photosai-project')
       return raw ? !!JSON.parse(raw).imageSrc : false
     } catch { return false }
   })
@@ -231,7 +231,7 @@ export default function App() {
             <button onClick={() => setSwRegistration(null)} className="text-zinc-800 hover:text-zinc-900 text-lg leading-none">×</button>
           </div>
         )}
-        <h1 className="text-3xl font-bold text-amber-500 mb-2">Photo Editor</h1>
+        <h1 className="text-3xl font-bold text-amber-500 mb-2">PhotosAI</h1>
         <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
         {hasSavedProject && (
           <div className="mb-4 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-center">

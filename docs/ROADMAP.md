@@ -1,4 +1,4 @@
-# Photo Editor — Roadmap & Planning
+# PhotosAI — Roadmap & Planning
 
 > Vision: Build one of the best web-based photo editing applications, combining professional tools with approachable UX (think Prequel meets Photopea meets Canva).
 

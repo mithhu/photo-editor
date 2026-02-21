@@ -1,6 +1,8 @@
-# Photo Editor
+# PhotosAI
 
-A web-based photo editor built with React and Vite. Edit photos with adjustments, filters, crop, and more.
+A professional AI-powered photo editor in your browser. Built with React and Vite. Edit photos with adjustments, filters, AI tools, and more.
+
+**Live:** [photosai.vercel.app](https://photosai.vercel.app)
 
 ## Features
 

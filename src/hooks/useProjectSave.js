@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
-const STORAGE_KEY = 'photo-editor-project'
+const STORAGE_KEY = 'photosai-project'
 const AUTO_SAVE_INTERVAL = 10000
 
 export function useProjectSave(imageSrc, editState, setEditState, setImageSrc) {

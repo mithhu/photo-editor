@@ -1,4 +1,4 @@
-# Photo Editor — Progress
+# PhotosAI — Progress
 
 > Manually updated when completing features. All contributors: update this file.
 
@@ -11,7 +11,7 @@
 - [x] Tailwind CSS v4 with @tailwindcss/postcss
 - [x] Code style guide (`docs/CODE_STYLE.md`) and Cursor rules
 
-### Photo Editor MVP (v0.1)
+### PhotosAI MVP (v0.1)
 - [x] Image upload — drag & drop, file picker, loading states
 - [x] Adjustments — brightness, contrast, saturation, exposure, highlights, shadows
 - [x] Crop — aspect ratios (Original, 1:1, 4:5, 16:9, 9:16, 3:4, 2:3, custom)

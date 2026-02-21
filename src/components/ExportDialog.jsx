@@ -47,7 +47,7 @@ export function ExportDialog({ canvasRef, onClose }) {
   const [resizeH, setResizeH] = useState(0)
   const [lockRatio, setLockRatio] = useState(true)
   const [watermark, setWatermark] = useState(false)
-  const [watermarkText, setWatermarkText] = useState('Photo Editor')
+  const [watermarkText, setWatermarkText] = useState('PhotosAI')
   const [watermarkPosition, setWatermarkPosition] = useState('bottom-right')
   const [watermarkOpacity, setWatermarkOpacity] = useState(0.3)
   const aspectRatioRef = useRef(1)
@@ -306,7 +306,7 @@ export function ExportDialog({ canvasRef, onClose }) {
                     type="text"
                     value={watermarkText}
                     onChange={(e) => setWatermarkText(e.target.value)}
-                    placeholder="Photo Editor"
+                    placeholder="PhotosAI"
                     className="w-full bg-zinc-800 border border-zinc-700 px-2 py-1.5 rounded-lg text-sm text-zinc-200"
                   />
                 </div>

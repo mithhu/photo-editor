@@ -1,9 +1,9 @@
 ---
-description: Photo Editor coding style and conventions
+description: PhotosAI coding style and conventions
 alwaysApply: true
 ---
 
-# Photo Editor — Code Style Guide
+# PhotosAI — Code Style Guide
 
 Follow these conventions in all new code. Full guide: `docs/CODE_STYLE.md`
 

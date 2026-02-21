@@ -1,7 +1,7 @@
 {
-  "name": "Photo Editor",
-  "short_name": "PhotoEdit",
-  "description": "Professional web-based photo editor with AI features",
+  "name": "PhotosAI",
+  "short_name": "PhotosAI",
+  "description": "PhotosAI — Professional AI-powered photo editor in your browser",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#18181b",

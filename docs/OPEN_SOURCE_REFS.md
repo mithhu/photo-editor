@@ -1,4 +1,4 @@
-# Open Source References — Photo Editor
+# Open Source References — PhotosAI
 
 > Repos to study for architecture, patterns, and features.
 

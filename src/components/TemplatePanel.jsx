@@ -222,7 +222,7 @@ const TEMPLATES = [
   },
 ]
 
-const CUSTOM_TEMPLATES_KEY = 'photo-editor-custom-templates'
+const CUSTOM_TEMPLATES_KEY = 'photosai-custom-templates'
 
 export function TemplatePanel({ applyChange, editState }) {
   const [activeCategory, setActiveCategory] = useState('all')
