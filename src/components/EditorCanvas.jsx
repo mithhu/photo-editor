@@ -291,6 +291,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   }, [isComparing, preset, brightness, exposure, shadowBrightness, contrast, highlightContrast, saturation])
 
   const hasBaseFilters = baseFilterOps.length > 0
+  const hasPresetOps = !isComparing && preset !== 'none' && FILTER_PRESETS.find((p) => p.id === preset)?.ops?.length > 0
   const hasHSL = hsl && Object.values(hsl).some(c => c.h !== 0 || c.s !== 0 || c.l !== 0)
   const hasCurves = curves && Object.entries(curves).some(([, pts]) =>
     pts.length > 2 || (pts.length === 2 && (pts[0][0] !== 0 || pts[0][1] !== 0 || pts[1][0] !== 1 || pts[1][1] !== 1))
@@ -419,7 +420,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
     const hasPerspective = (p.horizontal !== 0 || p.vertical !== 0 || p.rotation !== 0)
     const perspectiveScale = hasPerspective ? 0.88 : 1
-    const scale = Math.min(containerSize.w / cw, containerSize.h / ch, 1) * perspectiveScale
+    const availW = containerSize.w - 8
+    const availH = containerSize.h - 8
+    const scale = Math.min(availW / cw, availH / ch, 1) * perspectiveScale
     const displayW = cw * scale
     const displayH = ch * scale
 
@@ -441,7 +444,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
     ctx.restore()
 
-    const hasComplexOps = hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
+    const hasComplexOps = hasPresetOps || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
     const hasSimpleOnly = needsPixelPass && !hasComplexOps
 
     if (hasSimpleOnly) {
@@ -799,7 +802,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasPresetOps, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
@@ -1353,7 +1356,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   return (
     <div
       ref={containerRef}
-      className="min-w-0 flex-1 min-h-0 relative bg-zinc-900/50 lg:rounded-xl p-2 pb-16 lg:p-4 lg:pb-4 overflow-hidden flex items-center justify-center touch-none"
+      className="min-w-0 flex-1 min-h-0 relative bg-zinc-900/50 lg:rounded-xl p-2 pb-[72px] lg:p-4 lg:pb-4 overflow-hidden flex items-center justify-center touch-none"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleContainerMouseMove}
@@ -1379,7 +1382,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         </div>
       )}
       <div
-        className="flex-shrink-0 relative"
+        className="relative"
         style={{
           transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
           opacity: loadedSrc === imageSrc ? 1 : 0,
@@ -1395,7 +1398,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         />
         <canvas
           ref={canvasRef}
-          className="rounded-lg shadow-2xl"
+          className="rounded-lg shadow-2xl block"
           style={{ background: '#1a1a1a' }}
         />
         {pickerBadge && (
