@@ -1,5 +1,7 @@
 export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, defaultValue, unit }) {
-  const defaultVal = defaultValue ?? (unit === '%' || unit === 'px' ? min : (min + max) / 2)
+  const isRawUnit = unit === '%' || unit === 'px' || unit === 'deg' || unit === 'raw'
+  const isIntegerRange = step >= 1 && max > 2
+  const defaultVal = defaultValue ?? (isRawUnit || isIntegerRange ? min : (min + max) / 2)
   const isSigned = min < 0
 
   let displayValue
@@ -9,6 +11,10 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
     displayValue = `${Math.round(value)}°`
   } else if (unit === '%') {
     displayValue = `${Math.round(value)}%`
+  } else if (unit === 'raw') {
+    displayValue = `${Math.round(value)}`
+  } else if (isIntegerRange) {
+    displayValue = `${Math.round(value)}`
   } else if (isSigned) {
     displayValue = `${value >= 0 ? '+' : ''}${(value * 100).toFixed(0)}`
   } else {

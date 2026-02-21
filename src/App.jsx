@@ -193,8 +193,14 @@ export default function App() {
   const handleAutoEnhance = () => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const suggested = analyzeAndEnhance(canvas)
-    applyChange(suggested)
+    const { beauty: beautyHint, ...adjustments } = analyzeAndEnhance(canvas)
+    applyChange((prev) => ({
+      ...prev,
+      ...adjustments,
+      beauty: beautyHint
+        ? { ...prev.beauty, ...beautyHint }
+        : prev.beauty,
+    }))
   }
 
   const handleNewImage = () => {

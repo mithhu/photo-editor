@@ -1,5 +1,10 @@
+/**
+ * Analyze an image on the canvas and return optimal edit settings.
+ * One-tap enhancement: adjusts exposure, contrast, saturation, and optionally beauty.
+ */
+
 export function analyzeAndEnhance(canvas) {
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const d = imageData.data
 
@@ -15,7 +20,7 @@ export function analyzeAndEnhance(canvas) {
     totalB += d[i + 2]
   }
 
-  // Find 1st and 99th percentile for auto-levels
+  // 1st and 99th percentile for auto-levels
   let cumulative = 0
   let low = 0, high = 255
   for (let i = 0; i < 256; i++) {
@@ -35,14 +40,14 @@ export function analyzeAndEnhance(canvas) {
   const avgB = totalB / pixelCount
   const avgSat = Math.max(avgR, avgG, avgB) - Math.min(avgR, avgG, avgB)
 
-  // Target average luminance ~128
+  // Brightness: target ~128
   const brightnessFactor = avgLum < 100
     ? Math.min(1.4, 128 / Math.max(avgLum, 1))
     : avgLum > 180
       ? Math.max(0.7, 128 / avgLum)
       : 1
 
-  // Expand tonal range
+  // Contrast: expand tonal range
   const range = high - low
   const contrastFactor = range < 200
     ? Math.min(1.4, 220 / Math.max(range, 1))
@@ -56,15 +61,26 @@ export function analyzeAndEnhance(canvas) {
       ? Math.max(0.8, 1 - (avgLum - 200) / 200)
       : 1
 
-  // Boost if image is desaturated
+  // Saturation: boost if desaturated
   const saturationFactor = avgSat < 40
     ? Math.min(1.3, 1 + (40 - avgSat) / 100)
-    : 1
+    : avgSat < 70
+      ? Math.min(1.15, 1 + (70 - avgSat) / 200)
+      : 1
+
+  // Vibrance: always add a little pop
+  const vibranceBoost = avgSat < 50 ? 0.15 : 0.08
+
+  // Slight warmth for photos that are cool/neutral
+  const warmthBoost = avgB > avgR + 10 ? 0.05 : 0
 
   return {
     brightness: Math.round(brightnessFactor * 100) / 100,
     contrast: Math.round(contrastFactor * 100) / 100,
     exposure: Math.round(exposureFactor * 100) / 100,
     saturation: Math.round(saturationFactor * 100) / 100,
+    vibrance: Math.round(vibranceBoost * 100) / 100,
+    warmth: warmthBoost,
+    beauty: { smooth: 25, blemish: 20, evenness: 15, brightenEyes: 20, teethWhiten: 10 },
   }
 }

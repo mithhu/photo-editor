@@ -688,57 +688,27 @@ export function EditorSidebar({
       <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Drawing</h3>
-          <div className="flex gap-2 mb-4">
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'brush' ? null : 'brush' })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'brush' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-            >
-              Brush
-            </button>
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'eraser' ? null : 'eraser' })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'eraser' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-            >
-              Eraser
-            </button>
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'heal' ? null : 'heal', healSource: null })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'heal' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-            >
-              Heal
-            </button>
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'blur' ? null : 'blur' })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'blur' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-            >
-              Blur
-            </button>
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'picker' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-              title="Pick a color from the image"
-            >
-              💧 Pick
-            </button>
-            <button
-              onClick={() => applyChange({ drawingMode: drawingMode === 'wand' ? null : 'wand', selectionMask: null })}
-              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
-                drawingMode === 'wand' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-              }`}
-              title="Magic wand selection"
-            >
-              🪄 Wand
-            </button>
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { id: 'brush', label: 'Brush', extra: {}, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18.37 2.63a2.12 2.12 0 013 3L14 13l-4 1 1-4z" /><path d="M9 14.5A3.5 3.5 0 005 18c-1 0-2 1.2-2 2 1.7 0 3-.5 4-1.5a3.5 3.5 0 002-4" /></svg> },
+              { id: 'eraser', label: 'Eraser', extra: {}, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 20H7L3 16a1 1 0 010-1.4l9.6-9.6a1 1 0 011.4 0l7 7a1 1 0 010 1.4L15.4 19" /><path d="M6.5 13.5L13 7" /></svg> },
+              { id: 'heal', label: 'Heal', extra: { healSource: null }, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17.7 3.3a2.4 2.4 0 013 3l-8.4 8.4a2 2 0 01-1 .5l-3.3.8.8-3.3a2 2 0 01.5-1z" /><circle cx="9" cy="15" r="0.5" fill="currentColor" /><circle cx="12" cy="12" r="0.5" fill="currentColor" /><circle cx="15" cy="9" r="0.5" fill="currentColor" /></svg> },
+              { id: 'blur', label: 'Blur', extra: {}, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" opacity="0.7" /><circle cx="12" cy="12" r="6" opacity="0.4" /><circle cx="12" cy="12" r="9" opacity="0.2" /></svg> },
+              { id: 'picker', label: 'Pick', extra: {}, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" /><circle cx="12" cy="12" r="3" /></svg> },
+              { id: 'wand', label: 'Wand', extra: { selectionMask: null }, icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4l-1 1 5 5 1-1a2.12 2.12 0 00-3-3l-2-2z" /><path d="M14 5L3 16l2 2 1 3 3 0 11-11z" /><path d="M9 9l0.01 0M12 6l0.01 0M6 12l0.01 0" /></svg> },
+            ].map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => applyChange({ drawingMode: drawingMode === tool.id ? null : tool.id, ...tool.extra })}
+                className={`flex flex-col items-center gap-1 py-2.5 rounded-lg transition-colors ${
+                  drawingMode === tool.id ? 'bg-indigo-500 text-white font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+                title={tool.label}
+              >
+                {tool.icon}
+                <span className="text-[10px]">{tool.label}</span>
+              </button>
+            ))}
           </div>
           {drawingMode === 'wand' && (
             <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50 space-y-3">
@@ -1320,7 +1290,7 @@ export function EditorSidebar({
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
           <div className="flex gap-1 flex-wrap mb-2">
-            {['popular', 'mood', 'style', 'aesthetic', 'trending', 'creative'].map((cat) => (
+            {['popular', 'mood', 'style', 'aesthetic', 'trending', 'portrait', 'film', 'retro', 'creative'].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setFilterTab(cat)}

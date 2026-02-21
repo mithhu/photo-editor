@@ -227,6 +227,9 @@ const CUSTOM_TEMPLATES_KEY = 'photosai-custom-templates'
 export function TemplatePanel({ applyChange, editState }) {
   const [activeCategory, setActiveCategory] = useState('all')
   const [selectedTemplateId, setSelectedTemplateId] = useState(null)
+
+  const isReset = editState?.preset === 'none' && editState?.vignette === 0 && editState?.textOverlays?.length === 0
+  const effectiveSelectedId = isReset ? null : selectedTemplateId
   const [customTemplates, setCustomTemplates] = useState(() => {
     try {
       const raw = localStorage.getItem(CUSTOM_TEMPLATES_KEY)
@@ -377,7 +380,7 @@ export function TemplatePanel({ applyChange, editState }) {
           <h4 className="text-xs text-zinc-500 font-medium mb-2">My Templates</h4>
           <div className="grid grid-cols-2 gap-2">
             {customTemplates.map((t) => {
-              const isSelected = selectedTemplateId === t.id
+              const isSelected = effectiveSelectedId === t.id
               return (
               <div key={t.id} className="relative group">
                 <button
@@ -431,7 +434,7 @@ export function TemplatePanel({ applyChange, editState }) {
       {/* Template grid */}
       <div className="grid grid-cols-2 gap-2">
         {filtered.map((template) => {
-          const isSelected = selectedTemplateId === template.id
+          const isSelected = effectiveSelectedId === template.id
           return (
             <button
               key={template.id}
