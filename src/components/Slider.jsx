@@ -1,14 +1,28 @@
-export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01 }) {
+export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, defaultValue }) {
+  const defaultVal = defaultValue ?? (min + max) / 2
   const isSigned = min < 0
   const displayValue = isSigned
     ? `${value >= 0 ? '+' : ''}${(value * 100).toFixed(0)}`
     : `${(value * 100).toFixed(0)}%`
+  const showReset = value !== defaultVal
 
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-sm">
+      <div className="flex justify-between items-center text-sm">
         <span className="text-zinc-400">{label}</span>
-        <span className="text-zinc-300 tabular-nums">{displayValue}</span>
+        <span className="flex items-center">
+          <span className="text-zinc-300 tabular-nums">{displayValue}</span>
+          {showReset && (
+            <button
+              type="button"
+              onClick={() => onChange(defaultVal)}
+              className="text-zinc-500 hover:text-amber-400 text-xs ml-1"
+              title="Reset"
+            >
+              ↺
+            </button>
+          )}
+        </span>
       </div>
       <input
         type="range"

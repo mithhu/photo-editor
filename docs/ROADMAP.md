@@ -9,7 +9,7 @@
 - Image upload (drag & drop, file picker)
 - Basic adjustments: brightness, contrast, saturation
 - Crop: aspect ratios (Original, 1:1, 4:5, 16:9)
-- Rotate: ±90°
+- Rotate: ±90°, Flip H/V
 - Filter presets (Vintage, Cinematic, B&W, etc.)
 - Export as PNG
 
@@ -23,7 +23,7 @@
 
 - [x] **Undo / Redo** — History stack for adjustments, filters, crop, rotate
 - [x] **Zoom & Pan** — Pinch/scroll zoom, drag to pan on canvas
-- [ ] **Reset individual controls** — Per-slider reset vs full reset
+- [x] **Reset individual controls** — Per-slider reset vs full reset
 - [ ] **Loading states** — Skeletons, progress for large images
 - [ ] **Error handling** — Invalid files, unsupported formats, export failures
 

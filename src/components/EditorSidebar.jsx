@@ -34,15 +34,15 @@ export function EditorSidebar({
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
         <h3 className="text-sm font-semibold text-zinc-300 mb-4">Adjustments</h3>
         <div className="space-y-4">
-          <Slider label="Brightness" value={brightness} onChange={(v) => applySliderChange('brightness', v)} />
-          <Slider label="Contrast" value={contrast} onChange={(v) => applySliderChange('contrast', v)} />
-          <Slider label="Saturation" value={saturation} onChange={(v) => applySliderChange('saturation', v)} />
-          <Slider label="Exposure" value={exposure} onChange={(v) => applySliderChange('exposure', v)} min={0.5} max={1.5} />
-          <Slider label="Highlights" value={highlights} onChange={(v) => applySliderChange('highlights', v)} min={0.5} max={1.5} />
-          <Slider label="Shadows" value={shadows} onChange={(v) => applySliderChange('shadows', v)} min={0.5} max={1.5} />
-          <Slider label="Warmth" value={warmth} onChange={(v) => applySliderChange('warmth', v)} min={-1} max={1} />
-          <Slider label="Tint" value={tint} onChange={(v) => applySliderChange('tint', v)} min={-1} max={1} />
-          <Slider label="Vibrance" value={vibrance} onChange={(v) => applySliderChange('vibrance', v)} min={-1} max={1} />
+          <Slider label="Brightness" value={brightness} onChange={(v) => applySliderChange('brightness', v)} defaultValue={1} />
+          <Slider label="Contrast" value={contrast} onChange={(v) => applySliderChange('contrast', v)} defaultValue={1} />
+          <Slider label="Saturation" value={saturation} onChange={(v) => applySliderChange('saturation', v)} defaultValue={1} />
+          <Slider label="Exposure" value={exposure} onChange={(v) => applySliderChange('exposure', v)} min={0.5} max={1.5} defaultValue={1} />
+          <Slider label="Highlights" value={highlights} onChange={(v) => applySliderChange('highlights', v)} min={0.5} max={1.5} defaultValue={1} />
+          <Slider label="Shadows" value={shadows} onChange={(v) => applySliderChange('shadows', v)} min={0.5} max={1.5} defaultValue={1} />
+          <Slider label="Warmth" value={warmth} onChange={(v) => applySliderChange('warmth', v)} min={-1} max={1} defaultValue={0} />
+          <Slider label="Tint" value={tint} onChange={(v) => applySliderChange('tint', v)} min={-1} max={1} defaultValue={0} />
+          <Slider label="Vibrance" value={vibrance} onChange={(v) => applySliderChange('vibrance', v)} min={-1} max={1} defaultValue={0} />
         </div>
         <button
           onClick={() => applyChange(INITIAL_EDIT_STATE)}
@@ -189,6 +189,7 @@ export function EditorSidebar({
             min={1}
             max={50}
             step={1}
+            defaultValue={5}
           />
           <Slider
             label="Opacity"
@@ -197,6 +198,7 @@ export function EditorSidebar({
             min={0.1}
             max={1}
             step={0.05}
+            defaultValue={1}
           />
         </div>
         {brushStrokes?.length > 0 && (
@@ -206,6 +208,81 @@ export function EditorSidebar({
           >
             Clear All Drawings
           </button>
+        )}
+      </div>
+
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-4">Shapes</h3>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {[
+            { type: 'circle', icon: '●' },
+            { type: 'square', icon: '■' },
+            { type: 'triangle', icon: '▲' },
+            { type: 'star', icon: '★' },
+            { type: 'heart', icon: '♥' },
+            { type: 'arrow-right', icon: '→' },
+            { type: 'arrow-up', icon: '↑' },
+          ].map(({ type, icon }) => (
+            <button
+              key={type}
+              onClick={() =>
+                applyChange((s) => ({
+                  ...s,
+                  shapeOverlays: [...(s.shapeOverlays || []), { id: Date.now(), type, x: 0.5, y: 0.5, size: 40, color: '#ffffff', rotation: 0 }],
+                }))
+              }
+              className="py-2 text-lg bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+            >
+              {icon}
+            </button>
+          ))}
+        </div>
+        {(editState.shapeOverlays || []).length > 0 && (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {(editState.shapeOverlays || []).map((shape, i) => (
+              <div key={shape.id ?? i} className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-zinc-400 w-20 shrink-0 capitalize">
+                  {shape.type?.replace('-', ' ')}
+                </span>
+                <input
+                  type="color"
+                  value={shape.color ?? '#ffffff'}
+                  onChange={(e) =>
+                    applyChange((s) => ({
+                      ...s,
+                      shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, color: e.target.value } : o)),
+                    }))
+                  }
+                  className="w-8 h-8 rounded cursor-pointer"
+                />
+                <input
+                  type="number"
+                  min={10}
+                  max={200}
+                  value={shape.size ?? 40}
+                  onChange={(e) => {
+                    const v = Number(e.target.value)
+                    applyChange((s) => ({
+                      ...s,
+                      shapeOverlays: (s.shapeOverlays || []).map((o, j) => (j === i ? { ...o, size: Math.max(10, Math.min(200, v)) } : o)),
+                    }))
+                  }}
+                  className="w-14 bg-zinc-800 px-2 py-1 rounded text-sm text-zinc-200"
+                />
+                <button
+                  onClick={() =>
+                    applyChange((s) => ({
+                      ...s,
+                      shapeOverlays: (s.shapeOverlays || []).filter((_, j) => j !== i),
+                    }))
+                  }
+                  className="text-red-400 hover:text-red-300 text-sm"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -223,6 +300,20 @@ export function EditorSidebar({
             className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
           >
             ↻ 90°
+          </button>
+        </div>
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => applyChange((s) => ({ ...s, flipH: !s.flipH }))}
+            className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipH ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
+          >
+            ↔ Flip H
+          </button>
+          <button
+            onClick={() => applyChange((s) => ({ ...s, flipV: !s.flipV }))}
+            className={`flex-1 py-2 rounded-lg transition-colors ${editState.flipV ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'}`}
+          >
+            ↕ Flip V
           </button>
         </div>
       </div>

@@ -27,7 +27,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
   const {
     brightness, contrast, saturation, exposure, highlights, shadows,
     warmth, tint, vibrance,
-    rotation, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
+    rotation, flipH, flipV, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
+    shapeOverlays,
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
   } = editState
 
@@ -78,6 +79,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
     ctx.translate(displayW / 2, displayH / 2)
     ctx.rotate(rot)
     ctx.scale(scale, scale)
+    ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
     ctx.translate(-sw / 2, -sh / 2)
     ctx.filter = adjustmentFilter
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
@@ -132,6 +134,76 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
       })
     }
 
+    if (shapeOverlays?.length) {
+      shapeOverlays.forEach((shape) => {
+        const cx = (shape.x ?? 0.5) * displayW
+        const cy = (shape.y ?? 0.5) * displayH
+        const size = shape.size ?? 40
+        const color = shape.color ?? '#ffffff'
+        const rot = ((shape.rotation ?? 0) * Math.PI) / 180
+        ctx.save()
+        ctx.translate(cx, cy)
+        ctx.rotate(rot)
+        ctx.fillStyle = color
+        if (shape.type === 'square') {
+          ctx.fillRect(-size / 2, -size / 2, size, size)
+        } else {
+          ctx.beginPath()
+          switch (shape.type) {
+          case 'triangle': {
+            const h = (size * Math.sqrt(3)) / 2
+            ctx.moveTo(0, -size / 2)
+            ctx.lineTo(-size / 2, h / 2)
+            ctx.lineTo(size / 2, h / 2)
+            ctx.closePath()
+            break
+          }
+          case 'star': {
+            const outer = size / 2
+            const inner = outer * 0.4
+            for (let i = 0; i < 10; i++) {
+              const r = i % 2 === 0 ? outer : inner
+              const a = (i * Math.PI) / 5 - Math.PI / 2
+              const x = r * Math.cos(a)
+              const y = r * Math.sin(a)
+              if (i === 0) ctx.moveTo(x, y)
+              else ctx.lineTo(x, y)
+            }
+            ctx.closePath()
+            break
+          }
+          case 'heart': {
+            const s = size / 4
+            ctx.moveTo(0, -s)
+            ctx.bezierCurveTo(s * 2, -s * 2, s * 3, s, 0, s * 2)
+            ctx.bezierCurveTo(-s * 3, s, -s * 2, -s * 2, 0, -s)
+            break
+          }
+          case 'arrow-right': {
+            const w = size / 2
+            ctx.moveTo(-w, -w)
+            ctx.lineTo(w, 0)
+            ctx.lineTo(-w, w)
+            ctx.closePath()
+            break
+          }
+          case 'arrow-up': {
+            const w = size / 2
+            ctx.moveTo(0, -w)
+            ctx.lineTo(w, w)
+            ctx.lineTo(-w, w)
+            ctx.closePath()
+            break
+          }
+          default:
+            ctx.arc(0, 0, size / 2, 0, Math.PI * 2)
+          }
+          ctx.fill()
+        }
+        ctx.restore()
+      })
+    }
+
     if (textOverlays?.length) {
       textOverlays.forEach((t) => {
         ctx.save()
@@ -143,7 +215,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
         ctx.restore()
       })
     }
-  }, [rotation, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, containerSize, brushStrokes])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes])
 
   useEffect(() => {
     drawCanvas()

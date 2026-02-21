@@ -17,11 +17,14 @@
 - [x] Crop — aspect ratios (Original, 1:1, 4:5, 16:9, 9:16, 3:4, 2:3, custom)
 - [x] Custom crop — numeric x, y, w, h inputs
 - [x] Rotate — ±90°
+- [x] Flip — horizontal & vertical
 - [x] Filter presets — 18 total (Clarendon, Juno, Teal & Orange, VHS, Dreamy, Y2K, etc.)
 - [x] Text overlay — add text, edit content, color picker, delete
 - [x] Zoom & pan — scroll to zoom, drag to pan
 - [x] Export — download as PNG
 - [x] Undo / Redo — history stack, ⌘Z / ⌘⇧Z
+- [x] Per-slider reset — ↺ button when value differs from default
+- [x] Keyboard shortcuts — B (brush), E (eraser), Escape (exit), [ / ] (brush size ±5)
 - [x] Modular structure — components, hooks, constants, utils
 
 ### Sharing (v0.2)

@@ -9,12 +9,15 @@ export const INITIAL_EDIT_STATE = {
   tint: 0,
   vibrance: 0,
   rotation: 0,
+  flipH: false,
+  flipV: false,
   cropRatio: 'original',
   preset: 'none',
   zoom: 1,
   panX: 0,
   panY: 0,
   textOverlays: [],
+  shapeOverlays: [],
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
   brushStrokes: [],
   drawingMode: null, // 'brush' | 'eraser' | null

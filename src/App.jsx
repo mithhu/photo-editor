@@ -31,6 +31,8 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!imageSrc) return
+      const tag = document.activeElement?.tagName?.toLowerCase()
+      if (tag === 'input' || tag === 'textarea') return
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         e.preventDefault()
         if (e.shiftKey) redo()
@@ -40,10 +42,30 @@ export default function App() {
         e.preventDefault()
         redo()
       }
+      if (e.key === 'b') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'brush' ? null : 'brush' }))
+      }
+      if (e.key === 'e') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'eraser' ? null : 'eraser' }))
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: null }))
+      }
+      if (e.key === '[') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, brushSize: Math.max(1, (s.brushSize ?? 5) - 5) }))
+      }
+      if (e.key === ']') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, brushSize: Math.min(50, (s.brushSize ?? 5) + 5) }))
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [imageSrc, undo, redo])
+  }, [imageSrc, undo, redo, applyChange])
 
   const handleImageLoad = (src) => {
     setImageSrc(src)
