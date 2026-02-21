@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Slider } from './Slider'
+import { SuggestionChips } from './SuggestionChips'
 import { HSLPanel } from './HSLPanel'
 import { ColorWheelPanel } from './ColorWheelPanel'
 import { SplitTonePanel } from './SplitTonePanel'
@@ -11,6 +12,8 @@ import { TemplatePanel } from './TemplatePanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
+import { useFilterPreviews } from '../hooks/useFilterPreviews'
+import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
 
 export function EditorSidebar({
   editState,
@@ -25,6 +28,8 @@ export function EditorSidebar({
   onApplyChange,
 }) {
   const [expandedTextId, setExpandedTextId] = useState(null)
+  const { previews: filterPreviews, loading: previewsLoading } = useFilterPreviews(imageSrc)
+  const { suggestions: exposureSuggestions, loading: exposureLoading, analyze: analyzeExposure } = useExposureSuggestions(canvasRef)
 
   const {
     brightness,
@@ -66,6 +71,15 @@ export function EditorSidebar({
       <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Adjustments</h3>
+          <div className="mb-4 pb-3 border-b border-zinc-700/50">
+            <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-2">Suggestions</h4>
+            <SuggestionChips
+              suggestions={exposureSuggestions}
+              loading={exposureLoading}
+              onAnalyze={analyzeExposure}
+              onApply={(changes) => applyChange((s) => ({ ...s, ...changes }))}
+            />
+          </div>
           <div className="space-y-4">
             <Slider label="Brightness" value={brightness} onChange={(v) => applySliderChange('brightness', v)} defaultValue={1} />
             <Slider label="Contrast" value={contrast} onChange={(v) => applySliderChange('contrast', v)} defaultValue={1} />
@@ -622,18 +636,40 @@ export function EditorSidebar({
 
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {FILTER_PRESETS.map((p) => (
               <button
                 key={p.id}
                 onClick={() => applyChange({ preset: p.id })}
-                className={`py-2 px-3 text-xs rounded-lg transition-colors ${
-                  preset === p.id
-                    ? 'bg-amber-500 text-zinc-900 font-medium'
-                    : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
-                }`}
+                className="flex flex-col items-center gap-1.5 group"
               >
-                {p.name}
+                <div
+                  className={`w-[48px] h-[48px] rounded-lg overflow-hidden border-2 transition-colors ${
+                    preset === p.id
+                      ? 'border-amber-500'
+                      : 'border-zinc-700 group-hover:border-zinc-500'
+                  }`}
+                >
+                  {filterPreviews[p.id] ? (
+                    <img
+                      src={filterPreviews[p.id]}
+                      alt={p.name}
+                      className="w-full h-full object-cover"
+                      draggable={false}
+                    />
+                  ) : (
+                    <div className={`w-full h-full ${previewsLoading ? 'animate-pulse' : ''} bg-zinc-700`} />
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] leading-tight transition-colors ${
+                    preset === p.id
+                      ? 'text-amber-400 font-medium'
+                      : 'text-zinc-400 group-hover:text-zinc-300'
+                  }`}
+                >
+                  {p.name}
+                </span>
               </button>
             ))}
           </div>

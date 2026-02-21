@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Slider } from './Slider'
+import { SuggestionChips } from './SuggestionChips'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
+import { useFilterPreviews } from '../hooks/useFilterPreviews'
+import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
 
 const HSLPanel = lazy(() => import('./HSLPanel').then((m) => ({ default: m.HSLPanel })))
 const CurvesPanel = lazy(() => import('./CurvesPanel').then((m) => ({ default: m.CurvesPanel })))
@@ -41,6 +44,8 @@ export function MobileBottomTray({
   const [subPanel, setSubPanel] = useState(null)
   const panelRef = useRef(null)
   const [expandedTextId, setExpandedTextId] = useState(null)
+  const { previews: filterPreviews, loading: previewsLoading } = useFilterPreviews(imageSrc)
+  const { suggestions: exposureSuggestions, loading: exposureLoading, analyze: analyzeExposure } = useExposureSuggestions(canvasRef)
 
   const {
     brightness, contrast, saturation, exposure, highlights, shadows,
@@ -97,6 +102,15 @@ export function MobileBottomTray({
         }
         return (
           <div className="space-y-3 px-1">
+            <div className="pb-2 border-b border-zinc-800/50">
+              <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5">Suggestions</h4>
+              <SuggestionChips
+                suggestions={exposureSuggestions}
+                loading={exposureLoading}
+                onAnalyze={analyzeExposure}
+                onApply={(changes) => applyChange((s) => ({ ...s, ...changes }))}
+              />
+            </div>
             <Slider label="Brightness" value={brightness} onChange={(v) => applySliderChange('brightness', v)} defaultValue={1} />
             <Slider label="Contrast" value={contrast} onChange={(v) => applySliderChange('contrast', v)} defaultValue={1} />
             <Slider label="Saturation" value={saturation} onChange={(v) => applySliderChange('saturation', v)} defaultValue={1} />
@@ -152,16 +166,36 @@ export function MobileBottomTray({
             </div>
             <div>
               <h4 className="text-xs font-medium text-zinc-400 mb-2">Filters</h4>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
                 {FILTER_PRESETS.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => applyChange({ preset: p.id })}
-                    className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
-                      preset === p.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
-                    }`}
+                    className="shrink-0 flex flex-col items-center gap-1"
                   >
-                    {p.name}
+                    <div
+                      className={`w-10 h-10 rounded-full overflow-hidden border-2 transition-colors ${
+                        preset === p.id ? 'border-amber-500' : 'border-zinc-700'
+                      }`}
+                    >
+                      {filterPreviews[p.id] ? (
+                        <img
+                          src={filterPreviews[p.id]}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          draggable={false}
+                        />
+                      ) : (
+                        <div className={`w-full h-full ${previewsLoading ? 'animate-pulse' : ''} bg-zinc-700`} />
+                      )}
+                    </div>
+                    <span
+                      className={`text-[10px] leading-tight ${
+                        preset === p.id ? 'text-amber-400 font-medium' : 'text-zinc-400'
+                      }`}
+                    >
+                      {p.name}
+                    </span>
                   </button>
                 ))}
               </div>

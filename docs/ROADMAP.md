@@ -24,7 +24,7 @@
 - [x] **Undo / Redo** — History stack for adjustments, filters, crop, rotate
 - [x] **Zoom & Pan** — Pinch/scroll zoom, drag to pan on canvas
 - [x] **Reset individual controls** — Per-slider reset vs full reset
-- [ ] **Loading states** — Skeletons, progress for large images
+- [x] **Loading states** — Skeletons, progress for large images
 - [x] **Error handling** — Invalid files, unsupported formats, export failures
 
 ### 1.2 More Adjustments
@@ -100,7 +100,7 @@
 
 - [x] Auto crop / composition suggestions (via smart crop)
 - [x] Suggested filters based on image content
-- [ ] Exposure/white balance suggestions
+- [x] Exposure/white balance suggestions
 
 ---
 

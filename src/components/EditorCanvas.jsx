@@ -11,6 +11,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const imageRef = useRef(null)
   const containerRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
+  const [loadedSrc, setLoadedSrc] = useState(null)
   const currentStrokeRef = useRef(null)
   const touchRef = useRef({ lastDistance: 0, startPanX: 0, startPanY: 0 })
   const [containerSize, setContainerSize] = useState(null)
@@ -501,8 +502,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current
     if (img) setImageDims({ w: img.naturalWidth, h: img.naturalHeight })
+    setLoadedSrc(imageSrc)
     throttledDraw()
-  }, [throttledDraw])
+  }, [throttledDraw, imageSrc])
 
   useEffect(() => {
     throttledDraw()
@@ -677,10 +679,21 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       onTouchEnd={handleTouchEnd}
       style={{ cursor: drawingMode ? 'crosshair' : 'default' }}
     >
+      {loadedSrc !== imageSrc && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-3 rounded-xl bg-zinc-800 animate-pulse" />
+            <div className="animate-spin w-6 h-6 border-2 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-2" />
+            <p className="text-xs text-zinc-500">Preparing canvas...</p>
+          </div>
+        </div>
+      )}
       <div
         className="flex-shrink-0 relative"
         style={{
           transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
+          opacity: loadedSrc === imageSrc ? 1 : 0,
+          transition: 'opacity 0.2s ease-in',
         }}
       >
         <img

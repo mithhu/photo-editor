@@ -97,3 +97,13 @@
 - [x] Thumbnail grid with progress indicator and per-image status
 - [x] Sequential download of all processed images
 - [x] Accessible from upload screen, editor header (desktop + mobile)
+
+### Smart Suggestions (v1.4)
+- [x] Exposure/white balance suggestions — canvas analysis detects underexposed, overexposed, color cast, low contrast
+- [x] Suggestion chips in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
+- [x] One-tap apply for suggested brightness, exposure, warmth, tint, contrast changes
+
+### Loading States (v1.4)
+- [x] Full-screen loading spinner overlay in App.jsx during large image upload
+- [x] Skeleton/loading indicator in EditorCanvas before image finishes loading
+- [x] AI operations loading states verified consistent (spinners + progress bars)

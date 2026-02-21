@@ -26,6 +26,9 @@ const CollageBuilder = lazy(() =>
 const BatchProcessor = lazy(() =>
   import('./components/BatchProcessor').then((m) => ({ default: m.BatchProcessor }))
 )
+const CompareSlider = lazy(() =>
+  import('./components/CompareSlider').then((m) => ({ default: m.CompareSlider }))
+)
 
 function EditorFallback() {
   return (
@@ -45,7 +48,7 @@ export default function App() {
   const [uploadLoading, setUploadLoading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
-  const [isComparing, setIsComparing] = useState(false)
+  const [showCompare, setShowCompare] = useState(false)
   const [swRegistration, setSwRegistration] = useState(null)
   const canvasRef = useRef(null)
 
@@ -188,6 +191,14 @@ export default function App() {
   if (!imageSrc) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        {uploadLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm">
+            <div className="text-center">
+              <div className="animate-spin w-10 h-10 border-3 border-zinc-600 border-t-amber-500 rounded-full mx-auto mb-4" />
+              <p className="text-sm text-zinc-300">Loading image...</p>
+            </div>
+          </div>
+        )}
         {swRegistration && (
           <div className="fixed top-0 inset-x-0 flex items-center justify-center gap-3 px-4 py-2 bg-amber-500 text-zinc-900 text-sm font-medium z-50">
             <span>A new version is available!</span>
@@ -263,8 +274,8 @@ export default function App() {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
-        onCompareStart={() => setIsComparing(true)}
-        onCompareEnd={() => setIsComparing(false)}
+        showCompare={showCompare}
+        onToggleCompare={() => setShowCompare((v) => !v)}
         onAutoEnhance={handleAutoEnhance}
         onNewImage={handleNewImage}
         onDownload={handleDownload}
@@ -273,13 +284,13 @@ export default function App() {
         onResetAll={reset}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row lg:gap-4 lg:p-4 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row lg:gap-4 lg:p-4 min-h-0 overflow-hidden relative">
         <Suspense fallback={<EditorFallback />}>
           <EditorCanvas
             imageSrc={imageSrc}
             editState={editState}
             canvasRef={canvasRef}
-            isComparing={isComparing}
+            isComparing={false}
             onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
             onApplyChange={applyChange}
           />
@@ -315,6 +326,14 @@ export default function App() {
       </div>
 
       <Suspense fallback={null}>
+        {showCompare && (
+          <CompareSlider
+            canvasRef={canvasRef}
+            imageSrc={imageSrc}
+            visible={showCompare}
+            onClose={() => setShowCompare(false)}
+          />
+        )}
         {showShareModal && (
           <ShareModal
             canvasRef={canvasRef}

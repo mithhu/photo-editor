@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll }) {
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, onToggleCompare, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll }) {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -43,11 +43,9 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
         {/* Desktop-only buttons */}
         <div className="hidden lg:flex items-center gap-2">
           <button
-            onMouseDown={onCompareStart}
-            onMouseUp={onCompareEnd}
-            onMouseLeave={onCompareEnd}
-            title="Hold to compare"
-            className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+            onClick={onToggleCompare}
+            title="Compare original vs edited"
+            className={`px-4 py-2 text-sm rounded-lg transition-colors ${showCompare ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}`}
           >
             Compare
           </button>
@@ -100,11 +98,10 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
           {showMenu && (
             <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
               <button
-                onPointerDown={onCompareStart}
-                onPointerUp={() => { onCompareEnd?.(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
+                onClick={() => { onToggleCompare?.(); closeMenu() }}
+                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${showCompare ? 'text-amber-400' : 'text-zinc-300'}`}
               >
-                Compare
+                {showCompare ? '✓ Compare' : 'Compare'}
               </button>
               <button
                 onClick={() => { onResetAll?.(); closeMenu() }}
