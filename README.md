@@ -5,10 +5,12 @@ A web-based photo editor built with React and Vite. Edit photos with adjustments
 ## Features
 
 - **Upload** — Drag & drop or click to upload images
-- **Adjustments** — Brightness, contrast, saturation
-- **Crop** — Aspect ratios (Original, 1:1, 4:5, 16:9)
+- **Adjustments** — Brightness, contrast, saturation, exposure, highlights, shadows
+- **Crop** — Aspect ratios (1:1, 4:5, 16:9, 9:16, 3:4, 2:3, custom)
 - **Rotate** — ±90°
-- **Filters** — Vintage, Cinematic, B&W, and more
+- **Filters** — 18 presets (Clarendon, Juno, Teal & Orange, etc.)
+- **Text** — Add and style text overlays
+- **Zoom & pan** — Scroll to zoom, drag to pan
 - **Export** — Download edited images as PNG
 
 ## Tech Stack
@@ -20,8 +22,8 @@ A web-based photo editor built with React and Vite. Edit photos with adjustments
 ## Development
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173)
@@ -29,8 +31,8 @@ Open [http://localhost:5173](http://localhost:5173)
 ## Build
 
 ```bash
-npm run build
-npm run preview
+pnpm build
+pnpm preview
 ```
 
 ## Docs

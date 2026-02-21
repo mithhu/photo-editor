@@ -10,6 +10,7 @@ import {
 
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
+  const [uploadLoading, setUploadLoading] = useState(false)
   const canvasRef = useRef(null)
 
   const {
@@ -65,14 +66,14 @@ export default function App() {
         <h1 className="text-3xl font-bold text-amber-500 mb-2">Photo Editor</h1>
         <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
         <div className="w-full max-w-md">
-          <ImageUpload onImageLoad={handleImageLoad} />
+          <ImageUpload onImageLoad={handleImageLoad} loading={uploadLoading} onLoadingChange={setUploadLoading} />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       <EditorHeader
         onUndo={undo}
         onRedo={redo}
@@ -82,12 +83,23 @@ export default function App() {
         onDownload={handleDownload}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-auto">
-        <EditorCanvas imageSrc={imageSrc} editState={editState} canvasRef={canvasRef} />
+      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">
+        <EditorCanvas
+          imageSrc={imageSrc}
+          editState={editState}
+          canvasRef={canvasRef}
+          onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
+        />
         <EditorSidebar
           editState={editState}
           applyChange={applyChange}
           applySliderChange={applySliderChange}
+          onAddText={() =>
+            applyChange((s) => ({
+              ...s,
+              textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
+            }))
+          }
         />
       </div>
     </div>

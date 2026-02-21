@@ -22,23 +22,24 @@
 ### 1.1 Editor UX
 
 - [x] **Undo / Redo** — History stack for adjustments, filters, crop, rotate
-- [ ] **Zoom & Pan** — Pinch/scroll zoom, drag to pan on canvas
+- [x] **Zoom & Pan** — Pinch/scroll zoom, drag to pan on canvas
 - [ ] **Reset individual controls** — Per-slider reset vs full reset
 - [ ] **Loading states** — Skeletons, progress for large images
 - [ ] **Error handling** — Invalid files, unsupported formats, export failures
 
 ### 1.2 More Adjustments
 
-- [ ] Exposure
-- [ ] Highlights & Shadows
+- [x] Exposure
+- [x] Highlights & Shadows
 - [ ] Warmth / Tint
 - [ ] Clarity / Dehaze
 - [ ] Vibrance (vs saturation)
 
 ### 1.3 Advanced Crop
 
-- [ ] Custom crop (resizable handles)
-- [ ] More ratios: 9:16, 3:4, 2:3, 5:4
+- [x] Custom crop (numeric x, y, w, h)
+- [x] More ratios: 9:16, 3:4, 2:3
+- [ ] Resizable crop handles (visual)
 - [ ] Free crop with custom dimensions
 
 ### 1.4 Technical
@@ -55,7 +56,7 @@
 
 ### 2.1 Layers & Composition
 
-- [ ] **Text overlay** — Add text with fonts, sizes, colors
+- [x] **Text overlay** — Add text with content, color
 - [ ] **Stickers / shapes** — Basic shapes, simple stickers
 - [ ] **Layer panel** — Reorder, toggle visibility, delete
 

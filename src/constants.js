@@ -2,9 +2,17 @@ export const INITIAL_EDIT_STATE = {
   brightness: 1,
   contrast: 1,
   saturation: 1,
+  exposure: 1,
+  highlights: 1,
+  shadows: 1,
   rotation: 0,
   cropRatio: 'original',
   preset: 'none',
+  zoom: 1,
+  panX: 0,
+  panY: 0,
+  textOverlays: [],
+  customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
 }
 
 export const FILTER_PRESETS = [
