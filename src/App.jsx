@@ -6,11 +6,13 @@ import {
   EditorHeader,
   EditorCanvas,
   EditorSidebar,
+  ShareModal,
 } from './components'
 
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
   const [uploadLoading, setUploadLoading] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
   const canvasRef = useRef(null)
 
   const {
@@ -81,6 +83,7 @@ export default function App() {
         canRedo={canRedo}
         onNewImage={handleNewImage}
         onDownload={handleDownload}
+        onShare={() => setShowShareModal(true)}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">
@@ -102,6 +105,13 @@ export default function App() {
           }
         />
       </div>
+
+      {showShareModal && (
+        <ShareModal
+          canvasRef={canvasRef}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   )
 }

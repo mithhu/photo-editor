@@ -111,8 +111,10 @@
 - [ ] **Collage builder** — Multiple photos in one frame
 - [ ] **Custom templates** — Save and reuse layouts
 
-### 4.2 Export
+### 4.2 Export & Sharing
 
+- [x] **Share modal** — native OS share sheet (Web Share API), copy to clipboard
+- [x] **Social sharing** — Twitter/X, Facebook, WhatsApp, Instagram buttons
 - [ ] Quality slider (JPEG compression)
 - [ ] Preset formats — Instagram Square, Story, YouTube thumbnail
 - [ ] Bulk export for collages

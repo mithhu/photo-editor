@@ -23,3 +23,7 @@
 - [x] Export — download as PNG
 - [x] Undo / Redo — history stack, ⌘Z / ⌘⇧Z
 - [x] Modular structure — components, hooks, constants, utils
+
+### Sharing (v0.2)
+- [x] Share modal — native OS share sheet (Web Share API), copy to clipboard
+- [x] Platform share buttons — Twitter/X, Facebook, WhatsApp, Instagram

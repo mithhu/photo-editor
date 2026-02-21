@@ -1,4 +1,4 @@
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onNewImage, onDownload }) {
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onNewImage, onDownload, onShare }) {
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
       <h1 className="text-xl font-bold text-amber-500">Photo Editor</h1>
@@ -26,6 +26,12 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onNewImage, onD
           className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
         >
           New Image
+        </button>
+        <button
+          onClick={onShare}
+          className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+        >
+          Share
         </button>
         <button
           onClick={onDownload}
