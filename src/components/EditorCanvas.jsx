@@ -68,19 +68,19 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     }))
   }, [onApplyChange])
 
-  const presetOps = FILTER_PRESETS.find((p) => p.id === preset)?.ops || []
   const highlightContrast = 2 - highlights
   const shadowBrightness = shadows
 
   const baseFilterOps = useMemo(() => {
     if (isComparing) return []
+    const presetOps = FILTER_PRESETS.find((p) => p.id === preset)?.ops || []
     const ops = []
     const br = brightness * exposure * shadowBrightness
     if (br !== 1) ops.push({ type: 'brightness', value: br })
     if (contrast * highlightContrast !== 1) ops.push({ type: 'contrast', value: contrast * highlightContrast })
     if (saturation !== 1) ops.push({ type: 'saturate', value: saturation })
     return [...ops, ...presetOps]
-  }, [isComparing, brightness, exposure, shadowBrightness, contrast, highlightContrast, saturation, presetOps])
+  }, [isComparing, preset, brightness, exposure, shadowBrightness, contrast, highlightContrast, saturation])
 
   const hasBaseFilters = baseFilterOps.length > 0
   const hasHSL = hsl && Object.values(hsl).some(c => c.h !== 0 || c.s !== 0 || c.l !== 0)
