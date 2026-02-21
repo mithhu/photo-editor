@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photo-editor-v1'
+const CACHE_NAME = 'photo-editor-v2'
 const STATIC_ASSETS = ['/', '/index.html', '/favicon.svg']
 
 self.addEventListener('install', (event) => {
@@ -17,9 +17,35 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
+function isModelRequest(url) {
+  return (
+    url.includes('reiinakano.github.io') ||
+    url.includes('tfjs-models') ||
+    url.includes('model.json') ||
+    url.endsWith('.bin')
+  )
+}
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return
+
+  if (isModelRequest(request.url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached
+        return fetch(request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+      })
+    )
+    return
+  }
+
   if (request.url.includes('/api/') || request.url.includes('.wasm')) return
 
   event.respondWith(

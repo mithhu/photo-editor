@@ -10,27 +10,55 @@ const STYLE_MODEL_BASE = isDev
 const STYLE_NET_URL = `${STYLE_MODEL_BASE}/saved_model_style_js/model.json`
 const TRANSFORM_NET_URL = `${STYLE_MODEL_BASE}/saved_model_transformer_separable_js/model.json`
 
+const STYLE_NET_IDB = 'indexeddb://style-transfer-style-net'
+const TRANSFORM_NET_IDB = 'indexeddb://style-transfer-transform-net'
+
 async function getTf() {
   if (!_tf) _tf = await import('@tensorflow/tfjs')
   return _tf
 }
 
+async function loadFromCacheOrNetwork(tf, remoteUrl, idbKey, onProgress, label) {
+  try {
+    const cached = await tf.loadGraphModel(idbKey)
+    onProgress?.(`${label} loaded from cache`)
+    return cached
+  } catch {
+    // Not in cache — download from network
+  }
+
+  onProgress?.(`Downloading ${label}...`)
+  const model = await tf.loadGraphModel(remoteUrl)
+
+  try {
+    await model.save(idbKey)
+  } catch {
+    // Save failed (e.g. storage full) — not critical
+  }
+
+  return model
+}
+
 async function loadModels(onProgress) {
   const tf = await getTf()
+
   if (!styleNet) {
     onProgress?.('Initializing TF.js...')
     await tf.ready()
-    onProgress?.('Loading style model (~10 MB)...')
     try {
-      styleNet = await tf.loadGraphModel(STYLE_NET_URL)
+      styleNet = await loadFromCacheOrNetwork(
+        tf, STYLE_NET_URL, STYLE_NET_IDB, onProgress, 'Style model (~10 MB)'
+      )
     } catch (e) {
       throw new Error(`Style model failed to load: ${e.message}. Check your network connection.`)
     }
   }
+
   if (!transformNet) {
-    onProgress?.('Loading transform model (~2.5 MB)...')
     try {
-      transformNet = await tf.loadGraphModel(TRANSFORM_NET_URL)
+      transformNet = await loadFromCacheOrNetwork(
+        tf, TRANSFORM_NET_URL, TRANSFORM_NET_IDB, onProgress, 'Transform model (~2.5 MB)'
+      )
     } catch (e) {
       throw new Error(`Transform model failed to load: ${e.message}. Check your network connection.`)
     }
