@@ -38,6 +38,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     curves,
     colorGrade,
     splitTone,
+    masks,
   } = editState
 
   const cropActive = cropRatio !== 'original'
@@ -286,6 +287,61 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       ctx.fillRect(0, 0, displayW, displayH)
     }
 
+    const hasMasks = !isComparing && masks?.length > 0
+    if (hasMasks) {
+      const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const md = maskData.data
+
+      for (let i = 0; i < md.length; i += 4) {
+        const pixelIndex = i / 4
+        const px = (pixelIndex % canvas.width) / canvas.width
+        const py = Math.floor(pixelIndex / canvas.width) / canvas.height
+
+        masks.forEach((mask) => {
+          let weight = 0
+
+          if (mask.type === 'radial') {
+            const dx = (px - (mask.centerX ?? 0.5)) / ((mask.radiusX ?? 0.3) || 0.3)
+            const dy = (py - (mask.centerY ?? 0.5)) / ((mask.radiusY ?? 0.3) || 0.3)
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            const feather = mask.feather ?? 0.5
+            weight = 1 - Math.min(1, Math.max(0, (dist - (1 - feather)) / feather))
+          } else if (mask.type === 'linear') {
+            const dx = (mask.endX ?? 1) - (mask.startX ?? 0)
+            const dy = (mask.endY ?? 0.5) - (mask.startY ?? 0.5)
+            const len = Math.sqrt(dx * dx + dy * dy) || 0.001
+            const t = ((px - (mask.startX ?? 0)) * dx + (py - (mask.startY ?? 0.5)) * dy) / (len * len)
+            weight = Math.min(1, Math.max(0, t))
+          }
+
+          if (mask.invert) weight = 1 - weight
+          if (weight <= 0) return
+
+          const br = (mask.brightness ?? 0) * weight * 60
+          const ct = 1 + (mask.contrast ?? 0) * weight * 0.5
+          const st = 1 + (mask.saturation ?? 0) * weight * 0.5
+
+          md[i] = Math.min(255, Math.max(0, md[i] + br))
+          md[i + 1] = Math.min(255, Math.max(0, md[i + 1] + br))
+          md[i + 2] = Math.min(255, Math.max(0, md[i + 2] + br))
+
+          if (ct !== 1) {
+            md[i] = Math.min(255, Math.max(0, ((md[i] / 255 - 0.5) * ct + 0.5) * 255))
+            md[i + 1] = Math.min(255, Math.max(0, ((md[i + 1] / 255 - 0.5) * ct + 0.5) * 255))
+            md[i + 2] = Math.min(255, Math.max(0, ((md[i + 2] / 255 - 0.5) * ct + 0.5) * 255))
+          }
+
+          if (st !== 1) {
+            const gray = 0.299 * md[i] + 0.587 * md[i + 1] + 0.114 * md[i + 2]
+            md[i] = Math.min(255, Math.max(0, gray + (md[i] - gray) * st))
+            md[i + 1] = Math.min(255, Math.max(0, gray + (md[i + 1] - gray) * st))
+            md[i + 2] = Math.min(255, Math.max(0, gray + (md[i + 2] - gray) * st))
+          }
+        })
+      }
+      ctx.putImageData(maskData, 0, 0)
+    }
+
     if (!isComparing) {
     const allStrokes = currentStrokeRef.current
       ? [...(brushStrokes || []), currentStrokeRef.current]
@@ -388,16 +444,30 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       textOverlays.forEach((t) => {
         if (layerVisibility?.[t.id] === false) return
         ctx.save()
-        ctx.font = `${t.fontSize ?? 32}px sans-serif`
+        const tx = (t.x ?? 0.5) * displayW
+        const ty = (t.y ?? 0.5) * displayH
+        ctx.translate(tx, ty)
+        if (t.rotation) ctx.rotate((t.rotation * Math.PI) / 180)
+        ctx.globalAlpha = t.opacity ?? 1
+        const weight = t.fontWeight === 'bold' ? 'bold' : 'normal'
+        const style = t.fontStyle === 'italic' ? 'italic' : 'normal'
+        const family = t.fontFamily || 'sans-serif'
+        ctx.font = `${style} ${weight} ${t.fontSize ?? 32}px ${family}`
         ctx.fillStyle = t.color ?? '#ffffff'
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText(t.text || 'Text', (t.x ?? 0.5) * displayW, (t.y ?? 0.5) * displayH)
+        if (t.textShadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.5)'
+          ctx.shadowBlur = 4
+          ctx.shadowOffsetX = 2
+          ctx.shadowOffsetY = 2
+        }
+        ctx.fillText(t.text || 'Text', 0, 0)
         ctx.restore()
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 

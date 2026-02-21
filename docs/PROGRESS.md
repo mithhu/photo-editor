@@ -20,7 +20,7 @@
 - [x] Rotate — ±90°
 - [x] Flip — horizontal & vertical
 - [x] Filter presets — 18 total (Clarendon, Juno, Teal & Orange, VHS, Dreamy, Y2K, etc.)
-- [x] Text overlay — add text, edit content, color picker, delete
+- [x] Text overlay — add text, edit content, color picker, delete; font family, size (12–120px), bold/italic, shadow, opacity, position (x/y), rotation (−180°–180°); collapsible per-item controls
 - [x] Zoom & pan — scroll to zoom, drag to pan, pinch-to-zoom on mobile
 - [x] Export — download as PNG
 - [x] Undo / Redo — history stack, ⌘Z / ⌘⇧Z
@@ -74,6 +74,11 @@
 - [x] Touch support — single-finger draw/pan, two-finger pinch zoom
 - [x] Watermark on export — text, position, opacity
 - [x] Preset export formats — IG Square/Story/Post, FB Cover, YT Thumb, Twitter
+
+### Local Adjustments (v1.1)
+- [x] Radial gradient mask — center, radiusX/Y, feather; brightness/contrast/saturation; invert
+- [x] Linear gradient mask — start/end points; brightness/contrast/saturation; invert
+- [x] Mask panel in Adjust tab — add/delete masks, up to 3 for performance
 
 ### AI Features (v1.0)
 - [x] Smart auto-crop — COCO-SSD object detection to find subjects and auto-crop with 15% padding

@@ -5,6 +5,8 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
   let displayValue
   if (unit === 'px') {
     displayValue = `${Math.round(value)}px`
+  } else if (unit === 'deg') {
+    displayValue = `${Math.round(value)}°`
   } else if (isSigned) {
     displayValue = `${value >= 0 ? '+' : ''}${(value * 100).toFixed(0)}`
   } else {

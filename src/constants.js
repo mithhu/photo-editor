@@ -56,7 +56,21 @@ export const INITIAL_EDIT_STATE = {
     shadowSat: 0,
     balance: 0,
   },
+  masks: [],
 }
+
+/** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */
+export const TEXT_OVERLAY_FONTS = [
+  { value: 'sans-serif', label: 'Sans Serif' },
+  { value: 'serif', label: 'Serif' },
+  { value: 'monospace', label: 'Monospace' },
+  { value: 'cursive', label: 'Cursive' },
+  { value: 'fantasy', label: 'Fantasy' },
+  { value: 'Georgia', label: 'Georgia' },
+  { value: 'Courier New', label: 'Courier New' },
+  { value: 'Impact', label: 'Impact' },
+  { value: 'Comic Sans MS', label: 'Comic Sans MS' },
+]
 
 export const FILTER_PRESETS = [
   { id: 'none', name: 'None', filter: '' },

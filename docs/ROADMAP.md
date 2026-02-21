@@ -70,15 +70,15 @@
 ### 2.3 Curves & Color Grading
 
 - [x] RGB curves
-- [ ] Color wheels (shadows, midtones, highlights)
-- [ ] Split toning
+- [x] Color wheels (shadows, midtones, highlights)
+- [x] Split toning
 - [x] HSL sliders per color
 
 ### 2.4 Local Adjustments
 
-- [ ] Radial mask
-- [ ] Linear/gradient mask
-- [ ] Apply adjustments only within mask
+- [x] Radial mask
+- [x] Linear/gradient mask
+- [x] Apply adjustments only within mask
 
 ---
 

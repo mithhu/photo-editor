@@ -4,9 +4,10 @@ import { HSLPanel } from './HSLPanel'
 import { ColorWheelPanel } from './ColorWheelPanel'
 import { SplitTonePanel } from './SplitTonePanel'
 import { CurvesPanel } from './CurvesPanel'
+import { MaskPanel } from './MaskPanel'
 import { LayerPanel } from './LayerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
-import { FILTER_PRESETS, INITIAL_EDIT_STATE } from '../constants'
+import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 
 const MOBILE_TABS = [
@@ -32,6 +33,7 @@ export function EditorSidebar({
   onApplyChange,
 }) {
   const [activeTab, setActiveTab] = useState('adjust')
+  const [expandedTextId, setExpandedTextId] = useState(null)
 
   const {
     brightness,
@@ -123,6 +125,10 @@ export function EditorSidebar({
             }
           />
         </div>
+        <MaskPanel
+          masks={editState.masks || []}
+          onMasksChange={(masks) => applyChange({ masks })}
+        />
       </div>
 
       {/* Color tab: HSL Panel + Color Grading + Split Toning */}
@@ -390,45 +396,142 @@ export function EditorSidebar({
             Add Text
           </button>
           {(editState.textOverlays || []).length > 0 && (
-            <div className="mt-4 space-y-2 max-h-32 overflow-y-auto">
-              {(editState.textOverlays || []).map((t, i) => (
-                <div key={t.id ?? i} className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={t.text ?? ''}
-                    onChange={(e) =>
-                      applyChange((s) => ({
-                        ...s,
-                        textOverlays: (s.textOverlays || []).map((o, j) => (j === i ? { ...o, text: e.target.value } : o)),
-                      }))
-                    }
-                    className="flex-1 bg-zinc-800 px-2 py-1 rounded text-sm text-zinc-200"
-                    placeholder="Text"
-                  />
-                  <input
-                    type="color"
-                    value={t.color ?? '#ffffff'}
-                    onChange={(e) =>
-                      applyChange((s) => ({
-                        ...s,
-                        textOverlays: (s.textOverlays || []).map((o, j) => (j === i ? { ...o, color: e.target.value } : o)),
-                      }))
-                    }
-                    className="w-8 h-8 rounded cursor-pointer"
-                  />
-                  <button
-                    onClick={() =>
-                      applyChange((s) => ({
-                        ...s,
-                        textOverlays: (s.textOverlays || []).filter((_, j) => j !== i),
-                      }))
-                    }
-                    className="text-red-400 hover:text-red-300 text-xs"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
+            <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
+              {(editState.textOverlays || []).map((t, i) => {
+                const updateText = (prop, value) =>
+                  applyChange((s) => ({
+                    ...s,
+                    textOverlays: (s.textOverlays || []).map((o, j) => (j === i ? { ...o, [prop]: value } : o)),
+                  }))
+                const toggleProp = (prop, onVal, offVal) =>
+                  applyChange((s) => ({
+                    ...s,
+                    textOverlays: (s.textOverlays || []).map((o, j) =>
+                      j === i ? { ...o, [prop]: o[prop] === onVal ? offVal : onVal } : o
+                    ),
+                  }))
+                return (
+                  <div key={t.id ?? i} className="border border-zinc-700 rounded-lg p-2">
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={t.text ?? ''}
+                        onChange={(e) => updateText('text', e.target.value)}
+                        className="flex-1 bg-zinc-800 px-2 py-1 rounded text-sm text-zinc-200"
+                        placeholder="Text"
+                      />
+                      <button
+                        onClick={() => setExpandedTextId(expandedTextId === t.id ? null : t.id)}
+                        className="text-xs text-zinc-400 hover:text-zinc-200"
+                        title="Settings"
+                      >
+                        ⚙
+                      </button>
+                      <button
+                        onClick={() =>
+                          applyChange((s) => ({
+                            ...s,
+                            textOverlays: (s.textOverlays || []).filter((_, j) => j !== i),
+                          }))
+                        }
+                        className="text-red-400 hover:text-red-300 text-xs"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {expandedTextId === t.id && (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex gap-2">
+                          <select
+                            value={t.fontFamily || 'sans-serif'}
+                            onChange={(e) => updateText('fontFamily', e.target.value)}
+                            className="flex-1 bg-zinc-800 text-sm text-zinc-200 rounded px-2 py-1"
+                          >
+                            {TEXT_OVERLAY_FONTS.map((f) => (
+                              <option key={f.value} value={f.value}>
+                                {f.label}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="color"
+                            value={t.color ?? '#ffffff'}
+                            onChange={(e) => updateText('color', e.target.value)}
+                            className="w-8 h-8 rounded cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => toggleProp('fontWeight', 'bold', 'normal')}
+                            className={`px-2 py-1 text-xs rounded ${t.fontWeight === 'bold' ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                          >
+                            <b>B</b>
+                          </button>
+                          <button
+                            onClick={() => toggleProp('fontStyle', 'italic', 'normal')}
+                            className={`px-2 py-1 text-xs rounded ${t.fontStyle === 'italic' ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                          >
+                            <i>I</i>
+                          </button>
+                          <button
+                            onClick={() => toggleProp('textShadow', true, false)}
+                            className={`px-2 py-1 text-xs rounded ${t.textShadow ? 'bg-amber-500 text-zinc-900' : 'bg-zinc-700 text-zinc-300'}`}
+                          >
+                            Shadow
+                          </button>
+                        </div>
+                        <Slider
+                          label="Size"
+                          value={t.fontSize ?? 32}
+                          onChange={(v) => updateText('fontSize', Math.round(v))}
+                          min={12}
+                          max={120}
+                          step={1}
+                          defaultValue={32}
+                          unit="px"
+                        />
+                        <Slider
+                          label="Opacity"
+                          value={t.opacity ?? 1}
+                          onChange={(v) => updateText('opacity', v)}
+                          min={0.1}
+                          max={1}
+                          step={0.05}
+                          defaultValue={1}
+                        />
+                        <Slider
+                          label="X Position"
+                          value={t.x ?? 0.5}
+                          onChange={(v) => updateText('x', v)}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          defaultValue={0.5}
+                        />
+                        <Slider
+                          label="Y Position"
+                          value={t.y ?? 0.5}
+                          onChange={(v) => updateText('y', v)}
+                          min={0}
+                          max={1}
+                          step={0.01}
+                          defaultValue={0.5}
+                        />
+                        <Slider
+                          label="Rotation"
+                          value={t.rotation ?? 0}
+                          onChange={(v) => updateText('rotation', v)}
+                          min={-180}
+                          max={180}
+                          step={1}
+                          defaultValue={0}
+                          unit="deg"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
