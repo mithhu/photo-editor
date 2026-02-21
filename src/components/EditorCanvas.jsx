@@ -10,9 +10,7 @@ import { applyPixelFilters } from '../utils/pixelFilters'
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
-  const [isDragging, setIsDragging] = useState(false)
   const [isDrawing, setIsDrawing] = useState(false)
-  const dragStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
   const currentStrokeRef = useRef(null)
   const touchRef = useRef({ lastDistance: 0, startPanX: 0, startPanY: 0 })
   const [containerSize, setContainerSize] = useState(null)
@@ -554,13 +552,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           opacity: brushOpacity,
           tool: drawingMode,
         }
-        return
       }
-      if (!onZoomPanChange) return
-      setIsDragging(true)
-      dragStartRef.current = { x: e.clientX, y: e.clientY, panX, panY }
     },
-    [panX, panY, onZoomPanChange, drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint],
   )
 
   const handleMouseMove = useCallback(
@@ -573,18 +567,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           points: [...currentStrokeRef.current.points, pt],
         }
         throttledDraw()
-        return
       }
-      if (!isDragging || !onZoomPanChange) return
-      const dx = e.clientX - dragStartRef.current.x
-      const dy = e.clientY - dragStartRef.current.y
-      onZoomPanChange({
-        zoom,
-        panX: dragStartRef.current.panX + dx,
-        panY: dragStartRef.current.panY + dy,
-      })
     },
-    [isDragging, isDrawing, zoom, onZoomPanChange, getCanvasPoint, throttledDraw],
+    [isDrawing, getCanvasPoint, throttledDraw],
   )
 
   const handleMouseUp = useCallback(() => {
@@ -598,34 +583,26 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }))
       return
     }
-    setIsDragging(false)
   }, [isDrawing, onApplyChange])
 
-  // --- Touch event handlers ---
+  // --- Touch event handlers (single-finger: drawing only, two-finger: pinch zoom) ---
 
   const handleTouchStart = useCallback((e) => {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 1 && drawingMode) {
+      e.preventDefault()
       const touch = e.touches[0]
-      if (drawingMode) {
-        e.preventDefault()
-        const pt = getCanvasPointFromTouch(touch)
-        if (!pt) return
-        setIsDrawing(true)
-        currentStrokeRef.current = {
-          points: [pt],
-          color: drawingMode === 'eraser' ? '#000000' : brushColor,
-          size: brushSize,
-          opacity: brushOpacity,
-          tool: drawingMode,
-        }
-      } else {
-        e.preventDefault()
-        setIsDragging(true)
-        dragStartRef.current = { x: touch.clientX, y: touch.clientY, panX, panY }
+      const pt = getCanvasPointFromTouch(touch)
+      if (!pt) return
+      setIsDrawing(true)
+      currentStrokeRef.current = {
+        points: [pt],
+        color: drawingMode === 'eraser' ? '#000000' : brushColor,
+        size: brushSize,
+        opacity: brushOpacity,
+        tool: drawingMode,
       }
     } else if (e.touches.length === 2) {
       e.preventDefault()
-      setIsDragging(false)
       setIsDrawing(false)
       currentStrokeRef.current = null
       const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -637,27 +614,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch])
 
   const handleTouchMove = useCallback((e) => {
-    if (e.touches.length === 1) {
+    if (e.touches.length === 1 && isDrawing && currentStrokeRef.current) {
+      e.preventDefault()
       const touch = e.touches[0]
-      if (isDrawing && currentStrokeRef.current) {
-        e.preventDefault()
-        const pt = getCanvasPointFromTouch(touch)
-        if (!pt) return
-        currentStrokeRef.current = {
-          ...currentStrokeRef.current,
-          points: [...currentStrokeRef.current.points, pt],
-        }
-        throttledDraw()
-      } else if (isDragging && onZoomPanChange) {
-        e.preventDefault()
-        const dx = touch.clientX - dragStartRef.current.x
-        const dy = touch.clientY - dragStartRef.current.y
-        onZoomPanChange({
-          zoom,
-          panX: dragStartRef.current.panX + dx,
-          panY: dragStartRef.current.panY + dy,
-        })
+      const pt = getCanvasPointFromTouch(touch)
+      if (!pt) return
+      currentStrokeRef.current = {
+        ...currentStrokeRef.current,
+        points: [...currentStrokeRef.current.points, pt],
       }
+      throttledDraw()
     } else if (e.touches.length === 2 && onZoomPanChange) {
       e.preventDefault()
       const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -671,7 +637,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       touchRef.current.lastDistance = distance
     }
-  }, [isDrawing, isDragging, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw])
+  }, [isDrawing, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw])
 
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
@@ -685,18 +651,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         }))
         return
       }
-      setIsDragging(false)
       touchRef.current.lastDistance = 0
     } else if (e.touches.length === 1) {
-      // Went from two fingers to one — reset for single-finger pan
       touchRef.current.lastDistance = 0
-      const touch = e.touches[0]
-      if (!drawingMode) {
-        setIsDragging(true)
-        dragStartRef.current = { x: touch.clientX, y: touch.clientY, panX, panY }
-      }
     }
-  }, [isDrawing, onApplyChange, drawingMode, panX, panY])
+  }, [isDrawing, onApplyChange])
 
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
@@ -716,7 +675,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: drawingMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab' }}
+      style={{ cursor: drawingMode ? 'crosshair' : 'default' }}
     >
       <div
         className="flex-shrink-0 relative"
