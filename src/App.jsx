@@ -223,6 +223,7 @@ export default function App() {
         onDownload={handleDownload}
         onShare={() => setShowShareModal(true)}
         onBatch={() => setMode('batch')}
+        onResetAll={reset}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">

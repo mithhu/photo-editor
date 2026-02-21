@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onAutoEnhance, onNewImage, onDownload, onShare, onBatch }) {
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll }) {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -52,6 +52,12 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
             Compare
           </button>
           <button
+            onClick={onResetAll}
+            className="px-4 py-2 text-sm bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/25 rounded-lg transition-colors"
+          >
+            Reset
+          </button>
+          <button
             onClick={onAutoEnhance}
             className="px-4 py-2 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors"
           >
@@ -99,6 +105,12 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
                 className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
               >
                 Compare
+              </button>
+              <button
+                onClick={() => { onResetAll?.(); closeMenu() }}
+                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-700"
+              >
+                Reset All
               </button>
               <button
                 onClick={() => { onAutoEnhance?.(); closeMenu() }}
