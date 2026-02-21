@@ -234,6 +234,14 @@ self.onmessage = function (e) {
       baseFilterOps, warmth, tint, vibrance, clarity, dehaze,
       hsl, curves, colorGrade, splitTone, selectiveColor,
       filmEmulation, filmIntensity, lut, gradientMap,
+      chromaticAberration,
+      sharpen,
+      glitch,
+      oilPaint,
+      posterize,
+      solarize,
+      emboss,
+      channelMixer,
     } = params
 
     // Base filters
@@ -382,6 +390,189 @@ self.onmessage = function (e) {
 
     // Gradient map / duotone
     applyGradientMap(d, gradientMap)
+
+    // Chromatic Aberration
+    const caShift = chromaticAberration || 0
+    if (caShift > 0) {
+      const src = new Uint8ClampedArray(d)
+      const w = width, h = height
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4
+          const rx = Math.max(0, Math.min(w - 1, x - caShift))
+          const ri = (y * w + rx) * 4
+          d[i] = src[ri]
+          const bx = Math.max(0, Math.min(w - 1, x + caShift))
+          const bi = (y * w + bx) * 4
+          d[i + 2] = src[bi + 2]
+        }
+      }
+    }
+
+    // Sharpen (unsharp mask)
+    const sharpenAmt = sharpen || 0
+    if (sharpenAmt > 0) {
+      const amt = sharpenAmt / 100
+      const src = new Uint8ClampedArray(d)
+      const w = width, h = height
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = (y * w + x) * 4
+          for (let c = 0; c < 3; c++) {
+            const center = src[i + c] * 5
+            const neighbors = src[((y - 1) * w + x) * 4 + c] +
+                              src[((y + 1) * w + x) * 4 + c] +
+                              src[(y * w + x - 1) * 4 + c] +
+                              src[(y * w + x + 1) * 4 + c]
+            const sharpened = center - neighbors
+            d[i + c] = Math.max(0, Math.min(255, src[i + c] + sharpened * amt))
+          }
+        }
+      }
+    }
+
+    // Glitch effect
+    const glitchAmt = glitch || 0
+    if (glitchAmt > 0) {
+      const intensity = glitchAmt / 100
+      const src = new Uint8ClampedArray(d)
+      const w = width, h = height
+      const numSlices = Math.floor(2 + intensity * 20)
+      let seed = w * h
+      const rand = () => { seed = (seed * 16807 + 0) % 2147483647; return seed / 2147483647 }
+
+      for (let s = 0; s < numSlices; s++) {
+        const sliceY = Math.floor(rand() * h)
+        const sliceH = Math.floor(1 + rand() * intensity * 30)
+        const offset = Math.floor((rand() - 0.5) * intensity * w * 0.3)
+
+        for (let dy = 0; dy < sliceH && sliceY + dy < h; dy++) {
+          const y = sliceY + dy
+          for (let x = 0; x < w; x++) {
+            const di = (y * w + x) * 4
+            const sx = Math.max(0, Math.min(w - 1, x + offset))
+            const si = (y * w + sx) * 4
+            d[di] = src[si]
+            d[di + 1] = src[di + 1]
+            d[di + 2] = src[si + 2]
+          }
+        }
+      }
+
+      if (intensity > 0.3) {
+        const channelShift = Math.floor(intensity * 8)
+        for (let y = 0; y < h; y += Math.floor(3 + rand() * 10)) {
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4
+            const rx = Math.min(w - 1, x + channelShift)
+            d[i] = src[(y * w + rx) * 4]
+          }
+        }
+      }
+    }
+
+    // Oil Paint effect
+    const oilRadius = oilPaint || 0
+    if (oilRadius > 0) {
+      const src = new Uint8ClampedArray(d)
+      const w = width, h = height
+      const r = Math.min(oilRadius, 5)
+      const levels = 20
+
+      for (let y = r; y < h - r; y++) {
+        for (let x = r; x < w - r; x++) {
+          const bins = new Uint32Array(levels)
+          const binR = new Float32Array(levels)
+          const binG = new Float32Array(levels)
+          const binB = new Float32Array(levels)
+
+          for (let dy = -r; dy <= r; dy++) {
+            for (let dx = -r; dx <= r; dx++) {
+              const si = ((y + dy) * w + (x + dx)) * 4
+              const intensity = Math.floor(((src[si] + src[si + 1] + src[si + 2]) / 3) * levels / 256)
+              const bin = Math.min(levels - 1, intensity)
+              bins[bin]++
+              binR[bin] += src[si]
+              binG[bin] += src[si + 1]
+              binB[bin] += src[si + 2]
+            }
+          }
+
+          let maxBin = 0, maxCount = 0
+          for (let b = 0; b < levels; b++) {
+            if (bins[b] > maxCount) { maxCount = bins[b]; maxBin = b }
+          }
+
+          const di = (y * w + x) * 4
+          if (maxCount > 0) {
+            d[di] = Math.round(binR[maxBin] / maxCount)
+            d[di + 1] = Math.round(binG[maxBin] / maxCount)
+            d[di + 2] = Math.round(binB[maxBin] / maxCount)
+          }
+        }
+      }
+    }
+
+    // Posterize
+    const posterizeLvl = posterize || 0
+    if (posterizeLvl >= 2) {
+      const step = 255 / (posterizeLvl - 1)
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = Math.round(Math.round(d[i] / step) * step)
+        d[i + 1] = Math.round(Math.round(d[i + 1] / step) * step)
+        d[i + 2] = Math.round(Math.round(d[i + 2] / step) * step)
+      }
+    }
+
+    // Solarize
+    const solarizeThresh = solarize || 0
+    if (solarizeThresh > 0) {
+      for (let i = 0; i < d.length; i += 4) {
+        if (d[i] < solarizeThresh) d[i] = 255 - d[i]
+        if (d[i + 1] < solarizeThresh) d[i + 1] = 255 - d[i + 1]
+        if (d[i + 2] < solarizeThresh) d[i + 2] = 255 - d[i + 2]
+      }
+    }
+
+    // Emboss
+    const embossAmt = emboss || 0
+    if (embossAmt > 0) {
+      const amt = embossAmt / 100
+      const src = new Uint8ClampedArray(d)
+      const w = width, h = height
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = (y * w + x) * 4
+          for (let c = 0; c < 3; c++) {
+            const val = -src[((y - 1) * w + (x - 1)) * 4 + c]
+                        -src[((y - 1) * w + x) * 4 + c]
+                        -src[(y * w + (x - 1)) * 4 + c]
+                        +src[((y + 1) * w + (x + 1)) * 4 + c]
+                        +src[((y + 1) * w + x) * 4 + c]
+                        +src[(y * w + (x + 1)) * 4 + c]
+            const embossed = Math.max(0, Math.min(255, 128 + val))
+            d[i + c] = Math.round(src[i + c] * (1 - amt) + embossed * amt)
+          }
+        }
+      }
+    }
+
+    // Channel Mixer
+    const cm = channelMixer
+    if (cm) {
+      const isDefault = cm.red.r === 100 && cm.red.g === 0 && cm.red.b === 0 &&
+                        cm.green.r === 0 && cm.green.g === 100 && cm.green.b === 0 &&
+                        cm.blue.r === 0 && cm.blue.g === 0 && cm.blue.b === 100
+      if (!isDefault) {
+        const src = new Uint8ClampedArray(d)
+        for (let i = 0; i < d.length; i += 4) {
+          const sr = src[i], sg = src[i + 1], sb = src[i + 2]
+          d[i] = Math.max(0, Math.min(255, (sr * cm.red.r + sg * cm.red.g + sb * cm.red.b) / 100))
+          d[i + 1] = Math.max(0, Math.min(255, (sr * cm.green.r + sg * cm.green.g + sb * cm.green.b) / 100))
+          d[i + 2] = Math.max(0, Math.min(255, (sr * cm.blue.r + sg * cm.blue.g + sb * cm.blue.b) / 100))
+        }
+      }
+    }
 
     self.postMessage({ type: 'pixelsProcessed', data: d.buffer, width, height }, [d.buffer])
   }

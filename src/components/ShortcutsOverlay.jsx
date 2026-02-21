@@ -9,12 +9,16 @@ const SHORTCUT_GROUPS = [
     ],
   },
   {
-    title: 'Drawing',
+    title: 'Drawing & Selection',
     shortcuts: [
       { keys: ['B'], description: 'Brush tool' },
       { keys: ['E'], description: 'Eraser tool' },
       { keys: ['H'], description: 'Heal tool' },
-      { keys: ['Escape'], description: 'Exit tool / Cancel' },
+      { keys: ['G'], description: 'Blur brush tool' },
+      { keys: ['W'], description: 'Magic wand tool' },
+      { keys: ['I'], description: 'Color picker tool' },
+      { keys: ['Del'], description: 'Delete selected area' },
+      { keys: ['Escape'], description: 'Exit tool / Clear selection' },
       { keys: ['+', '−'], description: 'Brush size (increase / decrease)' },
     ],
   },
@@ -22,6 +26,7 @@ const SHORTCUT_GROUPS = [
     title: 'View',
     shortcuts: [
       { keys: ['?'], description: 'Show shortcuts' },
+      { keys: ['Dbl-click'], description: 'Reset zoom to fit' },
     ],
   },
 ]

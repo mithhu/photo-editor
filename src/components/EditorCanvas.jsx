@@ -189,6 +189,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY, resizing?, initDist?, initSize? }
   const [editingTextId, setEditingTextId] = useState(null)
   const dragMovedRef = useRef(false)
+  const lastTapRef = useRef(0)
   const workerRef = useRef(null)
   const workerBusyRef = useRef(false)
   const workerPendingRef = useRef(false)
@@ -239,6 +240,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     lut,
     resize,
     gradientMap,
+    chromaticAberration,
+    sharpen,
+    glitch,
+    oilPaint,
+    posterize,
+    solarize,
+    emboss,
+    channelMixer,
     selectionMask,
     wandTolerance,
   } = editState
@@ -298,7 +307,15 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasLUT = !isComparing && !!lut
   const hasGradientMap = !isComparing && gradientMap?.enabled
   const hasResize = !isComparing && resize && (resize.width > 0 || resize.height > 0)
-  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap)
+  const hasChromaticAberration = !isComparing && (chromaticAberration ?? 0) > 0
+  const hasSharpen = !isComparing && (sharpen ?? 0) > 0
+  const hasGlitch = !isComparing && (glitch ?? 0) > 0
+  const hasOilPaint = !isComparing && (oilPaint ?? 0) > 0
+  const hasPosterize = !isComparing && (posterize ?? 0) >= 2
+  const hasSolarize = !isComparing && (solarize ?? 0) > 0
+  const hasEmboss = !isComparing && (emboss ?? 0) > 0
+  const hasChannelMixer = !isComparing && channelMixer && (channelMixer.red.r !== 100 || channelMixer.red.g !== 0 || channelMixer.red.b !== 0 || channelMixer.green.r !== 0 || channelMixer.green.g !== 100 || channelMixer.green.b !== 0 || channelMixer.blue.r !== 0 || channelMixer.blue.g !== 0 || channelMixer.blue.b !== 100)
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer)
 
   const drawPostPixel = useCallback((ctx, canvas, displayW, displayH) => {
     if (!isComparing && filmGrain > 0) {
@@ -424,7 +441,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
     ctx.restore()
 
-    const hasComplexOps = hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap
+    const hasComplexOps = hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
     const hasSimpleOnly = needsPixelPass && !hasComplexOps
 
     if (hasSimpleOnly) {
@@ -486,6 +503,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
               filmIntensity: filmIntensity ?? 1,
               lut: hasLUT ? lut : null,
               gradientMap: hasGradientMap ? gradientMap : null,
+              chromaticAberration: hasChromaticAberration ? chromaticAberration : 0,
+              sharpen: hasSharpen ? sharpen : 0,
+              glitch: hasGlitch ? glitch : 0,
+              oilPaint: hasOilPaint ? oilPaint : 0,
+              posterize: hasPosterize ? posterize : 0,
+              solarize: hasSolarize ? solarize : 0,
+              emboss: hasEmboss ? emboss : 0,
+              channelMixer: hasChannelMixer ? channelMixer : null,
             },
           },
           [buffer]
@@ -510,6 +535,60 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         if (!stroke.points || stroke.points.length < 2) return
         ctx.save()
         ctx.globalAlpha = stroke.opacity ?? 1
+
+        if (stroke.tool === 'blur') {
+          const radius = Math.max(2, Math.round((stroke.size ?? 5) * 0.5))
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          const d = imgData.data
+          const w = canvas.width, h = canvas.height
+
+          const affected = new Uint8Array(w * h)
+          for (let pi = 0; pi < stroke.points.length; pi++) {
+            const px = Math.round(stroke.points[pi].x * displayW)
+            const py = Math.round(stroke.points[pi].y * displayH)
+            const r2 = radius * radius
+            for (let dy = -radius; dy <= radius; dy++) {
+              for (let dx = -radius; dx <= radius; dx++) {
+                if (dx * dx + dy * dy > r2) continue
+                const nx = px + dx, ny = py + dy
+                if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                  affected[ny * w + nx] = 1
+                }
+              }
+            }
+          }
+
+          const out = new Uint8ClampedArray(d)
+          const br = Math.max(1, Math.round(radius * 0.4))
+          for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+              if (!affected[y * w + x]) continue
+              let rr = 0, gg = 0, bb = 0, count = 0
+              for (let dy = -br; dy <= br; dy++) {
+                const ny = y + dy
+                if (ny < 0 || ny >= h) continue
+                for (let dx = -br; dx <= br; dx++) {
+                  const nx = x + dx
+                  if (nx < 0 || nx >= w) continue
+                  const si = (ny * w + nx) * 4
+                  rr += d[si]; gg += d[si + 1]; bb += d[si + 2]
+                  count++
+                }
+              }
+              const di = (y * w + x) * 4
+              const alpha = stroke.opacity ?? 1
+              out[di] = Math.round(d[di] * (1 - alpha) + (rr / count) * alpha)
+              out[di + 1] = Math.round(d[di + 1] * (1 - alpha) + (gg / count) * alpha)
+              out[di + 2] = Math.round(d[di + 2] * (1 - alpha) + (bb / count) * alpha)
+            }
+          }
+
+          const outData = new ImageData(out, w, h)
+          ctx.putImageData(outData, 0, 0)
+          ctx.restore()
+          return
+        }
+
         if (stroke.tool === 'eraser') {
           ctx.globalCompositeOperation = 'destination-out'
         }
@@ -536,6 +615,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         const color = shape.color ?? '#ffffff'
         const rot = ((shape.rotation ?? 0) * Math.PI) / 180
         ctx.save()
+        ctx.globalAlpha = shape.opacity ?? 1
+        if (shape.blendMode && shape.blendMode !== 'normal') ctx.globalCompositeOperation = shape.blendMode
         ctx.translate(cx, cy)
         ctx.rotate(rot)
         if (shape.type === 'sticker' && shape.emoji) {
@@ -615,6 +696,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         ctx.translate(tx, ty)
         if (t.rotation) ctx.rotate((t.rotation * Math.PI) / 180)
         ctx.globalAlpha = t.opacity ?? 1
+        if (t.blendMode && t.blendMode !== 'normal') ctx.globalCompositeOperation = t.blendMode
         const weight = t.fontWeight === 'bold' ? 'bold' : 'normal'
         const style = t.fontStyle === 'italic' ? 'italic' : 'normal'
         const family = t.fontFamily || 'sans-serif'
@@ -717,7 +799,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
@@ -1090,7 +1172,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         tool: drawingMode,
       }
     } else if (e.touches.length === 1 && !drawingMode) {
-      // No drawing mode — check for overlay drag
+      // Double-tap detection — reset zoom to fit
+      const now = Date.now()
+      if (now - lastTapRef.current < 300 && onZoomPanChange) {
+        lastTapRef.current = 0
+        e.preventDefault()
+        onZoomPanChange({ zoom: 1, panX: 0, panY: 0 })
+        return
+      }
+      lastTapRef.current = now
+
       const touch = e.touches[0]
       const pt = getCanvasPointFromTouch(touch)
       if (!pt) return
@@ -1128,7 +1219,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       touchRef.current.startPanX = panX
       touchRef.current.startPanY = panY
     }
-  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay, textOverlays, shapeOverlays, wandTolerance])
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay, textOverlays, shapeOverlays, wandTolerance, onZoomPanChange])
 
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1 && isDrawing && healingRef.current.active) {
@@ -1267,6 +1358,12 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       onMouseDown={handleMouseDown}
       onMouseMove={handleContainerMouseMove}
       onMouseLeave={handleMouseLeave}
+      onDoubleClick={(e) => {
+        if (!drawingMode && onZoomPanChange) {
+          e.preventDefault()
+          onZoomPanChange({ zoom: 1, panX: 0, panY: 0 })
+        }
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

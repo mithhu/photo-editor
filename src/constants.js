@@ -25,7 +25,7 @@ export const INITIAL_EDIT_STATE = {
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
   perspective: { horizontal: 0, vertical: 0, rotation: 0 }, // transform: skew ±45°, fine rotation ±180°
   brushStrokes: [],
-  drawingMode: null, // 'brush' | 'eraser' | 'heal' | 'wand' | null
+  drawingMode: null, // 'brush' | 'eraser' | 'heal' | 'wand' | 'blur' | null
   selectionMask: null, // Uint8Array or null
   wandTolerance: 32,
   healSource: null, // { x, y } in 0-1 canvas coords — set on first click in heal mode
@@ -74,6 +74,18 @@ export const INITIAL_EDIT_STATE = {
   lutName: null,
   resize: { width: 0, height: 0, lockAspect: true },
   gradientMap: { enabled: false, shadows: '#1a1a2e', highlights: '#e8d5b7', intensity: 0.7 },
+  chromaticAberration: 0, // 0-20 pixel shift
+  sharpen: 0, // 0-100 sharpen amount
+  glitch: 0, // 0-100 glitch intensity
+  oilPaint: 0, // 0-10 oil paint radius
+  posterize: 0, // 0 = off, 2-20 = number of color levels
+  solarize: 0, // 0 = off, 1-255 = threshold
+  emboss: 0, // 0-100 emboss intensity
+  channelMixer: {
+    red: { r: 100, g: 0, b: 0 },
+    green: { r: 0, g: 100, b: 0 },
+    blue: { r: 0, g: 0, b: 100 },
+  },
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */

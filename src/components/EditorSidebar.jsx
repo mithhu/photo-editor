@@ -11,7 +11,9 @@ import { StickerPanel } from './StickerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
 import { ImageInfoPanel } from './ImageInfoPanel'
+import { HistogramPanel } from './HistogramPanel'
 import { GradientMapPanel } from './GradientMapPanel'
+import { ChannelMixerPanel } from './ChannelMixerPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -19,6 +21,7 @@ import { useFilterPreviews } from '../hooks/useFilterPreviews'
 import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
 import { usePortraitCrop } from '../hooks/usePortraitCrop'
 import { parseCubeLUT } from '../utils/lutParser'
+import { featherMask } from '../utils/magicWand'
 
 export function EditorSidebar({
   editState,
@@ -146,6 +149,24 @@ export function EditorSidebar({
             <Slider label="Shadows" value={shadows} onChange={(v) => applySliderChange('shadows', v)} min={0.5} max={1.5} defaultValue={1} />
             <Slider label="Warmth" value={warmth} onChange={(v) => applySliderChange('warmth', v)} min={-1} max={1} defaultValue={0} />
             <Slider label="Tint" value={tint} onChange={(v) => applySliderChange('tint', v)} min={-1} max={1} defaultValue={0} />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {[
+                { label: '☀️ Daylight', warmth: 0, tint: 0 },
+                { label: '☁️ Cloudy', warmth: 8, tint: 2 },
+                { label: '🏠 Shade', warmth: 12, tint: 4 },
+                { label: '💡 Tungsten', warmth: -15, tint: -5 },
+                { label: '💡 Fluorescent', warmth: -5, tint: 8 },
+                { label: '📸 Flash', warmth: 3, tint: 1 },
+              ].map((p) => (
+                <button
+                  key={p.label}
+                  onClick={() => applyChange({ warmth: p.warmth, tint: p.tint })}
+                  className="px-2 py-1 text-[10px] bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded transition-colors"
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
             <Slider label="Vibrance" value={vibrance} onChange={(v) => applySliderChange('vibrance', v)} min={-1} max={1} defaultValue={0} />
             <Slider label="Clarity" value={clarity} onChange={(v) => applySliderChange('clarity', v)} min={-1} max={1} defaultValue={0} />
             <Slider label="Dehaze" value={dehaze} onChange={(v) => applySliderChange('dehaze', v)} min={-1} max={1} defaultValue={0} />
@@ -372,6 +393,9 @@ export function EditorSidebar({
             splitTone={editState.splitTone}
             onChange={(val) => applyChange((s) => ({ ...s, splitTone: val }))}
           />
+        </div>
+        <div className="mt-6">
+          <ChannelMixerPanel editState={editState} applyChange={applyChange} />
         </div>
       </div>
 
@@ -677,6 +701,14 @@ export function EditorSidebar({
               Heal
             </button>
             <button
+              onClick={() => applyChange({ drawingMode: drawingMode === 'blur' ? null : 'blur' })}
+              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+                drawingMode === 'blur' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+            >
+              Blur
+            </button>
+            <button
               onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
               className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
                 drawingMode === 'picker' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
@@ -711,12 +743,122 @@ export function EditorSidebar({
                 step={1}
               />
               {editState.selectionMask && (
-                <button
-                  onClick={() => applyChange({ selectionMask: null })}
-                  className="text-xs text-indigo-400 hover:text-indigo-300"
-                >
-                  Clear selection
-                </button>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => {
+                        const mask = editState.selectionMask
+                        const inv = new Uint8Array(mask.length)
+                        for (let i = 0; i < mask.length; i++) inv[i] = mask[i] >= 128 ? 0 : 255
+                        applyChange({ selectionMask: inv })
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Invert
+                    </button>
+                    <button
+                      onClick={() => {
+                        const canvas = canvasRef?.current
+                        if (!canvas) return
+                        const f = featherMask(editState.selectionMask, canvas.width, canvas.height, 4)
+                        applyChange({ selectionMask: f })
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Feather
+                    </button>
+                    <button
+                      onClick={() => {
+                        const canvas = canvasRef?.current
+                        if (!canvas) return
+                        const ctx = canvas.getContext('2d')
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        const d = imageData.data
+                        const mask = editState.selectionMask
+                        for (let i = 0; i < mask.length; i++) {
+                          if (mask[i] >= 128) d[i * 4 + 3] = 0
+                        }
+                        ctx.putImageData(imageData, 0, 0)
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => {
+                        const canvas = canvasRef?.current
+                        if (!canvas) return
+                        const ctx = canvas.getContext('2d')
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        const d = imageData.data
+                        const mask = editState.selectionMask
+                        for (let i = 0; i < mask.length; i++) {
+                          if (mask[i] >= 128) {
+                            const idx = i * 4
+                            const gray = Math.round(d[idx] * 0.299 + d[idx + 1] * 0.587 + d[idx + 2] * 0.114)
+                            d[idx] = gray
+                            d[idx + 1] = gray
+                            d[idx + 2] = gray
+                          }
+                        }
+                        ctx.putImageData(imageData, 0, 0)
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Desaturate
+                    </button>
+                    <button
+                      onClick={() => {
+                        const canvas = canvasRef?.current
+                        if (!canvas) return
+                        const ctx = canvas.getContext('2d')
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        const d = imageData.data
+                        const mask = editState.selectionMask
+                        for (let i = 0; i < mask.length; i++) {
+                          if (mask[i] >= 128) {
+                            const idx = i * 4
+                            d[idx] = Math.min(255, d[idx] + 30)
+                            d[idx + 1] = Math.min(255, d[idx + 1] + 30)
+                            d[idx + 2] = Math.min(255, d[idx + 2] + 30)
+                          }
+                        }
+                        ctx.putImageData(imageData, 0, 0)
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Brighten
+                    </button>
+                    <button
+                      onClick={() => {
+                        const canvas = canvasRef?.current
+                        if (!canvas) return
+                        const ctx = canvas.getContext('2d')
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+                        const d = imageData.data
+                        const mask = editState.selectionMask
+                        for (let i = 0; i < mask.length; i++) {
+                          if (mask[i] >= 128) {
+                            const idx = i * 4
+                            d[idx] = Math.max(0, d[idx] - 30)
+                            d[idx + 1] = Math.max(0, d[idx + 1] - 30)
+                            d[idx + 2] = Math.max(0, d[idx + 2] - 30)
+                          }
+                        }
+                        ctx.putImageData(imageData, 0, 0)
+                      }}
+                      className="py-1.5 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+                    >
+                      Darken
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => applyChange({ selectionMask: null })}
+                    className="w-full py-1.5 text-xs bg-red-900/40 hover:bg-red-900/60 text-red-400 rounded-lg transition-colors"
+                  >
+                    Clear selection
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -1080,6 +1222,12 @@ export function EditorSidebar({
                 return { ...s, [key]: (s[key] || []).filter((_, i) => i !== index) }
               })
             }
+            onUpdateLayer={(type, index, patch) =>
+              applyChange((s) => {
+                const key = type === 'text' ? 'textOverlays' : 'shapeOverlays'
+                return { ...s, [key]: (s[key] || []).map((item, i) => i === index ? { ...item, ...patch } : item) }
+              })
+            }
           />
         </div>
       </div>
@@ -1228,6 +1376,77 @@ export function EditorSidebar({
 
         <GradientMapPanel editState={editState} applyChange={applyChange} />
 
+        {/* Chromatic Aberration */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Chromatic Aberration</h3>
+          <Slider
+            label="Shift"
+            value={editState.chromaticAberration ?? 0}
+            onChange={(v) => applyChange({ chromaticAberration: v })}
+            min={0}
+            max={20}
+            step={1}
+          />
+        </div>
+
+        {/* Sharpen */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Sharpen</h3>
+          <Slider
+            label="Amount"
+            value={editState.sharpen ?? 0}
+            onChange={(v) => applyChange({ sharpen: v })}
+            min={0}
+            max={100}
+            step={1}
+          />
+        </div>
+
+        {/* Glitch */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Glitch</h3>
+          <Slider
+            label="Intensity"
+            value={editState.glitch ?? 0}
+            onChange={(v) => applyChange({ glitch: v })}
+            min={0}
+            max={100}
+            step={1}
+          />
+        </div>
+
+        {/* Oil Paint */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Oil Paint</h3>
+          <Slider
+            label="Radius"
+            value={editState.oilPaint ?? 0}
+            onChange={(v) => applyChange({ oilPaint: v })}
+            min={0}
+            max={10}
+            step={1}
+          />
+        </div>
+
+        {/* Posterize */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Posterize</h3>
+          <Slider label="Levels" value={editState.posterize ?? 0} onChange={(v) => applyChange({ posterize: v })} min={0} max={20} step={1} />
+          <p className="text-[10px] text-zinc-500 mt-1">0 = off, 2-20 = color levels</p>
+        </div>
+
+        {/* Solarize */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Solarize</h3>
+          <Slider label="Threshold" value={editState.solarize ?? 0} onChange={(v) => applyChange({ solarize: v })} min={0} max={255} step={1} />
+        </div>
+
+        {/* Emboss */}
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">Emboss</h3>
+          <Slider label="Amount" value={editState.emboss ?? 0} onChange={(v) => applyChange({ emboss: v })} min={0} max={100} step={1} />
+        </div>
+
         {historyLength > 0 && (
           <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
             <h3 className="text-sm font-semibold text-zinc-300 mb-3">History</h3>
@@ -1249,9 +1468,12 @@ export function EditorSidebar({
         )}
       </div>
 
-      {/* Image Info */}
+      {/* Histogram + Image Info */}
       <div>
-        <ImageInfoPanel imageSrc={imageSrc} />
+        <HistogramPanel canvasRef={canvasRef} />
+        <div className="mt-4">
+          <ImageInfoPanel imageSrc={imageSrc} />
+        </div>
       </div>
     </aside>
   )

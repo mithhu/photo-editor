@@ -144,9 +144,33 @@ export default function App() {
         e.preventDefault()
         applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'picker' ? null : 'picker' }))
       }
+      if (e.key === 'w') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'wand' ? null : 'wand', selectionMask: null }))
+      }
+      if (e.key === 'g') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'blur' ? null : 'blur' }))
+      }
       if (e.key === 'Escape') {
         e.preventDefault()
-        applyChange((s) => ({ ...s, drawingMode: null, healSource: null }))
+        applyChange((s) => ({ ...s, drawingMode: null, healSource: null, selectionMask: null }))
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (editState.selectionMask && editState.drawingMode === 'wand') {
+          e.preventDefault()
+          const canvas = canvasRef.current
+          if (canvas) {
+            const ctx = canvas.getContext('2d')
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            const d = imgData.data
+            const mask = editState.selectionMask
+            for (let j = 0; j < mask.length; j++) {
+              if (mask[j] >= 128) d[j * 4 + 3] = 0
+            }
+            ctx.putImageData(imgData, 0, 0)
+          }
+        }
       }
       if (e.key === '[' || e.key === '-') {
         e.preventDefault()
@@ -159,7 +183,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [imageSrc, showShortcutsOverlay, undo, redo, applyChange])
+  }, [imageSrc, showShortcutsOverlay, undo, redo, applyChange, editState.drawingMode, editState.selectionMask])
 
   const handleImageLoad = (src) => {
     setImageSrc(src)
