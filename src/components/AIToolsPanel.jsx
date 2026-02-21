@@ -4,6 +4,8 @@ import { detectSubjects, computeSmartCrop } from '../utils/smartCrop'
 import { applyStyleTransfer, STYLE_PRESETS } from '../utils/styleTransfer'
 import { suggestFilters } from '../utils/filterSuggestions'
 import { getStyleImages } from '../utils/styleImages'
+import { upscaleImage } from '../utils/upscale'
+import { denoiseFromSrc } from '../utils/denoise'
 
 export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChange }) {
   const [bgLoading, setBgLoading] = useState(false)
@@ -21,6 +23,14 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
 
   const [suggestions, setSuggestions] = useState(null)
   const [suggestLoading, setSuggestLoading] = useState(false)
+
+  const [upscaleLoading, setUpscaleLoading] = useState(false)
+  const [upscaleStatus, setUpscaleStatus] = useState(null)
+  const [upscaleError, setUpscaleError] = useState(null)
+
+  const [denoiseLoading, setDenoiseLoading] = useState(false)
+  const [denoiseStrength, setDenoiseStrength] = useState(0.5)
+  const [denoiseError, setDenoiseError] = useState(null)
 
   const styleFileRef = useRef(null)
   const styleImages = useMemo(() => getStyleImages(), [])
@@ -99,6 +109,36 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     if (!file) return
     const url = URL.createObjectURL(file)
     handleStyleTransfer(url)
+  }
+
+  const handleUpscale = async () => {
+    if (!imageSrc) return
+    setUpscaleLoading(true)
+    setUpscaleError(null)
+    setUpscaleStatus(null)
+    try {
+      const result = await upscaleImage(imageSrc, setUpscaleStatus)
+      onImageReplace(result)
+      setUpscaleStatus('Done! Image upscaled 2x.')
+    } catch (e) {
+      setUpscaleError(e.message || 'Upscaling failed')
+    } finally {
+      setUpscaleLoading(false)
+    }
+  }
+
+  const handleDenoise = async () => {
+    if (!imageSrc) return
+    setDenoiseLoading(true)
+    setDenoiseError(null)
+    try {
+      const result = await denoiseFromSrc(imageSrc, denoiseStrength, () => {})
+      onImageReplace(result)
+    } catch (e) {
+      setDenoiseError(e.message || 'Denoise failed')
+    } finally {
+      setDenoiseLoading(false)
+    }
   }
 
   const handleSuggestFilters = () => {
@@ -262,6 +302,64 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
             </div>
           )}
         </div>
+      </div>
+
+      {/* Upscale */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">Upscale (2x)</h3>
+        <p className="text-[10px] text-zinc-500 mb-3">
+          Double your image resolution using AI. First use downloads a model (~5 MB).
+        </p>
+        <button
+          onClick={handleUpscale}
+          disabled={upscaleLoading || !imageSrc}
+          className="w-full py-2.5 text-sm bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {upscaleLoading ? 'Upscaling...' : 'Upscale 2x'}
+        </button>
+        {upscaleStatus && (
+          <div className="mt-2 flex items-center gap-2 bg-blue-500/10 rounded-lg p-2 border border-blue-500/20">
+            {upscaleLoading && <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" />}
+            <span className="text-xs text-blue-400">{upscaleStatus}</span>
+          </div>
+        )}
+        {upscaleError && (
+          <div className="mt-2 text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">{upscaleError}</div>
+        )}
+      </div>
+
+      {/* Denoise */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">Denoise</h3>
+        <p className="text-[10px] text-zinc-500 mb-3">
+          Reduce noise from low-light or high-ISO photos.
+        </p>
+        <div className="mb-3">
+          <div className="flex justify-between text-xs mb-1">
+            <span className="text-zinc-400">Strength</span>
+            <span className="text-zinc-300">{Math.round(denoiseStrength * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0.1}
+            max={1}
+            step={0.05}
+            value={denoiseStrength}
+            onChange={(e) => setDenoiseStrength(Number(e.target.value))}
+            className="w-full accent-cyan-500"
+            disabled={denoiseLoading}
+          />
+        </div>
+        <button
+          onClick={handleDenoise}
+          disabled={denoiseLoading || !imageSrc}
+          className="w-full py-2.5 text-sm bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 border border-cyan-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {denoiseLoading ? 'Processing...' : 'Reduce Noise'}
+        </button>
+        {denoiseError && (
+          <div className="mt-2 text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">{denoiseError}</div>
+        )}
       </div>
 
       {/* Filter Suggestions */}

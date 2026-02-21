@@ -25,6 +25,7 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('@tensorflow')) return 'tensorflow'
           if (id.includes('@imgly')) return 'background-removal'
+          if (id.includes('upscaler')) return 'upscaler'
         },
       },
     },
