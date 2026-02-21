@@ -5,6 +5,7 @@ import { CropOverlay } from './CropOverlay'
 import { buildCurveLUT } from '../utils/curvesUtils'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
+import { applyPixelFilters } from '../utils/pixelFilters'
 
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
@@ -67,11 +68,21 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     }))
   }, [onApplyChange])
 
-  const presetFilter = FILTER_PRESETS.find((p) => p.id === preset)?.filter || ''
+  const presetOps = FILTER_PRESETS.find((p) => p.id === preset)?.ops || []
   const highlightContrast = 2 - highlights
   const shadowBrightness = shadows
-  const fullAdjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
-  const adjustmentFilter = isComparing ? 'none' : fullAdjustmentFilter
+
+  const baseFilterOps = useMemo(() => {
+    if (isComparing) return []
+    const ops = []
+    const br = brightness * exposure * shadowBrightness
+    if (br !== 1) ops.push({ type: 'brightness', value: br })
+    if (contrast * highlightContrast !== 1) ops.push({ type: 'contrast', value: contrast * highlightContrast })
+    if (saturation !== 1) ops.push({ type: 'saturate', value: saturation })
+    return [...ops, ...presetOps]
+  }, [isComparing, brightness, exposure, shadowBrightness, contrast, highlightContrast, saturation, presetOps])
+
+  const hasBaseFilters = baseFilterOps.length > 0
   const hasHSL = hsl && Object.values(hsl).some(c => c.h !== 0 || c.s !== 0 || c.l !== 0)
   const hasCurves = curves && Object.entries(curves).some(([, pts]) =>
     pts.length > 2 || (pts.length === 2 && (pts[0][0] !== 0 || pts[0][1] !== 0 || pts[1][0] !== 1 || pts[1][1] !== 1))
@@ -81,7 +92,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   )
   const hasSplitTone = splitTone && (splitTone.highlightSat > 0 || splitTone.shadowSat > 0)
   const hasFilmEmulation = !isComparing && !!filmEmulation
-  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation)
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -126,13 +137,17 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.scale(scale, scale)
     ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
     ctx.translate(-sw / 2, -sh / 2)
-    ctx.filter = adjustmentFilter
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
     ctx.restore()
 
     if (needsPixelPass) {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const d = imgData.data
+
+      if (hasBaseFilters) {
+        applyPixelFilters(imgData, baseFilterOps)
+      }
+
       const warmShift = warmth * 30
       const tintShift = tint * 30
 
@@ -481,7 +496,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 

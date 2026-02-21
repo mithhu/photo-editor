@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { FILTER_PRESETS } from '../constants'
+import { applyPixelFilters } from '../utils/pixelFilters'
 
 export function BatchProcessor({ editState, onBack }) {
   const [files, setFiles] = useState([])
@@ -177,24 +178,20 @@ export function BatchProcessor({ editState, onBack }) {
   )
 }
 
-function buildFilterString(editState) {
-  const { brightness, contrast, saturation, exposure } = editState
+function buildFilterOps(editState) {
+  const { brightness = 1, contrast = 1, saturation = 1, exposure = 1, shadows = 1, highlights = 1 } = editState
+  const ops = []
 
-  const br = brightness ?? 1
-  const ct = contrast ?? 1
-  const st = saturation ?? 1
-  let filterStr = `brightness(${br}) contrast(${ct}) saturate(${st})`
-
-  if (exposure && exposure !== 1) {
-    filterStr += ` brightness(${0.5 + exposure / 2})`
-  }
+  const br = brightness * exposure * shadows
+  if (br !== 1) ops.push({ type: 'brightness', value: br })
+  const ct = contrast * (2 - highlights)
+  if (ct !== 1) ops.push({ type: 'contrast', value: ct })
+  if (saturation !== 1) ops.push({ type: 'saturate', value: saturation })
 
   const preset = FILTER_PRESETS.find(p => p.id === (editState.preset || 'none'))
-  if (preset?.filter) {
-    filterStr += ` ${preset.filter}`
-  }
+  if (preset?.ops?.length) ops.push(...preset.ops)
 
-  return filterStr
+  return ops
 }
 
 async function processImage(imageSrc, editState) {
@@ -210,12 +207,12 @@ async function processImage(imageSrc, editState) {
   canvas.height = img.naturalHeight
   const ctx = canvas.getContext('2d')
 
-  ctx.filter = buildFilterString(editState)
   ctx.drawImage(img, 0, 0)
-  ctx.filter = 'none'
 
+  const filterOps = buildFilterOps(editState)
   const { warmth, tint, vibrance, clarity, dehaze } = editState
   const needsPixelPass =
+    filterOps.length > 0 ||
     (warmth && warmth !== 0) ||
     (tint && tint !== 0) ||
     (vibrance && vibrance !== 0) ||
@@ -225,6 +222,10 @@ async function processImage(imageSrc, editState) {
   if (needsPixelPass) {
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
     const d = imageData.data
+
+    if (filterOps.length > 0) {
+      applyPixelFilters(imageData, filterOps)
+    }
 
     for (let i = 0; i < d.length; i += 4) {
       if (warmth) {
