@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photosai-v7'
+const CACHE_NAME = 'photosai-v8'
 const STATIC_ASSETS = ['/', '/index.html', '/favicon.svg']
 
 self.addEventListener('install', (event) => {

@@ -167,7 +167,137 @@ function aura(r, g, b) {
   const hlW = Math.max(0, (lum - 0.6) * 2.5)
   return [clamp(r + hlW * 10), g, clamp(b + hlW * 5)]
 }
-const FILM_FNS = { koji, tokyo, portra, velvia, superia, aura }
+function havana(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r * 0.92 + 20); g = clamp(g * 0.92 + 12); b = clamp(b * 0.92 + 8)
+  const hlW = Math.max(0, (lum - 0.45) * 2.2)
+  r = clamp(r + hlW * 22); g = clamp(g + hlW * 10); b = clamp(b - hlW * 8)
+  const shW = Math.max(0, (0.35 - lum) * 3)
+  r = clamp(r - shW * 6); g = clamp(g + shW * 5); b = clamp(b + shW * 12)
+  const c = 1.1
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function berlin(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.3); g = clamp(g + (gray - g) * 0.3); b = clamp(b + (gray - b) * 0.3)
+  r = clamp(r - 5); b = clamp(b + 8)
+  const shW = Math.max(0, (0.3 - lum) * 3)
+  r = clamp(r - shW * 10); g = clamp(g - shW * 8); b = clamp(b - shW * 4)
+  const c = 1.2
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function seoul(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r * 0.85 + 38); g = clamp(g * 0.85 + 35); b = clamp(b * 0.85 + 40)
+  const hlW = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlW * 12); b = clamp(b + hlW * 8)
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.12); g = clamp(g + (gray - g) * 0.12); b = clamp(b + (gray - b) * 0.12)
+  r = clamp(r + 4); b = clamp(b + 3)
+  const c = 0.9
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function paris(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r * 0.88 + 30); g = clamp(g * 0.88 + 25); b = clamp(b * 0.88 + 22)
+  r = clamp(r + 10); g = clamp(g + 4); b = clamp(b - 3)
+  const hlW = Math.max(0, (lum - 0.55) * 2.5)
+  r = clamp(r + hlW * 10); g = clamp(g + hlW * 4); b = clamp(b + hlW * 6)
+  const c = 0.92
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function bali(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.25); g = clamp(g + (g - gray) * 0.3); b = clamp(b + (b - gray) * 0.2)
+  const hlW = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlW * 12); g = clamp(g + hlW * 5)
+  g = clamp(g + 6); b = clamp(b + 4)
+  const c = 1.1
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function nordic(r, g, b) {
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.4); g = clamp(g + (gray - g) * 0.4); b = clamp(b + (gray - b) * 0.35)
+  r = clamp(r - 6); b = clamp(b + 10)
+  const c = 1.25
+  r = clamp(((r / 255 - 0.5) * c + 0.5) * 255); g = clamp(((g / 255 - 0.5) * c + 0.5) * 255); b = clamp(((b / 255 - 0.5) * c + 0.5) * 255)
+  return [r, g, b]
+}
+function retroVhsW(r, g, b) {
+  const origR = r
+  r = clamp(r * 0.85 + g * 0.1 + b * 0.05); g = clamp(origR * 0.05 + g * 0.85 + b * 0.1)
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.25); g = clamp(g + (gray - g) * 0.25); b = clamp(b + (gray - b) * 0.25)
+  r = clamp(r * 0.85 + 35); g = clamp(g * 0.85 + 30); b = clamp(b * 0.85 + 32)
+  r = clamp(r + 6); g = clamp(g - 4); b = clamp(b + 4)
+  const c = 0.88
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function disposableW(r, g, b) {
+  r = clamp(r + 15); g = clamp(g + 15); b = clamp(b + 10)
+  r = clamp(r * 0.8 + 50); g = clamp(g * 0.8 + 50); b = clamp(b * 0.8 + 40)
+  g = clamp(g + 8); r = clamp(r + 3); b = clamp(b - 5)
+  const c = 0.85
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function cyberpunk(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.3); g = clamp(g + (g - gray) * 0.3); b = clamp(b + (b - gray) * 0.3)
+  const shW = Math.max(0, (0.4 - lum) * 2.5)
+  r = clamp(r - shW * 10); g = clamp(g + shW * 8); b = clamp(b + shW * 15)
+  const hlW = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlW * 20); g = clamp(g - hlW * 5); b = clamp(b + hlW * 10)
+  const c = 1.25
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function sunsetBlvd(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r + 20); g = clamp(g + 8); b = clamp(b - 10)
+  const hlW = Math.max(0, (lum - 0.4) * 2)
+  r = clamp(r + hlW * 25); g = clamp(g + hlW * 15); b = clamp(b - hlW * 5)
+  r = clamp(r * 0.92 + 20); g = clamp(g * 0.92 + 12); b = clamp(b * 0.92 + 8)
+  const c = 0.95
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function filmNoir(r, g, b) {
+  let gray = 0.299 * r + 0.587 * g + 0.114 * b
+  const c = 1.35
+  gray = clamp(((gray / 255 - 0.5) * c + 0.5) * 255)
+  return [clamp(gray + 6), clamp(gray + 2), clamp(gray - 2)]
+}
+function pastelPop(r, g, b) {
+  r = clamp(r * 0.78 + 55); g = clamp(g * 0.78 + 50); b = clamp(b * 0.78 + 52)
+  r = clamp(r + 8); b = clamp(b + 4)
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.15); g = clamp(g + (gray - g) * 0.15); b = clamp(b + (gray - b) * 0.15)
+  const c = 0.82
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function chrome(r, g, b) {
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.2); g = clamp(g + (gray - g) * 0.2); b = clamp(b + (gray - b) * 0.15)
+  r = clamp(r - 3); b = clamp(b + 6)
+  const c = 1.3
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function matteW(r, g, b) {
+  r = clamp(r * 0.75 + 60); g = clamp(g * 0.75 + 55); b = clamp(b * 0.75 + 52)
+  r = clamp(r + 4); b = clamp(b - 2)
+  const c = 0.85
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+function infraredW(r, g, b) {
+  const origR = r, origG = g, origB = b
+  r = clamp(origG * 1.2 + origR * 0.1)
+  g = clamp(origR * 0.6 + origG * 0.3 + 20)
+  b = clamp(origB * 0.5 + origR * 0.15)
+  const c = 1.15
+  return [clamp(((r / 255 - 0.5) * c + 0.5) * 255), clamp(((g / 255 - 0.5) * c + 0.5) * 255), clamp(((b / 255 - 0.5) * c + 0.5) * 255)]
+}
+const FILM_FNS = { koji, tokyo, portra, velvia, superia, aura, havana, berlin, seoul, paris, bali, nordic, retroVhs: retroVhsW, disposable: disposableW, cyberpunk, sunsetBlvd, filmNoir, pastelPop, chrome, matte: matteW, infrared: infraredW }
 
 function applyLUT3D(d, lut) {
   if (!lut || !lut.data) return

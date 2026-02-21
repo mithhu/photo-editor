@@ -14,6 +14,7 @@ import { ImageInfoPanel } from './ImageInfoPanel'
 import { HistogramPanel } from './HistogramPanel'
 import { GradientMapPanel } from './GradientMapPanel'
 import { ChannelMixerPanel } from './ChannelMixerPanel'
+import { BeautyPanel } from './BeautyPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -38,6 +39,8 @@ export function EditorSidebar({
   const [expandedTextId, setExpandedTextId] = useState(null)
   const [lutError, setLutError] = useState(null)
   const [imageDims, setImageDims] = useState(null)
+  const [filterTab, setFilterTab] = useState('popular')
+  const [filmTab, setFilmTab] = useState('classic')
   const lutInputRef = useRef(null)
   const { previews: filterPreviews, loading: previewsLoading } = useFilterPreviews(imageSrc)
   const { suggestions: exposureSuggestions, loading: exposureLoading, analyze: analyzeExposure } = useExposureSuggestions(canvasRef)
@@ -124,6 +127,16 @@ export function EditorSidebar({
           onImageReplace={onImageReplace}
           canvasRef={canvasRef}
           onApplyChange={onApplyChange}
+        />
+      </div>
+
+      {/* AI Beauty */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <BeautyPanel
+          beauty={editState.beauty}
+          faceReshape={editState.faceReshape}
+          makeup={editState.makeup}
+          onUpdate={(changes) => applyChange(changes)}
         />
       </div>
 
@@ -1241,6 +1254,19 @@ export function EditorSidebar({
       <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Film Emulation</h3>
+          <div className="flex gap-1 mb-2">
+            {['classic', 'trending'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilmTab(cat)}
+                className={`px-2 py-0.5 text-[10px] rounded-full transition-colors capitalize ${
+                  filmTab === cat ? 'bg-indigo-500 text-white' : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-3 gap-2 mb-3">
             <button
               onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
@@ -1252,7 +1278,7 @@ export function EditorSidebar({
             >
               None
             </button>
-            {FILM_EMULATIONS.map((em) => (
+            {FILM_EMULATIONS.filter((em) => em.category === filmTab).map((em) => (
               <button
                 key={em.id}
                 onClick={() => applyChange({ filmEmulation: em.id, filmGrain: em.id === 'koji' ? 0.06 : (editState.filmGrain || 0) })}
@@ -1293,8 +1319,21 @@ export function EditorSidebar({
 
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
+          <div className="flex gap-1 flex-wrap mb-2">
+            {['popular', 'mood', 'style', 'aesthetic', 'trending', 'creative'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilterTab(cat)}
+                className={`px-2 py-0.5 text-[10px] rounded-full transition-colors capitalize ${
+                  filterTab === cat ? 'bg-indigo-500 text-white' : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-3 gap-3">
-            {FILTER_PRESETS.map((p) => (
+            {FILTER_PRESETS.filter((p) => p.category === 'all' || p.category === filterTab).map((p) => (
               <button
                 key={p.id}
                 onClick={() => applyChange({ preset: p.id })}

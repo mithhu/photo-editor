@@ -20,9 +20,11 @@ const AIToolsPanel = lazy(() => import('./AIToolsPanel').then((m) => ({ default:
 const TemplatePanel = lazy(() => import('./TemplatePanel').then((m) => ({ default: m.TemplatePanel })))
 const StickerPanel = lazy(() => import('./StickerPanel').then((m) => ({ default: m.StickerPanel })))
 const LayerPanel = lazy(() => import('./LayerPanel').then((m) => ({ default: m.LayerPanel })))
+const BeautyPanel = lazy(() => import('./BeautyPanel').then((m) => ({ default: m.BeautyPanel })))
 
 const CATEGORIES = [
   { id: 'adjust', icon: '☀', label: 'Adjust' },
+  { id: 'beauty', icon: '✨', label: 'Beauty' },
   { id: 'filters', icon: '✦', label: 'Filters' },
   { id: 'crop', icon: '⬡', label: 'Crop' },
   { id: 'resize', icon: '↔', label: 'Resize' },
@@ -54,6 +56,8 @@ export function MobileBottomTray({
   const [expandedTextId, setExpandedTextId] = useState(null)
   const [lutError, setLutError] = useState(null)
   const [imageDims, setImageDims] = useState(null)
+  const [filterTab, setFilterTab] = useState('popular')
+  const [filmTab, setFilmTab] = useState('classic')
   const lutInputRef = useRef(null)
   const { previews: filterPreviews, loading: previewsLoading } = useFilterPreviews(imageSrc)
   const { suggestions: exposureSuggestions, loading: exposureLoading, analyze: analyzeExposure } = useExposureSuggestions(canvasRef)
@@ -524,6 +528,19 @@ export function MobileBottomTray({
           <div className="space-y-3 px-1">
             <div>
               <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Film Emulation</h4>
+              <div className="flex gap-1 mb-1.5">
+                {['classic', 'trending'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilmTab(cat)}
+                    className={`px-2 py-0.5 text-[9px] rounded-full transition-colors capitalize ${
+                      filmTab === cat ? 'bg-indigo-500 text-white' : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <button
                   onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
@@ -533,7 +550,7 @@ export function MobileBottomTray({
                 >
                   None
                 </button>
-                {FILM_EMULATIONS.map((em) => (
+                {FILM_EMULATIONS.filter((em) => em.category === filmTab).map((em) => (
                   <button
                     key={em.id}
                     onClick={() => applyChange({ filmEmulation: em.id, filmGrain: em.id === 'koji' ? 0.06 : (editState.filmGrain || 0) })}
@@ -554,8 +571,21 @@ export function MobileBottomTray({
             </div>
             <div>
               <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Filters</h4>
+              <div className="flex gap-1 flex-wrap mb-1.5">
+                {['popular', 'mood', 'style', 'aesthetic', 'trending', 'creative'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterTab(cat)}
+                    className={`px-2 py-0.5 text-[9px] rounded-full transition-colors capitalize ${
+                      filterTab === cat ? 'bg-indigo-500 text-white' : 'bg-zinc-700 text-zinc-400 hover:bg-zinc-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-                {FILTER_PRESETS.map((p) => (
+                {FILTER_PRESETS.filter((p) => p.category === 'all' || p.category === filterTab).map((p) => (
                   <button
                     key={p.id}
                     onClick={() => applyChange({ preset: p.id })}
@@ -1240,6 +1270,18 @@ export function MobileBottomTray({
           </div>
         )
 
+      case 'beauty':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <BeautyPanel
+              beauty={editState.beauty}
+              faceReshape={editState.faceReshape}
+              makeup={editState.makeup}
+              onUpdate={(changes) => applyChange(changes)}
+            />
+          </Suspense>
+        )
+
       case 'ai':
         return (
           <Suspense fallback={<PanelLoader />}>
@@ -1292,19 +1334,19 @@ export function MobileBottomTray({
 
       {/* Category icon bar */}
       <div className="pointer-events-auto bg-zinc-900/85 backdrop-blur-xl border-t border-zinc-700/50 safe-area-bottom">
-        <div className="flex justify-around px-2 py-2">
+        <div className="flex overflow-x-auto scrollbar-hide px-1 py-2 gap-0.5">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => toggleCategory(cat.id)}
-              className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-colors min-w-[44px] ${
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors flex-shrink-0 min-w-[48px] ${
                 activeCategory === cat.id
                   ? 'text-indigo-400'
                   : 'text-zinc-400 active:text-zinc-200'
               }`}
             >
               <span className="text-lg leading-none">{cat.icon}</span>
-              <span className="text-[10px] leading-tight">{cat.label}</span>
+              <span className="text-[10px] leading-tight whitespace-nowrap">{cat.label}</span>
             </button>
           ))}
         </div>

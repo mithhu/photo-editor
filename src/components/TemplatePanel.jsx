@@ -226,6 +226,7 @@ const CUSTOM_TEMPLATES_KEY = 'photosai-custom-templates'
 
 export function TemplatePanel({ applyChange, editState }) {
   const [activeCategory, setActiveCategory] = useState('all')
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null)
   const [customTemplates, setCustomTemplates] = useState(() => {
     try {
       const raw = localStorage.getItem(CUSTOM_TEMPLATES_KEY)
@@ -305,7 +306,13 @@ export function TemplatePanel({ applyChange, editState }) {
   }
 
   const applyCustomTemplate = (template) => {
+    setSelectedTemplateId(template.id)
     applyChange((s) => ({ ...s, ...template.state }))
+  }
+
+  const handleApplyTemplate = (template) => {
+    setSelectedTemplateId(template.id)
+    template.apply(applyChange)
   }
 
   const categories = [
@@ -369,15 +376,22 @@ export function TemplatePanel({ applyChange, editState }) {
         <div className="mb-4">
           <h4 className="text-xs text-zinc-500 font-medium mb-2">My Templates</h4>
           <div className="grid grid-cols-2 gap-2">
-            {customTemplates.map((t) => (
+            {customTemplates.map((t) => {
+              const isSelected = selectedTemplateId === t.id
+              return (
               <div key={t.id} className="relative group">
                 <button
                   type="button"
                   onClick={() => applyCustomTemplate(t)}
-                  className="w-full p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-indigo-500/50"
+                  className={`w-full p-3 rounded-lg text-center transition-all border ${
+                    isSelected
+                      ? 'bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-500/50'
+                      : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 hover:border-indigo-500/50'
+                  }`}
                 >
                   <span className="text-2xl block mb-1">🎨</span>
-                  <span className="text-xs text-zinc-300 truncate block">{t.name}</span>
+                  <span className={`text-xs truncate block ${isSelected ? 'text-indigo-300 font-medium' : 'text-zinc-300'}`}>{t.name}</span>
+                  {isSelected && <span className="block text-[9px] text-indigo-400 mt-0.5">Applied</span>}
                 </button>
                 <button
                   type="button"
@@ -390,7 +404,8 @@ export function TemplatePanel({ applyChange, editState }) {
                   ×
                 </button>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
@@ -415,17 +430,29 @@ export function TemplatePanel({ applyChange, editState }) {
 
       {/* Template grid */}
       <div className="grid grid-cols-2 gap-2">
-        {filtered.map((template) => (
-          <button
-            key={template.id}
-            type="button"
-            onClick={() => template.apply(applyChange)}
-            className="p-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-center transition-colors border border-zinc-700 hover:border-indigo-500/50"
-          >
-            <span className="text-2xl block mb-1">{template.preview}</span>
-            <span className="text-xs text-zinc-300">{template.name}</span>
-          </button>
-        ))}
+        {filtered.map((template) => {
+          const isSelected = selectedTemplateId === template.id
+          return (
+            <button
+              key={template.id}
+              type="button"
+              onClick={() => handleApplyTemplate(template)}
+              className={`p-3 rounded-lg text-center transition-all border ${
+                isSelected
+                  ? 'bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-500/50'
+                  : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 hover:border-indigo-500/50'
+              }`}
+            >
+              <span className="text-2xl block mb-1">{template.preview}</span>
+              <span className={`text-xs ${isSelected ? 'text-indigo-300 font-medium' : 'text-zinc-300'}`}>
+                {template.name}
+              </span>
+              {isSelected && (
+                <span className="block text-[9px] text-indigo-400 mt-0.5">Applied</span>
+              )}
+            </button>
+          )
+        })}
       </div>
     </div>
   )

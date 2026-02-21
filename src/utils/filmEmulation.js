@@ -223,13 +223,558 @@ function aura(r, g, b) {
   return [r, g, b]
 }
 
+/**
+ * Havana — warm tropical look. Heavy warm cast, orange highlights,
+ * teal shadows, lifted blacks, moderate contrast.
+ */
+function havana(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Lift blacks with warm bias
+  r = clamp(r * 0.92 + 20)
+  g = clamp(g * 0.92 + 14)
+  b = clamp(b * 0.92 + 8)
+
+  // Heavy warm cast
+  r = clamp(r + 12)
+  g = clamp(g + 4)
+  b = clamp(b - 10)
+
+  // Orange push in highlights
+  const hlWeight = Math.max(0, (lum - 0.45) * 2)
+  r = clamp(r + hlWeight * 22)
+  g = clamp(g + hlWeight * 8)
+  b = clamp(b - hlWeight * 12)
+
+  // Teal shadows
+  const shWeight = Math.max(0, (0.35 - lum) * 3)
+  r = clamp(r - shWeight * 10)
+  g = clamp(g + shWeight * 6)
+  b = clamp(b + shWeight * 14)
+
+  // Moderate contrast
+  const contrast = 1.1
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Berlin — cool muted European aesthetic. Desaturated, blue-gray tones,
+ * crushed blacks, slightly cold overall.
+ */
+function berlin(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Heavy desaturation
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.35)
+  g = clamp(g + (gray - g) * 0.35)
+  b = clamp(b + (gray - b) * 0.35)
+
+  // Cool blue-gray push
+  r = clamp(r - 6)
+  g = clamp(g - 2)
+  b = clamp(b + 10)
+
+  // Crush blacks
+  const shWeight = Math.max(0, (0.25 - lum) * 4)
+  r = clamp(r - shWeight * 12)
+  g = clamp(g - shWeight * 12)
+  b = clamp(b - shWeight * 8)
+
+  // Moderate contrast
+  const contrast = 1.12
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  // Slight lift to floor
+  r = clamp(r * 0.97 + 6)
+  g = clamp(g * 0.97 + 6)
+  b = clamp(b * 0.97 + 8)
+
+  return [r, g, b]
+}
+
+/**
+ * Seoul — soft K-drama aesthetic. Pink-toned highlights, very low contrast,
+ * lifted shadows, slight lavender cast, gentle desaturation.
+ */
+function seoul(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Lift shadows heavily
+  r = clamp(r * 0.85 + 38)
+  g = clamp(g * 0.85 + 35)
+  b = clamp(b * 0.85 + 38)
+
+  // Gentle desaturation
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.18)
+  g = clamp(g + (gray - g) * 0.18)
+  b = clamp(b + (gray - b) * 0.18)
+
+  // Pink-toned highlights
+  const hlWeight = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlWeight * 14)
+  g = clamp(g - hlWeight * 4)
+  b = clamp(b + hlWeight * 6)
+
+  // Slight lavender cast overall
+  r = clamp(r + 4)
+  b = clamp(b + 6)
+
+  // Very low contrast
+  const contrast = 0.85
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Paris — romantic warm tone. Golden warmth, soft pink highlights,
+ * creamy midtones, low contrast, lifted blacks.
+ */
+function paris(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Lift blacks with warm floor
+  r = clamp(r * 0.88 + 30)
+  g = clamp(g * 0.88 + 25)
+  b = clamp(b * 0.88 + 18)
+
+  // Golden warm tone
+  r = clamp(r + 10)
+  g = clamp(g + 4)
+  b = clamp(b - 8)
+
+  // Soft pink highlights
+  const hlWeight = Math.max(0, (lum - 0.55) * 2.5)
+  r = clamp(r + hlWeight * 12)
+  g = clamp(g - hlWeight * 2)
+  b = clamp(b + hlWeight * 4)
+
+  // Creamy midtones — desaturate midrange slightly
+  const midWeight = 1 - Math.abs(lum - 0.5) * 2
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.12 * midWeight)
+  g = clamp(g + (gray - g) * 0.12 * midWeight)
+  b = clamp(b + (gray - b) * 0.12 * midWeight)
+
+  // Low contrast
+  const contrast = 0.9
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Bali — tropical vibrant. Boosted greens and teals, warm highlights,
+ * high saturation, moderate contrast.
+ */
+function bali(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Boost saturation
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.25)
+  g = clamp(g + (g - gray) * 0.3)
+  b = clamp(b + (b - gray) * 0.25)
+
+  // Push greens and teals
+  const midWeight = 1 - Math.abs(lum - 0.5) * 2
+  g = clamp(g + midWeight * 12)
+  b = clamp(b + midWeight * 6)
+
+  // Warm highlights
+  const hlWeight = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlWeight * 14)
+  g = clamp(g + hlWeight * 6)
+  b = clamp(b - hlWeight * 8)
+
+  // Moderate contrast
+  const contrast = 1.1
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Nordic — desaturated cool blue. Heavy desaturation, blue tint,
+ * high contrast, dark moody. Scandinavian crime drama look.
+ */
+function nordic(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Heavy desaturation
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.45)
+  g = clamp(g + (gray - g) * 0.45)
+  b = clamp(b + (gray - b) * 0.45)
+
+  // Blue tint
+  r = clamp(r - 8)
+  g = clamp(g - 4)
+  b = clamp(b + 14)
+
+  // High contrast
+  const contrast = 1.25
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  // Dark moody — push shadows down
+  const shWeight = Math.max(0, (0.3 - lum) * 3)
+  r = clamp(r - shWeight * 10)
+  g = clamp(g - shWeight * 10)
+  b = clamp(b - shWeight * 6)
+
+  return [r, g, b]
+}
+
+/**
+ * RetroVHS — VHS retro look. Color bleeding (red channel shifted),
+ * lifted blacks, reduced saturation, slight magenta cast, low contrast.
+ */
+function retroVhs(r, g, b) {
+  // Simulate color bleeding by cross-contaminating channels
+  const origR = r
+  r = clamp(r * 0.85 + g * 0.1 + b * 0.05)
+  g = clamp(origR * 0.05 + g * 0.85 + b * 0.1)
+
+  // Reduce saturation
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.25)
+  g = clamp(g + (gray - g) * 0.25)
+  b = clamp(b + (gray - b) * 0.25)
+
+  // Lift blacks heavily
+  r = clamp(r * 0.85 + 35)
+  g = clamp(g * 0.85 + 30)
+  b = clamp(b * 0.85 + 32)
+
+  // Slight magenta cast
+  r = clamp(r + 6)
+  g = clamp(g - 4)
+  b = clamp(b + 4)
+
+  // Low contrast
+  const contrast = 0.88
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Disposable — disposable camera look. Washed out, green/yellow cast,
+ * heavily lifted blacks, low contrast, slight overexposure feel.
+ */
+function disposable(r, g, b) {
+  // Overexposure feel — push brightness
+  r = clamp(r + 15)
+  g = clamp(g + 15)
+  b = clamp(b + 10)
+
+  // Heavily lift blacks
+  r = clamp(r * 0.8 + 50)
+  g = clamp(g * 0.8 + 50)
+  b = clamp(b * 0.8 + 40)
+
+  // Green/yellow cast
+  r = clamp(r + 4)
+  g = clamp(g + 10)
+  b = clamp(b - 12)
+
+  // Desaturate for washed-out look
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.2)
+  g = clamp(g + (gray - g) * 0.2)
+  b = clamp(b + (gray - b) * 0.2)
+
+  // Low contrast
+  const contrast = 0.85
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Cyberpunk — neon aesthetic. Pushed teal shadows, hot magenta highlights,
+ * high saturation, high contrast, vivid.
+ */
+function cyberpunk(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Boost saturation aggressively
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.3)
+  g = clamp(g + (g - gray) * 0.3)
+  b = clamp(b + (b - gray) * 0.3)
+
+  // Teal shadows
+  const shWeight = Math.max(0, (0.4 - lum) * 2.5)
+  r = clamp(r - shWeight * 14)
+  g = clamp(g + shWeight * 10)
+  b = clamp(b + shWeight * 16)
+
+  // Hot magenta highlights
+  const hlWeight = Math.max(0, (lum - 0.55) * 2.5)
+  r = clamp(r + hlWeight * 20)
+  g = clamp(g - hlWeight * 10)
+  b = clamp(b + hlWeight * 14)
+
+  // High contrast
+  const contrast = 1.22
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * SunsetBlvd — extreme golden hour. Heavy orange/amber push, warm everything,
+ * soft contrast, glowing highlights.
+ */
+function sunsetBlvd(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Heavy orange/amber push
+  r = clamp(r + 20)
+  g = clamp(g + 6)
+  b = clamp(b - 18)
+
+  // Warm everything — scale channels
+  r = clamp(r * 1.05)
+  g = clamp(g * 0.98)
+  b = clamp(b * 0.85)
+
+  // Glowing highlights — lift bright areas further
+  const hlWeight = Math.max(0, (lum - 0.45) * 2)
+  r = clamp(r + hlWeight * 18)
+  g = clamp(g + hlWeight * 10)
+  b = clamp(b + hlWeight * 2)
+
+  // Lift blacks with warmth
+  r = clamp(r * 0.92 + 20)
+  g = clamp(g * 0.92 + 14)
+  b = clamp(b * 0.92 + 6)
+
+  // Soft contrast
+  const contrast = 0.92
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * FilmNoir — classic black & white with warmth. Convert to grayscale,
+ * add slight sepia tint, high contrast, deep blacks.
+ */
+function filmNoir(r, g, b) {
+  // Convert to grayscale
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+
+  // High contrast
+  const contrast = 1.3
+  let v = clamp(((gray / 255 - 0.5) * contrast + 0.5) * 255)
+
+  // Deep blacks — crush shadows
+  const lum = gray / 255
+  const shWeight = Math.max(0, (0.25 - lum) * 4)
+  v = clamp(v - shWeight * 15)
+
+  // Add slight sepia tint
+  r = clamp(v + 8)
+  g = clamp(v + 2)
+  b = clamp(v - 6)
+
+  return [r, g, b]
+}
+
+/**
+ * PastelPop — pastel aesthetic. Heavily lifted blacks, very low contrast,
+ * desaturated but pink/peach tinted, dreamy soft.
+ */
+function pastelPop(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Heavily lift blacks
+  r = clamp(r * 0.75 + 60)
+  g = clamp(g * 0.75 + 55)
+  b = clamp(b * 0.75 + 58)
+
+  // Desaturate substantially
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.3)
+  g = clamp(g + (gray - g) * 0.3)
+  b = clamp(b + (gray - b) * 0.3)
+
+  // Pink/peach tint
+  r = clamp(r + 10)
+  g = clamp(g - 2)
+  b = clamp(b + 4)
+
+  // Very low contrast
+  const contrast = 0.82
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  // Dreamy soft highlights
+  const hlWeight = Math.max(0, (lum - 0.6) * 2.5)
+  r = clamp(r + hlWeight * 8)
+  g = clamp(g + hlWeight * 4)
+  b = clamp(b + hlWeight * 6)
+
+  return [r, g, b]
+}
+
+/**
+ * Chrome — metallic/chrome look. High contrast, slight blue-steel tint,
+ * desaturated midtones, bright whites, deep blacks.
+ */
+function chrome(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Desaturate midtones
+  const midWeight = 1 - Math.abs(lum - 0.5) * 2
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.35 * midWeight)
+  g = clamp(g + (gray - g) * 0.35 * midWeight)
+  b = clamp(b + (gray - b) * 0.35 * midWeight)
+
+  // Blue-steel tint
+  r = clamp(r - 4)
+  g = clamp(g - 2)
+  b = clamp(b + 8)
+
+  // High contrast for metallic sheen
+  const contrast = 1.3
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  // Push whites brighter
+  const hlWeight = Math.max(0, (lum - 0.7) * 3)
+  r = clamp(r + hlWeight * 12)
+  g = clamp(g + hlWeight * 12)
+  b = clamp(b + hlWeight * 14)
+
+  // Deep blacks
+  const shWeight = Math.max(0, (0.2 - lum) * 5)
+  r = clamp(r - shWeight * 10)
+  g = clamp(g - shWeight * 10)
+  b = clamp(b - shWeight * 10)
+
+  return [r, g, b]
+}
+
+/**
+ * Matte — matte/flat look. Very lifted blacks (floor ~40), reduced highlights,
+ * flat contrast, slightly warm.
+ */
+function matte(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+  // Very lifted blacks — floor around 40
+  r = clamp(r * 0.78 + 55)
+  g = clamp(g * 0.78 + 52)
+  b = clamp(b * 0.78 + 48)
+
+  // Reduce highlights — pull down bright areas
+  const hlWeight = Math.max(0, (lum - 0.6) * 2.5)
+  r = clamp(r - hlWeight * 15)
+  g = clamp(g - hlWeight * 15)
+  b = clamp(b - hlWeight * 15)
+
+  // Slightly warm
+  r = clamp(r + 5)
+  g = clamp(g + 1)
+  b = clamp(b - 4)
+
+  // Flat contrast
+  const contrast = 0.82
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
+/**
+ * Infrared — false color infrared. Swaps green channel toward red tones,
+ * pushes reds to white, blues stay dark, surreal color shift.
+ */
+function infrared(r, g, b) {
+  // Swap/remap channels for false color
+  const origR = r
+  const origG = g
+  const origB = b
+
+  // Green channel maps to red (foliage goes bright)
+  r = clamp(origG * 1.2 + origR * 0.1)
+  // Red channel pushes toward white
+  g = clamp(origR * 0.6 + origG * 0.3 + 20)
+  // Blue stays dark and muted
+  b = clamp(origB * 0.5 + origR * 0.15)
+
+  // Push high-red areas toward white
+  const redWeight = Math.max(0, (origR / 255 - 0.5) * 2)
+  r = clamp(r + redWeight * 30)
+  g = clamp(g + redWeight * 25)
+  b = clamp(b + redWeight * 10)
+
+  // Keep blues dark
+  const blueWeight = Math.max(0, (origB / 255 - 0.4) * 2)
+  b = clamp(b - blueWeight * 15)
+
+  // High contrast for surreal effect
+  const contrast = 1.18
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+
+  return [r, g, b]
+}
+
 export const FILM_EMULATIONS = [
-  { id: 'koji', name: 'Koji', fn: koji, description: 'Warm cinematic film' },
-  { id: 'tokyo', name: 'Tokyo', fn: tokyo, description: 'Cool urban teal' },
-  { id: 'portra', name: 'Portra', fn: portra, description: 'Soft warm portrait' },
-  { id: 'velvia', name: 'Velvia', fn: velvia, description: 'Vivid saturated' },
-  { id: 'superia', name: 'Superia', fn: superia, description: 'Cool disposable' },
-  { id: 'aura', name: 'Aura', fn: aura, description: 'Dreamy pastel glow' },
+  { id: 'koji', name: 'Koji', fn: koji, description: 'Warm cinematic film', category: 'classic' },
+  { id: 'tokyo', name: 'Tokyo', fn: tokyo, description: 'Cool urban teal', category: 'classic' },
+  { id: 'portra', name: 'Portra', fn: portra, description: 'Soft warm portrait', category: 'classic' },
+  { id: 'velvia', name: 'Velvia', fn: velvia, description: 'Vivid saturated', category: 'classic' },
+  { id: 'superia', name: 'Superia', fn: superia, description: 'Cool disposable', category: 'classic' },
+  { id: 'aura', name: 'Aura', fn: aura, description: 'Dreamy pastel glow', category: 'classic' },
+  { id: 'havana', name: 'Havana', fn: havana, description: 'Warm tropical', category: 'trending' },
+  { id: 'berlin', name: 'Berlin', fn: berlin, description: 'Cool muted European', category: 'trending' },
+  { id: 'seoul', name: 'Seoul', fn: seoul, description: 'Soft K-drama aesthetic', category: 'trending' },
+  { id: 'paris', name: 'Paris', fn: paris, description: 'Romantic warm golden', category: 'trending' },
+  { id: 'bali', name: 'Bali', fn: bali, description: 'Tropical vibrant', category: 'trending' },
+  { id: 'nordic', name: 'Nordic', fn: nordic, description: 'Desaturated cool blue', category: 'trending' },
+  { id: 'retroVhs', name: 'Retro VHS', fn: retroVhs, description: 'VHS retro look', category: 'trending' },
+  { id: 'disposable', name: 'Disposable', fn: disposable, description: 'Disposable camera', category: 'trending' },
+  { id: 'cyberpunk', name: 'Cyberpunk', fn: cyberpunk, description: 'Neon aesthetic', category: 'trending' },
+  { id: 'sunsetBlvd', name: 'Sunset Blvd', fn: sunsetBlvd, description: 'Extreme golden hour', category: 'trending' },
+  { id: 'filmNoir', name: 'Film Noir', fn: filmNoir, description: 'Classic B&W with warmth', category: 'trending' },
+  { id: 'pastelPop', name: 'Pastel Pop', fn: pastelPop, description: 'Pastel aesthetic', category: 'trending' },
+  { id: 'chrome', name: 'Chrome', fn: chrome, description: 'Metallic chrome look', category: 'trending' },
+  { id: 'matte', name: 'Matte', fn: matte, description: 'Matte flat look', category: 'trending' },
+  { id: 'infrared', name: 'Infrared', fn: infrared, description: 'False color infrared', category: 'trending' },
 ]
 
 export function applyFilmEmulation(imageData, emulationId, intensity = 1) {

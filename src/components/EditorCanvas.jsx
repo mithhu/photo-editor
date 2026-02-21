@@ -193,6 +193,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const workerRef = useRef(null)
   const workerBusyRef = useRef(false)
   const workerPendingRef = useRef(false)
+  const workerDoneRef = useRef(false)
   const redrawRef = useRef(null)
 
   useEffect(() => {
@@ -250,6 +251,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     channelMixer,
     selectionMask,
     wandTolerance,
+    beauty,
+    faceReshape,
+    makeup,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -391,58 +395,71 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     }
   }, [isComparing, filmGrain, hasGrain, grain, hasLightLeak, lightLeak, vignette, masks, hasTiltShift, tiltShift, frame])
 
+  const displaySizeRef = useRef({ w: 0, h: 0 })
+
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
     const img = imageRef.current
     if (!canvas || !img || !img.complete || !containerSize) return
 
     const ctx = canvas.getContext('2d')
-    const dpr = window.devicePixelRatio || 1
-    const w = img.naturalWidth
-    const h = img.naturalHeight
+    let displayW, displayH
 
-    let sx, sy, sw, sh
-    if (customCrop && customCrop.w > 0 && customCrop.h > 0) {
-      sx = customCrop.x * w
-      sy = customCrop.y * h
-      sw = customCrop.w * w
-      sh = customCrop.h * h
+    // When worker just finished, canvas already has processed pixels + post effects.
+    // Skip image draw + pixel processing, just redraw overlays.
+    const skipPixelProcessing = workerDoneRef.current
+    if (skipPixelProcessing) {
+      workerDoneRef.current = false
+      displayW = displaySizeRef.current.w
+      displayH = displaySizeRef.current.h
     } else {
-      const region = getCropRegion(w, h, cropRatio)
-      sx = region.sx; sy = region.sy; sw = region.sw; sh = region.sh
-    }
+      const dpr = window.devicePixelRatio || 1
+      const w = img.naturalWidth
+      const h = img.naturalHeight
 
-    const rot = (rotation * Math.PI) / 180
-    const cos = Math.abs(Math.cos(rot))
-    const sin = Math.abs(Math.sin(rot))
-    const cw = sw * cos + sh * sin
-    const ch = sw * sin + sh * cos
+      let sx, sy, sw, sh
+      if (customCrop && customCrop.w > 0 && customCrop.h > 0) {
+        sx = customCrop.x * w
+        sy = customCrop.y * h
+        sw = customCrop.w * w
+        sh = customCrop.h * h
+      } else {
+        const region = getCropRegion(w, h, cropRatio)
+        sx = region.sx; sy = region.sy; sw = region.sw; sh = region.sh
+      }
 
-    const hasPerspective = (p.horizontal !== 0 || p.vertical !== 0 || p.rotation !== 0)
-    const perspectiveScale = hasPerspective ? 0.88 : 1
-    const availW = containerSize.w - 8
-    const availH = containerSize.h - 8
-    const scale = Math.min(availW / cw, availH / ch, 1) * perspectiveScale
-    const displayW = cw * scale
-    const displayH = ch * scale
+      const rot = (rotation * Math.PI) / 180
+      const cos = Math.abs(Math.cos(rot))
+      const sin = Math.abs(Math.sin(rot))
+      const cw = sw * cos + sh * sin
+      const ch = sw * sin + sh * cos
 
-    canvas.width = displayW * dpr
-    canvas.height = displayH * dpr
-    canvas.style.width = displayW + 'px'
-    canvas.style.height = displayH + 'px'
-    ctx.scale(dpr, dpr)
+      const hasPerspective = (p.horizontal !== 0 || p.vertical !== 0 || p.rotation !== 0)
+      const perspectiveScale = hasPerspective ? 0.88 : 1
+      const availW = containerSize.w - 8
+      const availH = containerSize.h - 8
+      const scale = Math.min(availW / cw, availH / ch, 1) * perspectiveScale
+      displayW = cw * scale
+      displayH = ch * scale
+      displaySizeRef.current = { w: displayW, h: displayH }
 
-    ctx.save()
-    ctx.translate(displayW / 2, displayH / 2)
-    ctx.rotate(rot)
-    if (p.rotation !== 0) ctx.rotate((p.rotation * Math.PI) / 180)
-    if (p.horizontal !== 0) ctx.transform(1, 0, Math.tan((p.horizontal * Math.PI) / 180), 1, 0, 0)
-    if (p.vertical !== 0) ctx.transform(1, Math.tan((p.vertical * Math.PI) / 180), 0, 1, 0, 0)
-    ctx.scale(scale, scale)
-    ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
-    ctx.translate(-sw / 2, -sh / 2)
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
-    ctx.restore()
+      canvas.width = displayW * dpr
+      canvas.height = displayH * dpr
+      canvas.style.width = displayW + 'px'
+      canvas.style.height = displayH + 'px'
+      ctx.scale(dpr, dpr)
+
+      ctx.save()
+      ctx.translate(displayW / 2, displayH / 2)
+      ctx.rotate(rot)
+      if (p.rotation !== 0) ctx.rotate((p.rotation * Math.PI) / 180)
+      if (p.horizontal !== 0) ctx.transform(1, 0, Math.tan((p.horizontal * Math.PI) / 180), 1, 0, 0)
+      if (p.vertical !== 0) ctx.transform(1, Math.tan((p.vertical * Math.PI) / 180), 0, 1, 0, 0)
+      ctx.scale(scale, scale)
+      ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
+      ctx.translate(-sw / 2, -sh / 2)
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
+      ctx.restore()
 
     const hasComplexOps = hasPresetOps || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
     const hasSimpleOnly = needsPixelPass && !hasComplexOps
@@ -454,14 +471,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         saturation,
         warmth,
         vibrance,
-        vignette,
+        vignette: 0,
         clarity,
         dehaze,
       })
       if (glResult) {
+        ctx.save()
+        ctx.setTransform(1, 0, 0, 1, 0, 0)
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.drawImage(glResult, 0, 0)
-        drawPostPixel(ctx, canvas, displayW, displayH)
+        ctx.restore()
       }
     } else if (needsPixelPass) {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -487,10 +506,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
               drawPostPixel(cx, c, postState.displayW, postState.displayH)
             }
           }
+          workerDoneRef.current = true
           if (workerPendingRef.current) {
             workerPendingRef.current = false
-            redrawRef.current?.()
           }
+          redrawRef.current?.()
         }
 
         workerRef.current.postMessage(
@@ -520,13 +540,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         )
 
         drawPostPixel(ctx, canvas, displayW, displayH)
-        return
       } else if (workerBusyRef.current) {
         workerPendingRef.current = true
+        drawPostPixel(ctx, canvas, displayW, displayH)
       }
+    } else {
+      drawPostPixel(ctx, canvas, displayW, displayH)
     }
-
-    drawPostPixel(ctx, canvas, displayW, displayH)
+    } // end of else (!skipPixelProcessing)
 
     if (!isComparing) {
     const allStrokes = currentStrokeRef.current
@@ -818,6 +839,42 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   useEffect(() => {
     throttledDraw()
   }, [throttledDraw, imageSrc])
+
+  // Apply beauty/reshape/makeup effects asynchronously after main draw
+  const beautyTimerRef = useRef(null)
+  const hasBeauty = beauty && (beauty.smooth > 0 || beauty.blemish > 0 || beauty.evenness > 0 || beauty.brightenEyes > 0 || beauty.teethWhiten > 0)
+  const hasReshape = faceReshape && (faceReshape.slimFace > 0 || faceReshape.biggerEyes > 0 || faceReshape.noseSlim > 0 || faceReshape.jawline > 0)
+  const hasMakeup = makeup && (makeup.lipstick?.opacity > 0 || makeup.blush?.opacity > 0 || makeup.eyeliner?.opacity > 0 || makeup.eyeshadow?.opacity > 0)
+
+  useEffect(() => {
+    if (!hasBeauty && !hasReshape && !hasMakeup) return
+    if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
+
+    beautyTimerRef.current = setTimeout(async () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      try {
+        if (hasBeauty) {
+          const { applyBeautyFilters } = await import('../utils/beautyFilters')
+          await applyBeautyFilters(canvas, beauty)
+        }
+        if (hasReshape) {
+          const { applyFaceReshape } = await import('../utils/faceReshape')
+          await applyFaceReshape(canvas, faceReshape)
+        }
+        if (hasMakeup) {
+          const { applyVirtualMakeup } = await import('../utils/virtualMakeup')
+          await applyVirtualMakeup(canvas, makeup)
+        }
+      } catch {
+        // Face detection may fail silently — no face in image
+      }
+    }, 500)
+
+    return () => {
+      if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
+    }
+  }, [hasBeauty, hasReshape, hasMakeup, beauty, faceReshape, makeup, canvasRef])
 
   const getCanvasPoint = useCallback((e) => {
     const canvas = canvasRef.current
