@@ -9,6 +9,7 @@ import { applyPixelFilters } from '../utils/pixelFilters'
 import { applyTiltShift } from '../utils/tiltShift'
 import { applyGrain } from '../utils/grain'
 import { applyLightLeak } from '../utils/lightLeaks'
+import { applyLUT } from '../utils/lutApply'
 
 function drawFrame(ctx, displayW, displayH, frame) {
   if (!frame || frame.type === 'none') return
@@ -181,6 +182,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     grain,
     selectiveColor,
     lightLeak,
+    lut,
+    resize,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -235,7 +238,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasSelectiveColor = !isComparing && selectiveColor?.enabled
   const hasGrain = !isComparing && grain && (grain.amount ?? 0) > 0
   const hasLightLeak = !isComparing && lightLeak && lightLeak.type !== 'none' && (lightLeak.intensity ?? 0) > 0
-  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor)
+  const hasLUT = !isComparing && !!lut
+  const hasResize = !isComparing && resize && (resize.width > 0 || resize.height > 0)
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -472,6 +477,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
       if (hasFilmEmulation) {
         applyFilmEmulation(imgData, filmEmulation, filmIntensity ?? 1)
+      }
+
+      if (hasLUT) {
+        applyLUT(imgData, lut)
       }
 
       ctx.putImageData(imgData, 0, 0)
@@ -755,7 +764,28 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation, hasGrain, grain, hasLightLeak, lightLeak, hasSelectiveColor, selectiveColor])
+
+    if (hasResize) {
+      const targetW = resize.width
+      const targetH = resize.height
+      if (targetW > 0 && targetH > 0) {
+        const tmpCanvas = document.createElement('canvas')
+        tmpCanvas.width = canvas.width
+        tmpCanvas.height = canvas.height
+        tmpCanvas.getContext('2d').drawImage(canvas, 0, 0)
+
+        const resizeDpr = window.devicePixelRatio || 1
+        canvas.width = targetW * resizeDpr
+        canvas.height = targetH * resizeDpr
+        canvas.style.width = targetW + 'px'
+        canvas.style.height = targetH + 'px'
+        const rCtx = canvas.getContext('2d')
+        rCtx.imageSmoothingEnabled = true
+        rCtx.imageSmoothingQuality = 'high'
+        rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
+      }
+    }
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation, hasGrain, grain, hasLightLeak, lightLeak, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 

@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react'
 import { removeBackground } from '../utils/backgroundRemoval'
 import { detectSubjects, computeSmartCrop } from '../utils/smartCrop'
+import { usePortraitCrop } from '../hooks/usePortraitCrop'
 import { applyStyleTransfer, STYLE_PRESETS } from '../utils/styleTransfer'
 import { suggestFilters } from '../utils/filterSuggestions'
 import { getStyleImages } from '../utils/styleImages'
@@ -15,6 +16,13 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
   const [smartCropLoading, setSmartCropLoading] = useState(false)
   const [smartCropError, setSmartCropError] = useState(null)
   const [detectedCount, setDetectedCount] = useState(null)
+
+  const {
+    handlePortraitCrop,
+    loading: portraitCropLoading,
+    error: portraitCropError,
+    faceCount: portraitFaceCount,
+  } = usePortraitCrop(imageSrc, onApplyChange)
 
   const [styleLoading, setStyleLoading] = useState(false)
   const [styleStatus, setStyleStatus] = useState(null)
@@ -222,6 +230,26 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           {smartCropError && (
             <div className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
               {smartCropError}
+            </div>
+          )}
+
+          <button
+            onClick={handlePortraitCrop}
+            disabled={portraitCropLoading || !imageSrc}
+            className="w-full py-2.5 text-sm bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {portraitCropLoading ? 'Detecting faces...' : 'Portrait Crop'}
+          </button>
+
+          {portraitFaceCount !== null && (
+            <p className="text-xs text-emerald-400">
+              {portraitFaceCount} face{portraitFaceCount !== 1 ? 's' : ''} detected — crop applied
+            </p>
+          )}
+
+          {portraitCropError && (
+            <div className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {portraitCropError}
             </div>
           )}
         </div>

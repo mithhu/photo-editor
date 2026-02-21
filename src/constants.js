@@ -68,6 +68,9 @@ export const INITIAL_EDIT_STATE = {
   grain: { amount: 0, size: 1 },
   selectiveColor: { enabled: false, hue: 0, range: 30 },
   lightLeak: { type: 'none', intensity: 0.5 },
+  lut: null,
+  lutName: null,
+  resize: { width: 0, height: 0, lockAspect: true },
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */

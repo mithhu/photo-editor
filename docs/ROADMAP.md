@@ -107,6 +107,7 @@
 
 - [x] **Background removal** — @imgly/background-removal (ONNX, client-side)
 - [x] **Smart auto-crop** — COCO-SSD object detection + bounding box crop with padding
+- [x] **Face detection portrait crop** — BlazeFace model, 3:4 aspect ratio with headroom
 - [x] **Style transfer** — Magenta arbitrary style transfer (4 presets + custom upload + strength)
 - [ ] **Upscaling** — 2x/4x upscale
 - [ ] **Denoise** — Reduce noise
@@ -172,6 +173,8 @@
 
 Ideas to stand out:
 
+- ~~**LUT import**~~ ✅ Done (v1.9) — .cube file import with trilinear interpolation
+- ~~**Resize tool**~~ ✅ Done (v1.9) — Dedicated resize with aspect ratio lock
 - **Presets marketplace** — Community filter and LUT packs
 - ~~**Batch processing**~~ ✅ Done (v1.3)
 - **Plugins / extensions** — Third-party tools or filters

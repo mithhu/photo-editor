@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Slider } from './Slider'
 import { SuggestionChips } from './SuggestionChips'
 import { HSLPanel } from './HSLPanel'
@@ -16,6 +16,8 @@ import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 import { useFilterPreviews } from '../hooks/useFilterPreviews'
 import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
+import { usePortraitCrop } from '../hooks/usePortraitCrop'
+import { parseCubeLUT } from '../utils/lutParser'
 
 export function EditorSidebar({
   editState,
@@ -30,8 +32,16 @@ export function EditorSidebar({
   onApplyChange,
 }) {
   const [expandedTextId, setExpandedTextId] = useState(null)
+  const [lutError, setLutError] = useState(null)
+  const [imageDims, setImageDims] = useState(null)
+  const lutInputRef = useRef(null)
   const { previews: filterPreviews, loading: previewsLoading } = useFilterPreviews(imageSrc)
   const { suggestions: exposureSuggestions, loading: exposureLoading, analyze: analyzeExposure } = useExposureSuggestions(canvasRef)
+  const {
+    handlePortraitCrop,
+    loading: portraitCropLoading,
+    error: portraitCropError,
+  } = usePortraitCrop(imageSrc, onApplyChange)
 
   const {
     brightness,
@@ -56,6 +66,50 @@ export function EditorSidebar({
   } = editState
 
   const ratioLabels = { original: 'Original', '1:1': '1:1', '4:5': '4:5', '16:9': '16:9', '9:16': '9:16', '3:4': '3:4', '2:3': '2:3', custom: 'Custom' }
+
+  useEffect(() => {
+    if (!imageSrc) return
+    const img = new Image()
+    img.onload = () => setImageDims({ w: img.naturalWidth, h: img.naturalHeight })
+    img.src = imageSrc
+  }, [imageSrc])
+
+  const handleLutImport = useCallback((e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setLutError(null)
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const parsed = parseCubeLUT(reader.result)
+        applyChange((s) => ({ ...s, lut: parsed, lutName: file.name }))
+      } catch (err) {
+        setLutError(err.message)
+      }
+    }
+    reader.readAsText(file)
+    if (lutInputRef.current) lutInputRef.current.value = ''
+  }, [applyChange])
+
+  const handleResizeWidth = useCallback((w) => {
+    const val = Math.max(0, Math.round(w))
+    if (editState.resize?.lockAspect && imageDims && imageDims.w > 0 && val > 0) {
+      const aspect = imageDims.h / imageDims.w
+      applyChange((s) => ({ ...s, resize: { ...s.resize, width: val, height: Math.round(val * aspect) } }))
+    } else {
+      applyChange((s) => ({ ...s, resize: { ...s.resize, width: val } }))
+    }
+  }, [applyChange, editState.resize?.lockAspect, imageDims])
+
+  const handleResizeHeight = useCallback((h) => {
+    const val = Math.max(0, Math.round(h))
+    if (editState.resize?.lockAspect && imageDims && imageDims.h > 0 && val > 0) {
+      const aspect = imageDims.w / imageDims.h
+      applyChange((s) => ({ ...s, resize: { ...s.resize, height: val, width: Math.round(val * aspect) } }))
+    } else {
+      applyChange((s) => ({ ...s, resize: { ...s.resize, height: val } }))
+    }
+  }, [applyChange, editState.resize?.lockAspect, imageDims])
 
   return (
     <aside className="w-80 flex-shrink lg:min-h-0 flex flex-col gap-6 overflow-y-auto">
@@ -341,7 +395,19 @@ export function EditorSidebar({
                 {ratioLabels[r] ?? r}
               </button>
             ))}
+            <button
+              onClick={handlePortraitCrop}
+              disabled={portraitCropLoading || !imageSrc}
+              className="py-2 px-3 text-xs rounded-lg transition-colors bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {portraitCropLoading ? 'Detecting...' : 'Portrait'}
+            </button>
           </div>
+          {portraitCropError && (
+            <div className="mt-2 text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {portraitCropError}
+            </div>
+          )}
           {cropRatio === 'custom' && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               {['x', 'y', 'w', 'h'].map((k) => (
@@ -464,6 +530,60 @@ export function EditorSidebar({
               Reset Transform
             </button>
           </div>
+        </div>
+
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-4">Resize</h3>
+          {imageDims && (
+            <p className="text-xs text-zinc-500 mb-3">
+              Original: {imageDims.w} × {imageDims.h}px
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Width</label>
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                value={editState.resize?.width || ''}
+                placeholder={imageDims?.w || '0'}
+                onChange={(e) => handleResizeWidth(Number(e.target.value) || 0)}
+                className="w-full bg-zinc-800 px-2 py-1.5 rounded text-sm text-zinc-200"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-zinc-500 mb-1 block">Height</label>
+              <input
+                type="number"
+                min={0}
+                max={10000}
+                value={editState.resize?.height || ''}
+                placeholder={imageDims?.h || '0'}
+                onChange={(e) => handleResizeHeight(Number(e.target.value) || 0)}
+                className="w-full bg-zinc-800 px-2 py-1.5 rounded text-sm text-zinc-200"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mb-3">
+            <button
+              onClick={() => applyChange((s) => ({ ...s, resize: { ...s.resize, lockAspect: !s.resize?.lockAspect } }))}
+              className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                editState.resize?.lockAspect ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+            >
+              {editState.resize?.lockAspect ? '🔒 Locked' : '🔓 Unlocked'}
+            </button>
+            <span className="text-xs text-zinc-500">Aspect ratio</span>
+          </div>
+          {(editState.resize?.width > 0 || editState.resize?.height > 0) && (
+            <button
+              onClick={() => applyChange((s) => ({ ...s, resize: { width: 0, height: 0, lockAspect: true } }))}
+              className="w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+            >
+              Reset to Original
+            </button>
+          )}
         </div>
       </div>
 
@@ -1018,6 +1138,48 @@ export function EditorSidebar({
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-4">LUT (Color Grading)</h3>
+          <input
+            ref={lutInputRef}
+            type="file"
+            accept=".cube"
+            onChange={handleLutImport}
+            className="hidden"
+          />
+          {editState.lutName ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 p-2.5 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
+                <span className="text-xs text-amber-400 font-mono truncate flex-1">{editState.lutName}</span>
+                <button
+                  onClick={() => applyChange((s) => ({ ...s, lut: null, lutName: null }))}
+                  className="text-xs text-red-400 hover:text-red-300 shrink-0"
+                >
+                  Clear
+                </button>
+              </div>
+              <button
+                onClick={() => lutInputRef.current?.click()}
+                className="w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+              >
+                Replace .cube
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => lutInputRef.current?.click()}
+              className="w-full py-2.5 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors"
+            >
+              Import .cube File
+            </button>
+          )}
+          {lutError && (
+            <div className="mt-2 text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {lutError}
+            </div>
+          )}
         </div>
 
         {historyLength > 0 && (

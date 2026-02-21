@@ -82,6 +82,7 @@
 
 ### AI Features (v1.0)
 - [x] Smart auto-crop — COCO-SSD object detection to find subjects and auto-crop with 15% padding
+- [x] Face detection portrait crop — BlazeFace for fast face detection; 3:4 portrait crop with headroom; Portrait Crop button in AI Tools and Crop sections (EditorSidebar + MobileBottomTray)
 - [x] Style transfer — Magenta arbitrary style transfer with 4 built-in presets + custom upload
 - [x] Style strength slider (10–100%) for blending original and stylized output
 
@@ -139,6 +140,14 @@
 - [x] Light leaks / bokeh overlays — 5 canvas-generated presets (Warm, Cool, Rainbow, Flare, Bokeh) composited via screen blend mode with intensity slider (0-1)
 - [x] Controls in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
 - [x] Utility modules: src/utils/grain.js, src/utils/lightLeaks.js
+
+### LUT Import & Resize Tool (v1.9)
+- [x] LUT parser — parse .cube files (1D and 3D LUTs) with domain min/max, trilinear interpolation
+- [x] LUT application — apply 3D LUT to pixel data after film emulation, before grain
+- [x] LUT controls — import .cube file picker, clear LUT, show loaded name (EditorSidebar + MobileBottomTray)
+- [x] Resize tool — separate from crop: width/height inputs, aspect ratio lock toggle, reset to original
+- [x] Resize rendering — output canvas scaled to target dimensions after all processing
+- [x] Utility modules: src/utils/lutParser.js, src/utils/lutApply.js
 
 ### Loading States (v1.4)
 - [x] Full-screen loading spinner overlay in App.jsx during large image upload
