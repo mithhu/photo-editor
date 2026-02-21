@@ -2,14 +2,13 @@ import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
-import { buildCurveLUT } from '../utils/curvesUtils'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
-import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
-import { applyPixelFilters } from '../utils/pixelFilters'
+import { addFilmGrain } from '../utils/filmEmulation'
 import { applyTiltShift } from '../utils/tiltShift'
 import { applyGrain } from '../utils/grain'
 import { applyLightLeak } from '../utils/lightLeaks'
-import { applyLUT } from '../utils/lutApply'
+import { renderWithWebGL } from '../utils/webglRenderer'
+import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
 
 function drawFrame(ctx, displayW, displayH, frame) {
   if (!frame || frame.type === 'none') return
@@ -190,6 +189,18 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY, resizing?, initDist?, initSize? }
   const [editingTextId, setEditingTextId] = useState(null)
   const dragMovedRef = useRef(false)
+  const workerRef = useRef(null)
+  const workerBusyRef = useRef(false)
+  const workerPendingRef = useRef(false)
+  const redrawRef = useRef(null)
+
+  useEffect(() => {
+    workerRef.current = new Worker(
+      new URL('../workers/pixelWorker.js', import.meta.url),
+      { type: 'module' }
+    )
+    return () => { workerRef.current?.terminate(); workerRef.current = null }
+  }, [])
 
   useEffect(() => {
     const el = containerRef.current
@@ -227,6 +238,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     lightLeak,
     lut,
     resize,
+    gradientMap,
+    selectionMask,
+    wandTolerance,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -282,8 +296,82 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasGrain = !isComparing && grain && (grain.amount ?? 0) > 0
   const hasLightLeak = !isComparing && lightLeak && lightLeak.type !== 'none' && (lightLeak.intensity ?? 0) > 0
   const hasLUT = !isComparing && !!lut
+  const hasGradientMap = !isComparing && gradientMap?.enabled
   const hasResize = !isComparing && resize && (resize.width > 0 || resize.height > 0)
-  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT)
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap)
+
+  const drawPostPixel = useCallback((ctx, canvas, displayW, displayH) => {
+    if (!isComparing && filmGrain > 0) {
+      addFilmGrain(ctx, canvas.width, canvas.height, filmGrain)
+    }
+    if (hasGrain) {
+      applyGrain(ctx, canvas.width, canvas.height, grain.amount, grain.size)
+    }
+    if (hasLightLeak) {
+      applyLightLeak(ctx, canvas.width, canvas.height, lightLeak.type, lightLeak.intensity)
+    }
+    if (!isComparing && vignette > 0) {
+      const cx = displayW / 2, cy = displayH / 2
+      const radius = Math.sqrt(cx * cx + cy * cy)
+      const gradient = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius)
+      gradient.addColorStop(0, 'rgba(0,0,0,0)')
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette * 0.8})`)
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, displayW, displayH)
+    }
+    const hasMasks = !isComparing && masks?.length > 0
+    if (hasMasks) {
+      const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const md = maskData.data
+      for (let i = 0; i < md.length; i += 4) {
+        const pixelIndex = i / 4
+        const px = (pixelIndex % canvas.width) / canvas.width
+        const py = Math.floor(pixelIndex / canvas.width) / canvas.height
+        masks.forEach((mask) => {
+          let weight = 0
+          if (mask.type === 'radial') {
+            const dx = (px - (mask.centerX ?? 0.5)) / ((mask.radiusX ?? 0.3) || 0.3)
+            const dy = (py - (mask.centerY ?? 0.5)) / ((mask.radiusY ?? 0.3) || 0.3)
+            const dist = Math.sqrt(dx * dx + dy * dy)
+            const feather = mask.feather ?? 0.5
+            weight = 1 - Math.min(1, Math.max(0, (dist - (1 - feather)) / feather))
+          } else if (mask.type === 'linear') {
+            const dx = (mask.endX ?? 1) - (mask.startX ?? 0)
+            const dy = (mask.endY ?? 0.5) - (mask.startY ?? 0.5)
+            const len = Math.sqrt(dx * dx + dy * dy) || 0.001
+            const t = ((px - (mask.startX ?? 0)) * dx + (py - (mask.startY ?? 0.5)) * dy) / (len * len)
+            weight = Math.min(1, Math.max(0, t))
+          }
+          if (mask.invert) weight = 1 - weight
+          if (weight <= 0) return
+          const br = (mask.brightness ?? 0) * weight * 60
+          const ct = 1 + (mask.contrast ?? 0) * weight * 0.5
+          const st = 1 + (mask.saturation ?? 0) * weight * 0.5
+          md[i] = Math.min(255, Math.max(0, md[i] + br))
+          md[i + 1] = Math.min(255, Math.max(0, md[i + 1] + br))
+          md[i + 2] = Math.min(255, Math.max(0, md[i + 2] + br))
+          if (ct !== 1) {
+            md[i] = Math.min(255, Math.max(0, ((md[i] / 255 - 0.5) * ct + 0.5) * 255))
+            md[i + 1] = Math.min(255, Math.max(0, ((md[i + 1] / 255 - 0.5) * ct + 0.5) * 255))
+            md[i + 2] = Math.min(255, Math.max(0, ((md[i + 2] / 255 - 0.5) * ct + 0.5) * 255))
+          }
+          if (st !== 1) {
+            const gray = 0.299 * md[i] + 0.587 * md[i + 1] + 0.114 * md[i + 2]
+            md[i] = Math.min(255, Math.max(0, gray + (md[i] - gray) * st))
+            md[i + 1] = Math.min(255, Math.max(0, gray + (md[i + 1] - gray) * st))
+            md[i + 2] = Math.min(255, Math.max(0, gray + (md[i + 2] - gray) * st))
+          }
+        })
+      }
+      ctx.putImageData(maskData, 0, 0)
+    }
+    if (hasTiltShift) {
+      applyTiltShift(ctx, canvas.width, canvas.height, tiltShift)
+    }
+    if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
+      drawFrame(ctx, displayW, displayH, frame)
+    }
+  }, [isComparing, filmGrain, hasGrain, grain, hasLightLeak, lightLeak, vignette, masks, hasTiltShift, tiltShift, frame])
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -336,284 +424,81 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
     ctx.restore()
 
-    if (needsPixelPass) {
+    const hasComplexOps = hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap
+    const hasSimpleOnly = needsPixelPass && !hasComplexOps
+
+    if (hasSimpleOnly) {
+      const glResult = renderWithWebGL(canvas, {
+        brightness: brightness * exposure * (shadows),
+        contrast: contrast * (2 - highlights),
+        saturation,
+        warmth,
+        vibrance,
+        vignette,
+        clarity,
+        dehaze,
+      })
+      if (glResult) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(glResult, 0, 0)
+        drawPostPixel(ctx, canvas, displayW, displayH)
+      }
+    } else if (needsPixelPass) {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const d = imgData.data
 
-      if (hasBaseFilters) {
-        applyPixelFilters(imgData, baseFilterOps)
-      }
+      if (workerRef.current && !workerBusyRef.current) {
+        workerBusyRef.current = true
+        const buffer = imgData.data.buffer.slice(0)
+        const cw = canvas.width, ch = canvas.height
 
-      const warmShift = warmth * 30
-      const tintShift = tint * 30
-
-      let rgbLUT, rLUT, gLUT, bLUT
-      if (hasCurves) {
-        rgbLUT = buildCurveLUT(curves.rgb)
-        rLUT = buildCurveLUT(curves.red)
-        gLUT = buildCurveLUT(curves.green)
-        bLUT = buildCurveLUT(curves.blue)
-      }
-
-      for (let i = 0; i < d.length; i += 4) {
-        d[i] = Math.min(255, Math.max(0, d[i] + warmShift))
-        d[i + 2] = Math.min(255, Math.max(0, d[i + 2] - warmShift))
-        d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + tintShift))
-
-        if (vibrance !== 0) {
-          const r = d[i], g = d[i + 1], b = d[i + 2]
-          const mx = Math.max(r, g, b)
-          const avg = (r + g + b) / 3
-          const amt = ((mx - avg) / 255) * (-vibrance * 2)
-          d[i] += (mx - r) * amt
-          d[i + 1] += (mx - g) * amt
-          d[i + 2] += (mx - b) * amt
+        const postState = {
+          ctx, canvas, displayW, displayH, cw, ch,
         }
-        if (clarity !== 0) {
-          const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
-          const midWeight = 1 - Math.abs(lum - 128) / 128
-          const boost = clarity * midWeight * 40
-          d[i] = Math.min(255, Math.max(0, d[i] + boost * (d[i] > lum ? 1 : -1) * 0.5))
-          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + boost * (d[i + 1] > lum ? 1 : -1) * 0.5))
-          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + boost * (d[i + 2] > lum ? 1 : -1) * 0.5))
-        }
-        if (dehaze !== 0) {
-          const factor = 1 + dehaze * 0.4
-          d[i] = Math.min(255, Math.max(0, ((d[i] / 255 - 0.5) * factor + 0.5) * 255))
-          d[i + 1] = Math.min(255, Math.max(0, ((d[i + 1] / 255 - 0.5) * factor + 0.5) * 255))
-          d[i + 2] = Math.min(255, Math.max(0, ((d[i + 2] / 255 - 0.5) * factor + 0.5) * 255))
-        }
-        if (hasHSL) {
-          let r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255
-          const max = Math.max(r, g, b), min = Math.min(r, g, b)
-          let h, s, l = (max + min) / 2
 
-          if (max === min) {
-            h = s = 0
-          } else {
-            const delta = max - min
-            s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min)
-            if (max === r) h = ((g - b) / delta + (g < b ? 6 : 0)) / 6
-            else if (max === g) h = ((b - r) / delta + 2) / 6
-            else h = ((r - g) / delta + 4) / 6
-          }
-
-          const hDeg = h * 360
-          let colorKey = null
-          if (hDeg < 15 || hDeg >= 345) colorKey = 'red'
-          else if (hDeg < 45) colorKey = 'orange'
-          else if (hDeg < 75) colorKey = 'yellow'
-          else if (hDeg < 150) colorKey = 'green'
-          else if (hDeg < 195) colorKey = 'cyan'
-          else if (hDeg < 255) colorKey = 'blue'
-          else if (hDeg < 300) colorKey = 'purple'
-          else colorKey = 'magenta'
-
-          const adj = hsl[colorKey]
-          if (adj && (adj.h !== 0 || adj.s !== 0 || adj.l !== 0)) {
-            h = (h + adj.h * 0.1 + 1) % 1
-            s = Math.min(1, Math.max(0, s + adj.s * 0.5))
-            l = Math.min(1, Math.max(0, l + adj.l * 0.3))
-
-            let r2, g2, b2
-            if (s === 0) {
-              r2 = g2 = b2 = l
-            } else {
-              const hue2rgb = (p, q, t) => {
-                if (t < 0) t += 1
-                if (t > 1) t -= 1
-                if (t < 1 / 6) return p + (q - p) * 6 * t
-                if (t < 1 / 2) return q
-                if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-                return p
-              }
-              const q2 = l < 0.5 ? l * (1 + s) : l + s - l * s
-              const p2 = 2 * l - q2
-              r2 = hue2rgb(p2, q2, h + 1 / 3)
-              g2 = hue2rgb(p2, q2, h)
-              b2 = hue2rgb(p2, q2, h - 1 / 3)
+        workerRef.current.onmessage = (evt) => {
+          workerBusyRef.current = false
+          if (evt.data.type === 'pixelsProcessed') {
+            const result = new Uint8ClampedArray(evt.data.data)
+            const outData = new ImageData(result, evt.data.width, evt.data.height)
+            const c = canvasRef.current
+            if (c && c.width === evt.data.width && c.height === evt.data.height) {
+              const cx = c.getContext('2d')
+              cx.putImageData(outData, 0, 0)
+              drawPostPixel(cx, c, postState.displayW, postState.displayH)
             }
-            d[i] = Math.round(r2 * 255)
-            d[i + 1] = Math.round(g2 * 255)
-            d[i + 2] = Math.round(b2 * 255)
+          }
+          if (workerPendingRef.current) {
+            workerPendingRef.current = false
+            redrawRef.current?.()
           }
         }
-        if (hasCurves) {
-          d[i] = rLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i])))]]
-          d[i + 1] = gLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 1])))]]
-          d[i + 2] = bLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 2])))]]
-        }
-        if (hasColorGrade) {
-          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
-          const shadowWeight = Math.max(0, 1 - lum * 3)
-          const highlightWeight = Math.max(0, (lum - 0.66) * 3)
-          const midtoneWeight = 1 - shadowWeight - highlightWeight
 
-          const sr = (colorGrade.shadows?.r || 0) * shadowWeight * 30
-          const sg = (colorGrade.shadows?.g || 0) * shadowWeight * 30
-          const sb = (colorGrade.shadows?.b || 0) * shadowWeight * 30
-          const mr = (colorGrade.midtones?.r || 0) * midtoneWeight * 30
-          const mg = (colorGrade.midtones?.g || 0) * midtoneWeight * 30
-          const mb = (colorGrade.midtones?.b || 0) * midtoneWeight * 30
-          const hr = (colorGrade.highlights?.r || 0) * highlightWeight * 30
-          const hg = (colorGrade.highlights?.g || 0) * highlightWeight * 30
-          const hb = (colorGrade.highlights?.b || 0) * highlightWeight * 30
+        workerRef.current.postMessage(
+          {
+            type: 'processPixels', data: buffer, width: cw, height: ch,
+            params: {
+              baseFilterOps, warmth, tint, vibrance, clarity, dehaze,
+              hsl: hasHSL ? hsl : null, curves: hasCurves ? curves : null,
+              colorGrade: hasColorGrade ? colorGrade : null,
+              splitTone: hasSplitTone ? splitTone : null,
+              selectiveColor: hasSelectiveColor ? selectiveColor : null,
+              filmEmulation: hasFilmEmulation ? filmEmulation : null,
+              filmIntensity: filmIntensity ?? 1,
+              lut: hasLUT ? lut : null,
+              gradientMap: hasGradientMap ? gradientMap : null,
+            },
+          },
+          [buffer]
+        )
 
-          d[i] = Math.min(255, Math.max(0, d[i] + sr + mr + hr))
-          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + sg + mg + hg))
-          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + sb + mb + hb))
-        }
-        if (hasSplitTone) {
-          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
-          const bal = (splitTone.balance || 0) * 0.5 + 0.5
-
-          let hue, sat, weight
-          if (lum < bal) {
-            hue = splitTone.shadowHue || 0
-            sat = splitTone.shadowSat || 0
-            weight = (bal - lum) / Math.max(bal, 0.01)
-          } else {
-            hue = splitTone.highlightHue || 0
-            sat = splitTone.highlightSat || 0
-            weight = (lum - bal) / Math.max(1 - bal, 0.01)
-          }
-
-          if (sat > 0) {
-            const angle = hue * Math.PI * 2
-            const tr = Math.cos(angle) * sat * weight * 40
-            const tg = Math.cos(angle - 2.094) * sat * weight * 40
-            const tb = Math.cos(angle + 2.094) * sat * weight * 40
-            d[i] = Math.min(255, Math.max(0, d[i] + tr))
-            d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + tg))
-            d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + tb))
-          }
-        }
-        if (hasSelectiveColor) {
-          const sr = d[i] / 255, sg = d[i + 1] / 255, sb = d[i + 2] / 255
-          const smax = Math.max(sr, sg, sb), smin = Math.min(sr, sg, sb)
-          if (smax !== smin) {
-            const sdelta = smax - smin
-            let sh
-            if (smax === sr) sh = ((sg - sb) / sdelta + (sg < sb ? 6 : 0)) * 60
-            else if (smax === sg) sh = ((sb - sr) / sdelta + 2) * 60
-            else sh = ((sr - sg) / sdelta + 4) * 60
-
-            const targetHue = selectiveColor.hue
-            const range = selectiveColor.range
-            let hueDiff = Math.abs(sh - targetHue)
-            if (hueDiff > 180) hueDiff = 360 - hueDiff
-
-            if (hueDiff > range) {
-              const gray = Math.round((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]))
-              d[i] = gray
-              d[i + 1] = gray
-              d[i + 2] = gray
-            }
-          } else {
-            const gray = Math.round((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]))
-            d[i] = gray
-            d[i + 1] = gray
-            d[i + 2] = gray
-          }
-        }
+        drawPostPixel(ctx, canvas, displayW, displayH)
+        return
+      } else if (workerBusyRef.current) {
+        workerPendingRef.current = true
       }
-
-      if (hasFilmEmulation) {
-        applyFilmEmulation(imgData, filmEmulation, filmIntensity ?? 1)
-      }
-
-      if (hasLUT) {
-        applyLUT(imgData, lut)
-      }
-
-      ctx.putImageData(imgData, 0, 0)
     }
 
-    if (!isComparing && filmGrain > 0) {
-      addFilmGrain(ctx, canvas.width, canvas.height, filmGrain)
-    }
-
-    if (hasGrain) {
-      applyGrain(ctx, canvas.width, canvas.height, grain.amount, grain.size)
-    }
-
-    if (hasLightLeak) {
-      applyLightLeak(ctx, canvas.width, canvas.height, lightLeak.type, lightLeak.intensity)
-    }
-
-    if (!isComparing && vignette > 0) {
-      const cx = displayW / 2
-      const cy = displayH / 2
-      const radius = Math.sqrt(cx * cx + cy * cy)
-      const gradient = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius)
-      gradient.addColorStop(0, 'rgba(0,0,0,0)')
-      gradient.addColorStop(1, `rgba(0,0,0,${vignette * 0.8})`)
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, displayW, displayH)
-    }
-
-    const hasMasks = !isComparing && masks?.length > 0
-    if (hasMasks) {
-      const maskData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-      const md = maskData.data
-
-      for (let i = 0; i < md.length; i += 4) {
-        const pixelIndex = i / 4
-        const px = (pixelIndex % canvas.width) / canvas.width
-        const py = Math.floor(pixelIndex / canvas.width) / canvas.height
-
-        masks.forEach((mask) => {
-          let weight = 0
-
-          if (mask.type === 'radial') {
-            const dx = (px - (mask.centerX ?? 0.5)) / ((mask.radiusX ?? 0.3) || 0.3)
-            const dy = (py - (mask.centerY ?? 0.5)) / ((mask.radiusY ?? 0.3) || 0.3)
-            const dist = Math.sqrt(dx * dx + dy * dy)
-            const feather = mask.feather ?? 0.5
-            weight = 1 - Math.min(1, Math.max(0, (dist - (1 - feather)) / feather))
-          } else if (mask.type === 'linear') {
-            const dx = (mask.endX ?? 1) - (mask.startX ?? 0)
-            const dy = (mask.endY ?? 0.5) - (mask.startY ?? 0.5)
-            const len = Math.sqrt(dx * dx + dy * dy) || 0.001
-            const t = ((px - (mask.startX ?? 0)) * dx + (py - (mask.startY ?? 0.5)) * dy) / (len * len)
-            weight = Math.min(1, Math.max(0, t))
-          }
-
-          if (mask.invert) weight = 1 - weight
-          if (weight <= 0) return
-
-          const br = (mask.brightness ?? 0) * weight * 60
-          const ct = 1 + (mask.contrast ?? 0) * weight * 0.5
-          const st = 1 + (mask.saturation ?? 0) * weight * 0.5
-
-          md[i] = Math.min(255, Math.max(0, md[i] + br))
-          md[i + 1] = Math.min(255, Math.max(0, md[i + 1] + br))
-          md[i + 2] = Math.min(255, Math.max(0, md[i + 2] + br))
-
-          if (ct !== 1) {
-            md[i] = Math.min(255, Math.max(0, ((md[i] / 255 - 0.5) * ct + 0.5) * 255))
-            md[i + 1] = Math.min(255, Math.max(0, ((md[i + 1] / 255 - 0.5) * ct + 0.5) * 255))
-            md[i + 2] = Math.min(255, Math.max(0, ((md[i + 2] / 255 - 0.5) * ct + 0.5) * 255))
-          }
-
-          if (st !== 1) {
-            const gray = 0.299 * md[i] + 0.587 * md[i + 1] + 0.114 * md[i + 2]
-            md[i] = Math.min(255, Math.max(0, gray + (md[i] - gray) * st))
-            md[i + 1] = Math.min(255, Math.max(0, gray + (md[i + 1] - gray) * st))
-            md[i + 2] = Math.min(255, Math.max(0, gray + (md[i + 2] - gray) * st))
-          }
-        })
-      }
-      ctx.putImageData(maskData, 0, 0)
-    }
-
-    if (hasTiltShift) {
-      applyTiltShift(ctx, canvas.width, canvas.height, tiltShift)
-    }
-
-    if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
-      drawFrame(ctx, displayW, displayH, frame)
-    }
+    drawPostPixel(ctx, canvas, displayW, displayH)
 
     if (!isComparing) {
     const allStrokes = currentStrokeRef.current
@@ -808,6 +693,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     }
     }
 
+    if (selectionMask && drawingMode === 'wand') {
+      drawSelectionOverlay(ctx, selectionMask, canvas.width, canvas.height)
+    }
+
     if (hasResize) {
       const targetW = resize.width
       const targetH = resize.height
@@ -828,9 +717,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation, hasGrain, grain, hasLightLeak, lightLeak, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
+
+  useEffect(() => { redrawRef.current = throttledDraw }, [throttledDraw])
 
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current
@@ -998,6 +889,19 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         handlePickColor(e)
         return
       }
+      if (drawingMode === 'wand') {
+        const pt = getCanvasPoint(e)
+        if (!pt) return
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const sx = Math.round(pt.x * canvas.width)
+        const sy = Math.round(pt.y * canvas.height)
+        const mask = magicWandSelect(imgData, sx, sy, wandTolerance ?? 32, true)
+        onApplyChange?.((s) => ({ ...s, selectionMask: mask }))
+        return
+      }
       if (drawingMode === 'heal') {
         const pt = getCanvasPoint(e)
         if (!pt) return
@@ -1042,7 +946,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         dragMovedRef.current = false
       }
     },
-    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor, hitTestOverlay, editingTextId],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor, hitTestOverlay, editingTextId, wandTolerance],
   )
 
   const handleMouseMove = useCallback(
@@ -1148,6 +1052,18 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         return
       }
 
+      if (drawingMode === 'wand') {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const sx = Math.round(pt.x * canvas.width)
+        const sy = Math.round(pt.y * canvas.height)
+        const mask = magicWandSelect(imgData, sx, sy, wandTolerance ?? 32, true)
+        onApplyChange?.((s) => ({ ...s, selectionMask: mask }))
+        return
+      }
+
       if (drawingMode === 'heal') {
         setHealCursor(pt)
         if (!healSource) {
@@ -1212,7 +1128,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       touchRef.current.startPanX = panX
       touchRef.current.startPanY = panY
     }
-  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay, textOverlays, shapeOverlays])
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay, textOverlays, shapeOverlays, wandTolerance])
 
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1 && isDrawing && healingRef.current.active) {
@@ -1354,7 +1270,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: drawingMode === 'picker' ? 'crosshair' : drawingMode === 'heal' ? (healSource ? 'cell' : 'crosshair') : drawingMode ? 'crosshair' : 'default' }}
+      style={{ cursor: drawingMode === 'picker' || drawingMode === 'wand' ? 'crosshair' : drawingMode === 'heal' ? (healSource ? 'cell' : 'crosshair') : drawingMode ? 'crosshair' : 'default' }}
     >
       {loadedSrc !== imageSrc && (
         <div className="absolute inset-0 flex items-center justify-center z-10">

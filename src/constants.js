@@ -25,7 +25,9 @@ export const INITIAL_EDIT_STATE = {
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
   perspective: { horizontal: 0, vertical: 0, rotation: 0 }, // transform: skew ±45°, fine rotation ±180°
   brushStrokes: [],
-  drawingMode: null, // 'brush' | 'eraser' | 'heal' | null
+  drawingMode: null, // 'brush' | 'eraser' | 'heal' | 'wand' | null
+  selectionMask: null, // Uint8Array or null
+  wandTolerance: 32,
   healSource: null, // { x, y } in 0-1 canvas coords — set on first click in heal mode
   brushColor: '#ffffff',
   brushSize: 5,
@@ -71,6 +73,7 @@ export const INITIAL_EDIT_STATE = {
   lut: null,
   lutName: null,
   resize: { width: 0, height: 0, lockAspect: true },
+  gradientMap: { enabled: false, shadows: '#1a1a2e', highlights: '#e8d5b7', intensity: 0.7 },
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */

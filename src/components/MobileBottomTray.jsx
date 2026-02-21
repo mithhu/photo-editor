@@ -284,6 +284,53 @@ export function MobileBottomTray({
               )}
             </div>
 
+            {/* Gradient Map / Duotone */}
+            <div className="pt-2 border-t border-zinc-800/50">
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Duotone</h4>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => applyChange((s) => ({ ...s, gradientMap: { ...(s.gradientMap || {}), enabled: !s.gradientMap?.enabled } }))}
+                  className={`px-2.5 py-1 text-[10px] font-medium rounded-md transition-colors ${
+                    editState.gradientMap?.enabled ? 'bg-indigo-500 text-white' : 'bg-zinc-700 text-zinc-400'
+                  }`}
+                >
+                  {editState.gradientMap?.enabled ? 'ON' : 'OFF'}
+                </button>
+              </div>
+              {editState.gradientMap?.enabled && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-6 gap-1">
+                    {[
+                      { s: '#1a1a2e', h: '#e8d5b7', n: 'Classic' }, { s: '#00304e', h: '#c1e8ff', n: 'Cyan' },
+                      { s: '#2a1a0a', h: '#e8c88a', n: 'Sepia' }, { s: '#0a0a3a', h: '#8888ff', n: 'Night' },
+                      { s: '#2d1b3d', h: '#ff9e6d', n: 'Sunset' }, { s: '#0a2a1a', h: '#a8e6a3', n: 'Forest' },
+                      { s: '#1a0a2a', h: '#ff6b9d', n: 'IR' }, { s: '#1a1400', h: '#ffd700', n: 'Gold' },
+                      { s: '#0a1a2a', h: '#e0f0ff', n: 'Ice' }, { s: '#0d0221', h: '#ff00ff', n: 'Neon' },
+                      { s: '#1a0505', h: '#ff4422', n: 'Ember' }, { s: '#001122', h: '#44ddaa', n: 'Ocean' },
+                    ].map((p, i) => (
+                      <button
+                        key={i}
+                        onClick={() => applyChange((s) => ({ ...s, gradientMap: { ...s.gradientMap, shadows: p.s, highlights: p.h } }))}
+                        className="rounded overflow-hidden"
+                        title={p.n}
+                      >
+                        <div className="h-5 w-full" style={{ background: `linear-gradient(90deg, ${p.s}, ${p.h})` }} />
+                      </button>
+                    ))}
+                  </div>
+                  <Slider
+                    label="Intensity"
+                    value={Math.round((editState.gradientMap?.intensity ?? 0.7) * 100)}
+                    onChange={(v) => applyChange((s) => ({ ...s, gradientMap: { ...s.gradientMap, intensity: v / 100 } }))}
+                    min={0}
+                    max={100}
+                    step={1}
+                    unit="%"
+                  />
+                </div>
+              )}
+            </div>
+
             {/* Light Leaks */}
             <div className="pt-2 border-t border-zinc-800/50">
               <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5">Light Leaks</h4>
@@ -715,6 +762,13 @@ export function MobileBottomTray({
               >
                 💧
               </button>
+              <button
+                onClick={() => applyChange({ drawingMode: drawingMode === 'wand' ? null : 'wand', selectionMask: null })}
+                className={`shrink-0 w-10 h-10 text-sm rounded-lg ${drawingMode === 'wand' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                title="Magic wand"
+              >
+                🪄
+              </button>
               {drawingMode === 'brush' && (
                 <input
                   type="color"
@@ -750,6 +804,17 @@ export function MobileBottomTray({
                   >
                     Reset source
                   </button>
+                )}
+              </div>
+            )}
+            {drawingMode === 'wand' && (
+              <div className="p-2 bg-zinc-800/60 rounded-lg border border-zinc-700/50 space-y-2 mb-2">
+                <p className="text-xs text-zinc-400">
+                  {editState.selectionMask ? 'Selection active — tap to reselect' : 'Tap to select a color region'}
+                </p>
+                <Slider label="Tolerance" value={editState.wandTolerance ?? 32} onChange={(v) => applyChange({ wandTolerance: v })} min={1} max={100} step={1} />
+                {editState.selectionMask && (
+                  <button onClick={() => applyChange({ selectionMask: null })} className="text-xs text-indigo-400 hover:text-indigo-300">Clear selection</button>
                 )}
               </div>
             )}

@@ -11,6 +11,7 @@ import { StickerPanel } from './StickerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
 import { ImageInfoPanel } from './ImageInfoPanel'
+import { GradientMapPanel } from './GradientMapPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -684,7 +685,41 @@ export function EditorSidebar({
             >
               💧 Pick
             </button>
+            <button
+              onClick={() => applyChange({ drawingMode: drawingMode === 'wand' ? null : 'wand', selectionMask: null })}
+              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+                drawingMode === 'wand' ? 'bg-indigo-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+              title="Magic wand selection"
+            >
+              🪄 Wand
+            </button>
           </div>
+          {drawingMode === 'wand' && (
+            <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50 space-y-3">
+              <p className="text-xs text-zinc-400">
+                {editState.selectionMask
+                  ? 'Selection active — click elsewhere to reselect'
+                  : 'Click on the image to select a color region'}
+              </p>
+              <Slider
+                label="Tolerance"
+                value={editState.wandTolerance ?? 32}
+                onChange={(v) => applyChange({ wandTolerance: v })}
+                min={1}
+                max={100}
+                step={1}
+              />
+              {editState.selectionMask && (
+                <button
+                  onClick={() => applyChange({ selectionMask: null })}
+                  className="text-xs text-indigo-400 hover:text-indigo-300"
+                >
+                  Clear selection
+                </button>
+              )}
+            </div>
+          )}
           {editState.pickedColor && (
             <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50 flex items-center gap-3">
               <span
@@ -1190,6 +1225,8 @@ export function EditorSidebar({
             </div>
           )}
         </div>
+
+        <GradientMapPanel editState={editState} applyChange={applyChange} />
 
         {historyLength > 0 && (
           <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
