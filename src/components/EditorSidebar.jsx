@@ -20,6 +20,9 @@ export function EditorSidebar({
     warmth,
     tint,
     vibrance,
+    clarity,
+    dehaze,
+    vignette,
     cropRatio,
     preset,
     drawingMode,
@@ -45,6 +48,9 @@ export function EditorSidebar({
           <Slider label="Warmth" value={warmth} onChange={(v) => applySliderChange('warmth', v)} min={-1} max={1} defaultValue={0} />
           <Slider label="Tint" value={tint} onChange={(v) => applySliderChange('tint', v)} min={-1} max={1} defaultValue={0} />
           <Slider label="Vibrance" value={vibrance} onChange={(v) => applySliderChange('vibrance', v)} min={-1} max={1} defaultValue={0} />
+          <Slider label="Clarity" value={clarity} onChange={(v) => applySliderChange('clarity', v)} min={-1} max={1} defaultValue={0} />
+          <Slider label="Dehaze" value={dehaze} onChange={(v) => applySliderChange('dehaze', v)} min={-1} max={1} defaultValue={0} />
+          <Slider label="Vignette" value={vignette} onChange={(v) => applySliderChange('vignette', v)} min={0} max={1} defaultValue={0} />
         </div>
         <button
           onClick={() => applyChange(INITIAL_EDIT_STATE)}

@@ -1,6 +1,7 @@
-import { useRef, useCallback, useEffect, useState } from 'react'
+import { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
+import { CropOverlay } from './CropOverlay'
 
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
@@ -26,18 +27,40 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
   const {
     brightness, contrast, saturation, exposure, highlights, shadows,
-    warmth, tint, vibrance,
+    warmth, tint, vibrance, clarity, dehaze, vignette,
     rotation, flipH, flipV, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
     shapeOverlays,
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
   } = editState
+
+  const cropActive = cropRatio !== 'original'
+  const [imageDims, setImageDims] = useState(null)
+
+  const cropOverlayRegion = useMemo(() => {
+    if (!cropActive) return null
+    if (customCrop && customCrop.w > 0 && customCrop.h > 0) {
+      return { x: customCrop.x, y: customCrop.y, w: customCrop.w, h: customCrop.h }
+    }
+    if (!imageDims) return null
+    const { sx, sy, sw, sh } = getCropRegion(imageDims.w, imageDims.h, cropRatio)
+    return { x: sx / imageDims.w, y: sy / imageDims.h, w: sw / imageDims.w, h: sh / imageDims.h }
+  }, [cropActive, cropRatio, customCrop, imageDims])
+
+  const handleCropChange = useCallback((region) => {
+    if (!onApplyChange) return
+    onApplyChange((s) => ({
+      ...s,
+      customCrop: region,
+      cropRatio: s.cropRatio === 'original' ? 'custom' : s.cropRatio,
+    }))
+  }, [onApplyChange])
 
   const presetFilter = FILTER_PRESETS.find((p) => p.id === preset)?.filter || ''
   const highlightContrast = 2 - highlights
   const shadowBrightness = shadows
   const fullAdjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
   const adjustmentFilter = isComparing ? 'none' : fullAdjustmentFilter
-  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0)
+  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -105,8 +128,33 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           d[i + 1] += (mx - g) * amt
           d[i + 2] += (mx - b) * amt
         }
+        if (clarity !== 0) {
+          const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+          const midWeight = 1 - Math.abs(lum - 128) / 128
+          const boost = clarity * midWeight * 40
+          d[i] = Math.min(255, Math.max(0, d[i] + boost * (d[i] > lum ? 1 : -1) * 0.5))
+          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + boost * (d[i + 1] > lum ? 1 : -1) * 0.5))
+          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + boost * (d[i + 2] > lum ? 1 : -1) * 0.5))
+        }
+        if (dehaze !== 0) {
+          const factor = 1 + dehaze * 0.4
+          d[i] = Math.min(255, Math.max(0, ((d[i] / 255 - 0.5) * factor + 0.5) * 255))
+          d[i + 1] = Math.min(255, Math.max(0, ((d[i + 1] / 255 - 0.5) * factor + 0.5) * 255))
+          d[i + 2] = Math.min(255, Math.max(0, ((d[i + 2] / 255 - 0.5) * factor + 0.5) * 255))
+        }
       }
       ctx.putImageData(imgData, 0, 0)
+    }
+
+    if (!isComparing && vignette > 0) {
+      const cx = displayW / 2
+      const cy = displayH / 2
+      const radius = Math.sqrt(cx * cx + cy * cy)
+      const gradient = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius)
+      gradient.addColorStop(0, 'rgba(0,0,0,0)')
+      gradient.addColorStop(1, `rgba(0,0,0,${vignette * 0.8})`)
+      ctx.fillStyle = gradient
+      ctx.fillRect(0, 0, displayW, displayH)
     }
 
     if (!isComparing) {
@@ -218,7 +266,13 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing])
+
+  const handleImageLoad = useCallback(() => {
+    const img = imageRef.current
+    if (img) setImageDims({ w: img.naturalWidth, h: img.naturalHeight })
+    drawCanvas()
+  }, [drawCanvas])
 
   useEffect(() => {
     drawCanvas()
@@ -323,7 +377,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       style={{ cursor: drawingMode ? 'crosshair' : isDragging ? 'grabbing' : 'grab' }}
     >
       <div
-        className="flex-shrink-0"
+        className="flex-shrink-0 relative"
         style={{
           transform: `scale(${zoom}) translate(${panX}px, ${panY}px)`,
         }}
@@ -333,12 +387,18 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           src={imageSrc}
           alt="Edit"
           className="hidden"
-          onLoad={drawCanvas}
+          onLoad={handleImageLoad}
         />
         <canvas
           ref={canvasRef}
           className="rounded-lg shadow-2xl"
           style={{ background: '#1a1a1a' }}
+        />
+        <CropOverlay
+          cropRegion={cropOverlayRegion}
+          onCropChange={handleCropChange}
+          isActive={cropActive}
+          cropRatio={cropRatio}
         />
       </div>
     </div>
