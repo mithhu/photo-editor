@@ -235,8 +235,7 @@ export default function App() {
         onResetAll={reset}
       />
 
-      {/* Desktop: side-by-side layout */}
-      <div className="flex-1 hidden lg:flex flex-row gap-4 p-4 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row lg:gap-4 lg:p-4 min-h-0 overflow-hidden">
         <Suspense fallback={<EditorFallback />}>
           <EditorCanvas
             imageSrc={imageSrc}
@@ -246,32 +245,24 @@ export default function App() {
             onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
             onApplyChange={applyChange}
           />
-          <EditorSidebar
-            editState={editState}
-            applyChange={applyChange}
-            applySliderChange={applySliderChange}
-            onAddText={addTextOverlay}
-            historyIndex={historyIndex}
-            historyLength={historyLength}
-            imageSrc={imageSrc}
-            onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
-            canvasRef={canvasRef}
-            onApplyChange={applyChange}
-          />
-        </Suspense>
-      </div>
 
-      {/* Mobile: full-screen canvas + bottom tray overlay */}
-      <div className="flex-1 flex flex-col lg:hidden min-h-0">
-        <Suspense fallback={<EditorFallback />}>
-          <EditorCanvas
-            imageSrc={imageSrc}
-            editState={editState}
-            canvasRef={canvasRef}
-            isComparing={isComparing}
-            onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
-            onApplyChange={applyChange}
-          />
+          {/* Desktop sidebar */}
+          <div className="hidden lg:flex flex-shrink-0 min-h-0">
+            <EditorSidebar
+              editState={editState}
+              applyChange={applyChange}
+              applySliderChange={applySliderChange}
+              onAddText={addTextOverlay}
+              historyIndex={historyIndex}
+              historyLength={historyLength}
+              imageSrc={imageSrc}
+              onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
+              canvasRef={canvasRef}
+              onApplyChange={applyChange}
+            />
+          </div>
+
+          {/* Mobile bottom tray */}
           <MobileBottomTray
             editState={editState}
             applyChange={applyChange}
