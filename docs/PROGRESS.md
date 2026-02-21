@@ -44,8 +44,12 @@
 - [x] Eraser — destination-out compositing
 - [x] Shapes overlay — circle, square, triangle, star, heart, arrows
 - [x] Visual crop handles — 8 drag points, rule-of-thirds grid, aspect ratio enforcement
-- [x] Before/after comparison — hold "Compare" button to see original
+- [x] Before/after comparison slider — draggable split-screen overlay with Original/Edited labels
 - [x] History panel — visual edit step list in sidebar
+- [x] Filter thumbnail previews — 48x48 preview of each filter on the actual image (Instagram-style)
+- [x] Keyboard shortcuts overlay — press ? for cheat sheet, grouped by category
+- [x] Sticker library — 50 emoji stickers in 5 categories (Popular, Emoji, Arrows, Badges, Decorative)
+- [x] Perspective correction — horizontal/vertical skew + fine rotation sliders
 
 ### Export & Quality (v0.5)
 - [x] Export dialog — format selection (PNG/JPEG/WEBP)
@@ -82,9 +86,11 @@
 
 ### AI Features (v1.0)
 - [x] Smart auto-crop — COCO-SSD object detection to find subjects and auto-crop with 15% padding
-- [x] Face detection portrait crop — BlazeFace for fast face detection; 3:4 portrait crop with headroom; Portrait Crop button in AI Tools and Crop sections (EditorSidebar + MobileBottomTray)
+- [x] Face detection portrait crop — BlazeFace for fast face detection; 3:4 portrait crop with headroom
 - [x] Style transfer — Magenta arbitrary style transfer with 4 built-in presets + custom upload
 - [x] Style strength slider (10–100%) for blending original and stylized output
+- [x] AI Upscale (2x) — UpscalerJS super resolution with progress feedback and model caching
+- [x] Denoise — bilateral-filter-inspired noise reduction with adjustable strength
 
 ### Templates & Social (v1.2)
 - [x] Collage builder — 7 layouts (2-grid, 3-horizontal, 3-vertical, 4-grid, 6-grid, 1+2, 2+1), gap/radius/bg controls, 4 output sizes, canvas compositing with cover-fill and rounded corners

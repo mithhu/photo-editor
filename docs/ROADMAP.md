@@ -26,6 +26,9 @@
 - [x] **Reset individual controls** — Per-slider reset vs full reset
 - [x] **Loading states** — Skeletons, progress for large images
 - [x] **Error handling** — Invalid files, unsupported formats, export failures
+- [x] **Before/after slider** — Draggable split-screen comparison
+- [x] **Filter previews** — Thumbnail previews of each filter on the actual image
+- [x] **Exposure suggestions** — Auto-analyze for brightness, contrast, warmth corrections
 
 ### 1.2 More Adjustments
 
@@ -80,22 +83,27 @@
 - [x] Linear/gradient mask
 - [x] Apply adjustments only within mask
 
-### 2.5 Focus & Blur
+### 2.5 Focus & Transform
 
 - [x] Tilt-shift / focus blur — linear and radial modes
+- [x] Perspective correction — horizontal/vertical skew + fine rotation
+- [x] Resize tool — dedicated width/height with aspect ratio lock
 - [x] Image info panel — dimensions, file type, estimated size
 
-### 2.6 Frames & Color Picker
+### 2.6 Frames, Stickers & Color Picker
 
 - [x] Decorative frames — 8 presets (Simple, Rounded, Shadow, Polaroid, Film Strip, Vintage, Gradient)
 - [x] Frame controls — color picker, width slider
 - [x] Eyedropper / color picker — sample pixel color from canvas, copy hex, use as brush color
+- [x] Sticker library — 50 emoji stickers in 5 categories, draggable on canvas
+- [x] Keyboard shortcuts overlay — press ? for cheat sheet
 
 ### 2.7 Creative Effects
 
 - [x] Film grain — monochromatic noise overlay with amount and size controls
 - [x] Selective color (color splash) — keep one hue range, desaturate everything else
 - [x] Light leaks / bokeh — 5 canvas-generated overlay presets with intensity control
+- [x] LUT import — .cube file support with 1D/3D trilinear interpolation
 
 ---
 
@@ -109,8 +117,8 @@
 - [x] **Smart auto-crop** — COCO-SSD object detection + bounding box crop with padding
 - [x] **Face detection portrait crop** — BlazeFace model, 3:4 aspect ratio with headroom
 - [x] **Style transfer** — Magenta arbitrary style transfer (4 presets + custom upload + strength)
-- [ ] **Upscaling** — 2x/4x upscale
-- [ ] **Denoise** — Reduce noise
+- [x] **Upscaling** — UpscalerJS 2x super resolution (client-side, TF.js)
+- [x] **Denoise** — Bilateral-filter-inspired noise reduction with strength control
 - [x] **Auto-enhance** — One-click balance (exposure, contrast, color)
 - [ ] **Object removal** — Inpainting (API or model)
 
