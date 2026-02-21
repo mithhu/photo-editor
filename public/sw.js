@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photo-editor-v2'
+const CACHE_NAME = 'photo-editor-v3'
 const STATIC_ASSETS = ['/', '/index.html', '/favicon.svg']
 
 self.addEventListener('install', (event) => {
@@ -15,6 +15,12 @@ self.addEventListener('activate', (event) => {
     )
   )
   self.clients.claim()
+})
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') {
+    self.skipWaiting()
+  }
 })
 
 function isModelRequest(url) {

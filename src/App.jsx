@@ -46,6 +46,7 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [isComparing, setIsComparing] = useState(false)
+  const [swRegistration, setSwRegistration] = useState(null)
   const canvasRef = useRef(null)
 
   const [hasSavedProject, setHasSavedProject] = useState(() => {
@@ -78,6 +79,12 @@ export default function App() {
     }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  useEffect(() => {
+    const handler = (e) => setSwRegistration(e.detail)
+    window.addEventListener('sw-update-available', handler)
+    return () => window.removeEventListener('sw-update-available', handler)
   }, [])
 
   const handleInstall = async () => {
@@ -146,6 +153,13 @@ export default function App() {
 
   const handleDownload = () => setShowExportDialog(true)
 
+  const handleUpdate = () => {
+    const waiting = swRegistration?.waiting
+    if (waiting) {
+      waiting.postMessage('SKIP_WAITING')
+    }
+  }
+
   if (mode === 'collage') {
     return (
       <Suspense fallback={<EditorFallback />}>
@@ -174,6 +188,13 @@ export default function App() {
   if (!imageSrc) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
+        {swRegistration && (
+          <div className="fixed top-0 inset-x-0 flex items-center justify-center gap-3 px-4 py-2 bg-amber-500 text-zinc-900 text-sm font-medium z-50">
+            <span>A new version is available!</span>
+            <button onClick={handleUpdate} className="px-3 py-1 bg-zinc-900 text-amber-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors">Update Now</button>
+            <button onClick={() => setSwRegistration(null)} className="text-zinc-800 hover:text-zinc-900 text-lg leading-none">×</button>
+          </div>
+        )}
         <h1 className="text-3xl font-bold text-amber-500 mb-2">Photo Editor</h1>
         <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
         {hasSavedProject && (
@@ -220,6 +241,23 @@ export default function App() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
+      {swRegistration && (
+        <div className="flex items-center justify-center gap-3 px-4 py-2 bg-amber-500 text-zinc-900 text-sm font-medium">
+          <span>A new version is available!</span>
+          <button
+            onClick={handleUpdate}
+            className="px-3 py-1 bg-zinc-900 text-amber-400 rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors"
+          >
+            Update Now
+          </button>
+          <button
+            onClick={() => setSwRegistration(null)}
+            className="text-zinc-800 hover:text-zinc-900 text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
       <EditorHeader
         onUndo={undo}
         onRedo={redo}
