@@ -70,7 +70,7 @@
 
 ### Mobile & Export (v0.9)
 - [x] Responsive header — collapse to overflow menu on mobile
-- [x] Mobile tab navigation — 6 tabs (Adjust, Color, Crop, Draw, Layers, Filters)
+- [x] Mobile tab navigation — 7 tabs (Adjust, Color, Crop, Draw, Layers, Templates, Filters)
 - [x] Touch support — single-finger draw/pan, two-finger pinch zoom
 - [x] Watermark on export — text, position, opacity
 - [x] Preset export formats — IG Square/Story/Post, FB Cover, YT Thumb, Twitter
@@ -84,3 +84,10 @@
 - [x] Smart auto-crop — COCO-SSD object detection to find subjects and auto-crop with 15% padding
 - [x] Style transfer — Magenta arbitrary style transfer with 4 built-in presets + custom upload
 - [x] Style strength slider (10–100%) for blending original and stylized output
+
+### Templates & Social (v1.2)
+- [x] Collage builder — 7 layouts (2-grid, 3-horizontal, 3-vertical, 4-grid, 6-grid, 1+2, 2+1), gap/radius/bg controls, 4 output sizes, canvas compositing with cover-fill and rounded corners
+
+### Templates & Social (v1.2)
+- [x] Template panel — sidebar with pre-designed layouts (Clean Story, Bold Story, Minimal Post, Vintage Post, FB Cover, YT Thumbnail, Cinematic, Moody)
+- [x] Category filter — Stories, Posts, Social, Styles

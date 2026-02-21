@@ -7,6 +7,7 @@ import { CurvesPanel } from './CurvesPanel'
 import { MaskPanel } from './MaskPanel'
 import { LayerPanel } from './LayerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
+import { TemplatePanel } from './TemplatePanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 
@@ -17,6 +18,7 @@ const MOBILE_TABS = [
   { id: 'crop', label: 'Crop' },
   { id: 'draw', label: 'Draw' },
   { id: 'layers', label: 'Layers' },
+  { id: 'templates', label: 'Templates' },
   { id: 'filters', label: 'Filters' },
 ]
 
@@ -565,6 +567,11 @@ export function EditorSidebar({
             }
           />
         </div>
+      </div>
+
+      {/* Templates tab */}
+      <div className={activeTab !== 'templates' ? 'hidden lg:block' : ''}>
+        <TemplatePanel applyChange={applyChange} />
       </div>
 
       {/* Filters tab: Filters + History */}

@@ -110,8 +110,8 @@
 
 ### 4.1 Templates
 
-- [ ] **Story templates** — Instagram/Snap layouts, borders, overlays
-- [ ] **Collage builder** — Multiple photos in one frame
+- [x] **Story templates** — Instagram/Snap layouts, borders, overlays (TemplatePanel with 8 presets)
+- [x] **Collage builder** — Multiple photos in one frame
 - [ ] **Custom templates** — Save and reuse layouts
 
 ### 4.2 Export & Sharing

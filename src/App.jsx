@@ -10,10 +10,12 @@ import {
   EditorSidebar,
   ShareModal,
   ExportDialog,
+  CollageBuilder,
 } from './components'
 
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
+  const [mode, setMode] = useState('editor')
   const [uploadLoading, setUploadLoading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -102,6 +104,18 @@ export default function App() {
 
   const handleDownload = () => setShowExportDialog(true)
 
+  if (mode === 'collage') {
+    return (
+      <CollageBuilder
+        onComplete={(dataUrl) => {
+          setImageSrc(dataUrl)
+          setMode('editor')
+        }}
+        onBack={() => setMode('editor')}
+      />
+    )
+  }
+
   if (!imageSrc) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -118,6 +132,12 @@ export default function App() {
         )}
         <div className="w-full max-w-md">
           <ImageUpload onImageLoad={handleImageLoad} loading={uploadLoading} onLoadingChange={setUploadLoading} />
+          <button
+            onClick={() => setMode('collage')}
+            className="w-full mt-4 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-amber-500/50 rounded-xl text-zinc-300 hover:text-amber-400 transition-colors"
+          >
+            Create Collage
+          </button>
         </div>
       </div>
     )
