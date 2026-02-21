@@ -32,3 +32,12 @@ Open [http://localhost:5173](http://localhost:5173)
 npm run build
 npm run preview
 ```
+
+## Docs
+
+| File | Purpose |
+|------|---------|
+| `docs/ROADMAP.md` | Phased plan and priorities |
+| `docs/PROGRESS.md` | What's built (update when adding features) |
+| `docs/CODE_STYLE.md` | Coding conventions for contributors |
+| `docs/OPEN_SOURCE_REFS.md` | Open source repos to reference |

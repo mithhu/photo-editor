@@ -1,0 +1,29 @@
+export const INITIAL_EDIT_STATE = {
+  brightness: 1,
+  contrast: 1,
+  saturation: 1,
+  rotation: 0,
+  cropRatio: 'original',
+  preset: 'none',
+}
+
+export const FILTER_PRESETS = [
+  { id: 'none', name: 'None', filter: '' },
+  { id: 'clarendon', name: 'Clarendon', filter: 'contrast(1.2) saturate(1.35)' },
+  { id: 'juno', name: 'Juno', filter: 'sepia(0.15) contrast(1.15) saturate(1.25) brightness(1.05)' },
+  { id: 'teal-orange', name: 'Teal & Orange', filter: 'sepia(0.25) hue-rotate(-10deg) contrast(1.15) saturate(1.1)' },
+  { id: 'vhs', name: 'VHS / Retro', filter: 'saturate(0.6) contrast(1.1) brightness(0.95) hue-rotate(-5deg)' },
+  { id: 'dreamy', name: 'Dreamy', filter: 'contrast(0.9) saturate(0.85) brightness(1.08)' },
+  { id: 'y2k', name: 'Y2K', filter: 'contrast(1.2) saturate(1.5) brightness(1.02)' },
+  { id: 'golden-hour', name: 'Golden Hour', filter: 'sepia(0.3) saturate(1.2) brightness(1.1) contrast(1.05)' },
+  { id: 'moody', name: 'Moody', filter: 'contrast(1.25) saturate(0.85) brightness(0.9)' },
+  { id: 'vintage', name: 'Vintage', filter: 'sepia(0.5) contrast(1.1) saturate(0.9)' },
+  { id: 'cinematic', name: 'Cinematic', filter: 'contrast(1.2) saturate(0.8) brightness(0.95)' },
+  { id: 'dramatic', name: 'Dramatic', filter: 'contrast(1.3) saturate(1.2)' },
+  { id: 'warm', name: 'Warm', filter: 'sepia(0.2) saturate(1.2) brightness(1.05)' },
+  { id: 'cool', name: 'Cool', filter: 'saturate(0.9) hue-rotate(-10deg)' },
+  { id: 'bw', name: 'B&W', filter: 'grayscale(1) contrast(1.1)' },
+  { id: 'noir', name: 'Noir', filter: 'grayscale(1) contrast(1.35) brightness(0.9)' },
+  { id: 'fade', name: 'Fade', filter: 'contrast(0.9) saturate(0.85)' },
+  { id: 'vivid', name: 'Vivid', filter: 'saturate(1.4) contrast(1.1)' },
+]

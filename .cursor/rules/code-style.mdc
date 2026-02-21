@@ -1,0 +1,44 @@
+---
+description: Photo Editor coding style and conventions
+alwaysApply: true
+---
+
+# Photo Editor — Code Style Guide
+
+Follow these conventions in all new code. Full guide: `docs/CODE_STYLE.md`
+
+## Structure
+- One component per file in `src/components/`
+- Extract reusable logic into `src/hooks/`
+- Shared constants in `src/constants.js`
+- Keep `App.jsx` thin (~100 lines) — orchestration only
+
+## React
+- Functional components; no class components
+- `useCallback` for handlers passed as props
+- `useRef` for DOM (canvas, input); avoid refs in dependency arrays unless linter requires
+- Prefer composition over prop drilling
+
+## Naming
+- Components: PascalCase (`EditorSidebar.jsx`)
+- Hooks: camelCase with `use` prefix (`useEditHistory.js`)
+- Constants: UPPER_SNAKE (`INITIAL_EDIT_STATE`, `FILTER_PRESETS`)
+
+## Styling
+- Tailwind only; no CSS modules or styled-components
+- Use semantic classes: `text-zinc-400`, `bg-zinc-900`, `accent-amber-500`
+- Responsive: `lg:` for sidebar layout changes
+
+## File Organization
+```
+src/
+├── components/   # UI components
+├── hooks/        # Custom hooks
+├── constants.js  # Shared config
+└── utils/        # Pure helpers (when added)
+```
+
+## When Adding Features
+1. Add constants to `constants.js` if reusable
+2. Create component in `components/` and export from `index.js`
+3. Update `docs/PROGRESS.md` and `docs/ROADMAP.md` after committing
