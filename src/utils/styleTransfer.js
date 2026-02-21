@@ -1,12 +1,17 @@
-import * as tf from '@tensorflow/tfjs'
-
 let styleNet = null
 let transformNet = null
+let _tf = null
 
 const STYLE_NET_URL = 'https://storage.googleapis.com/magenta-js/image/style_transfer/style_net/model.json'
 const TRANSFORM_NET_URL = 'https://storage.googleapis.com/magenta-js/image/style_transfer/transformer_net/model.json'
 
+async function getTf() {
+  if (!_tf) _tf = await import('@tensorflow/tfjs')
+  return _tf
+}
+
 async function loadModels(onProgress) {
+  const tf = await getTf()
   if (!styleNet) {
     onProgress?.('Loading style model...')
     await tf.ready()
@@ -21,6 +26,7 @@ async function loadModels(onProgress) {
 export async function applyStyleTransfer(contentCanvas, styleImageSrc, strength = 1.0, onProgress) {
   onProgress?.('Loading models...')
   await loadModels(onProgress)
+  const tf = await getTf()
 
   onProgress?.('Processing style...')
 

@@ -1,4 +1,4 @@
-import imglyRemoveBackground from '@imgly/background-removal'
+import { removeBackground as imglyRemoveBackground } from '@imgly/background-removal'
 
 export async function removeBackground(imageSrc, onProgress) {
   const config = {

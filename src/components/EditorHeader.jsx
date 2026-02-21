@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onAutoEnhance, onNewImage, onDownload, onShare }) {
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onAutoEnhance, onNewImage, onDownload, onShare, onBatch }) {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -64,6 +64,12 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
             New Image
           </button>
           <button
+            onClick={onBatch}
+            className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
+          >
+            Batch
+          </button>
+          <button
             onClick={onShare}
             className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
           >
@@ -105,6 +111,12 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
                 className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
               >
                 New Image
+              </button>
+              <button
+                onClick={() => { onBatch?.(); closeMenu() }}
+                className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-zinc-700"
+              >
+                Batch Process
               </button>
               <button
                 onClick={() => { onShare(); closeMenu() }}

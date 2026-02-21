@@ -91,3 +91,9 @@
 ### Templates & Social (v1.2)
 - [x] Template panel — sidebar with pre-designed layouts (Clean Story, Bold Story, Minimal Post, Vintage Post, FB Cover, YT Thumbnail, Cinematic, Moody)
 - [x] Category filter — Stories, Posts, Social, Styles
+
+### Batch Processing (v1.3)
+- [x] Batch processor — upload multiple images, apply current edit state to all at once
+- [x] Thumbnail grid with progress indicator and per-image status
+- [x] Sequential download of all processed images
+- [x] Accessible from upload screen, editor header (desktop + mobile)

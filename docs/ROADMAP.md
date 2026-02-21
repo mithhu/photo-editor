@@ -99,7 +99,7 @@
 ### 3.2 Smart Suggestions
 
 - [x] Auto crop / composition suggestions (via smart crop)
-- [ ] Suggested filters based on image content
+- [x] Suggested filters based on image content
 - [ ] Exposure/white balance suggestions
 
 ---
@@ -112,7 +112,7 @@
 
 - [x] **Story templates** — Instagram/Snap layouts, borders, overlays (TemplatePanel with 8 presets)
 - [x] **Collage builder** — Multiple photos in one frame
-- [ ] **Custom templates** — Save and reuse layouts
+- [x] **Custom templates** — Save and reuse layouts (localStorage)
 
 ### 4.2 Export & Sharing
 
@@ -134,7 +134,7 @@
 
 - [ ] Web Workers for heavy processing (curves, filters)
 - [ ] WebGL rendering (e.g. PixiJS or custom shaders)
-- [ ] Lazy load editor UI
+- [x] Lazy load editor UI
 - [ ] Virtual scrolling for layers
 
 ### 5.2 Cloud & Sync
@@ -156,7 +156,7 @@
 Ideas to stand out:
 
 - **Presets marketplace** — Community filter and LUT packs
-- **Batch processing** — Apply edits to multiple images
+- ~~**Batch processing** — Apply edits to multiple images~~ ✅ Done (v1.3)
 - **Plugins / extensions** — Third-party tools or filters
 - **Pro features** — RAW support, non-destructive edits, HDR merge
 - **Mobile PWA** — Camera capture, offline editing

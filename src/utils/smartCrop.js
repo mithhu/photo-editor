@@ -1,10 +1,9 @@
-import * as tf from '@tensorflow/tfjs'
-import * as cocoSsd from '@tensorflow-models/coco-ssd'
-
 let model = null
 
 async function loadModel() {
   if (!model) {
+    const tf = await import('@tensorflow/tfjs')
+    const cocoSsd = await import('@tensorflow-models/coco-ssd')
     await tf.ready()
     model = await cocoSsd.load()
   }

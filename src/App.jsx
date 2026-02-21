@@ -20,6 +20,9 @@ const ExportDialog = lazy(() =>
 const CollageBuilder = lazy(() =>
   import('./components/CollageBuilder').then((m) => ({ default: m.CollageBuilder }))
 )
+const BatchProcessor = lazy(() =>
+  import('./components/BatchProcessor').then((m) => ({ default: m.BatchProcessor }))
+)
 
 function EditorFallback() {
   return (
@@ -35,6 +38,7 @@ function EditorFallback() {
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
   const [mode, setMode] = useState('editor')
+  const [installPrompt, setInstallPrompt] = useState(null)
   const [uploadLoading, setUploadLoading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
@@ -63,6 +67,22 @@ export default function App() {
   } = useEditHistory(INITIAL_EDIT_STATE)
 
   const { clear, restore } = useProjectSave(imageSrc, editState, setEditState, setImageSrc)
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault()
+      setInstallPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleInstall = async () => {
+    if (!installPrompt) return
+    installPrompt.prompt()
+    await installPrompt.userChoice
+    setInstallPrompt(null)
+  }
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -137,6 +157,17 @@ export default function App() {
     )
   }
 
+  if (mode === 'batch') {
+    return (
+      <Suspense fallback={<EditorFallback />}>
+        <BatchProcessor
+          editState={editState}
+          onBack={() => setMode('editor')}
+        />
+      </Suspense>
+    )
+  }
+
   if (!imageSrc) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6">
@@ -153,11 +184,25 @@ export default function App() {
         )}
         <div className="w-full max-w-md">
           <ImageUpload onImageLoad={handleImageLoad} loading={uploadLoading} onLoadingChange={setUploadLoading} />
+          {installPrompt && (
+            <button
+              onClick={handleInstall}
+              className="mt-4 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg text-sm transition-colors w-full"
+            >
+              Install App for Offline Use
+            </button>
+          )}
           <button
             onClick={() => setMode('collage')}
             className="w-full mt-4 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-amber-500/50 rounded-xl text-zinc-300 hover:text-amber-400 transition-colors"
           >
             Create Collage
+          </button>
+          <button
+            onClick={() => setMode('batch')}
+            className="w-full mt-2 px-4 py-3 bg-zinc-800 border border-zinc-700 hover:border-purple-500/50 rounded-xl text-zinc-300 hover:text-purple-400 transition-colors"
+          >
+            Batch Process
           </button>
         </div>
       </div>
@@ -177,6 +222,7 @@ export default function App() {
         onNewImage={handleNewImage}
         onDownload={handleDownload}
         onShare={() => setShowShareModal(true)}
+        onBatch={() => setMode('batch')}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">
