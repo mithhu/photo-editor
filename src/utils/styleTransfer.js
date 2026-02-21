@@ -2,8 +2,13 @@ let styleNet = null
 let transformNet = null
 let _tf = null
 
-const STYLE_NET_URL = 'https://reiinakano.github.io/arbitrary-image-stylization-tfjs/saved_model_style_js/model.json'
-const TRANSFORM_NET_URL = 'https://reiinakano.github.io/arbitrary-image-stylization-tfjs/saved_model_transformer_separable_js/model.json'
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const STYLE_MODEL_BASE = isDev
+  ? '/proxy-style-models/arbitrary-image-stylization-tfjs'
+  : 'https://reiinakano.github.io/arbitrary-image-stylization-tfjs'
+
+const STYLE_NET_URL = `${STYLE_MODEL_BASE}/saved_model_style_js/model.json`
+const TRANSFORM_NET_URL = `${STYLE_MODEL_BASE}/saved_model_transformer_separable_js/model.json`
 
 async function getTf() {
   if (!_tf) _tf = await import('@tensorflow/tfjs')
@@ -80,7 +85,6 @@ function loadImage(src) {
   })
 }
 
-const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 const WIKI_BASE = isDev
   ? '/proxy-wiki'
   : 'https://upload.wikimedia.org'

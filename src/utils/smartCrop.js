@@ -1,12 +1,17 @@
 let model = null
 
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
 async function loadModel() {
   if (!model) {
     const tf = await import('@tensorflow/tfjs')
     await tf.ready()
     const cocoSsd = await import('@tensorflow-models/coco-ssd')
     try {
-      model = await cocoSsd.load()
+      const config = isDev
+        ? { modelUrl: '/proxy-tfjs-models/tfjs-models/savedmodel/ssdlite_mobilenet_v2/model.json' }
+        : undefined
+      model = await cocoSsd.load(config)
     } catch (e) {
       throw new Error(`COCO-SSD model failed to load: ${e.message}. Check your network connection.`)
     }

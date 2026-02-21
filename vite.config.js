@@ -10,6 +10,16 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy-wiki/, ''),
       },
+      '/proxy-style-models': {
+        target: 'https://reiinakano.github.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy-style-models/, ''),
+      },
+      '/proxy-tfjs-models': {
+        target: 'https://storage.googleapis.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy-tfjs-models/, ''),
+      },
     },
   },
   build: {
