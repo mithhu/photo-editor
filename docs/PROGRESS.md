@@ -16,11 +16,12 @@
 - [x] Adjustments — brightness, contrast, saturation, exposure, highlights, shadows
 - [x] Crop — aspect ratios (Original, 1:1, 4:5, 16:9, 9:16, 3:4, 2:3, custom)
 - [x] Custom crop — numeric x, y, w, h inputs
+- [x] Visual crop handles — 8 drag points, rule-of-thirds grid, aspect ratio enforcement
 - [x] Rotate — ±90°
 - [x] Flip — horizontal & vertical
 - [x] Filter presets — 18 total (Clarendon, Juno, Teal & Orange, VHS, Dreamy, Y2K, etc.)
 - [x] Text overlay — add text, edit content, color picker, delete
-- [x] Zoom & pan — scroll to zoom, drag to pan
+- [x] Zoom & pan — scroll to zoom, drag to pan, pinch-to-zoom on mobile
 - [x] Export — download as PNG
 - [x] Undo / Redo — history stack, ⌘Z / ⌘⇧Z
 - [x] Per-slider reset — ↺ button when value differs from default
@@ -50,18 +51,26 @@
 - [x] Export dialog — format selection (PNG/JPEG/WEBP)
 - [x] Quality slider for JPEG/WEBP exports
 - [x] Resize on export with aspect ratio lock
-- [x] Preset export formats — IG Square, IG Story, IG Post, FB Cover, YT Thumb, Twitter
-- [x] Watermark on export — text, position (bottom-right/left, center), opacity
 - [x] Estimated file size preview
 - [x] Error handling — file type, size limits (20MB/8192px), corrupted file detection
 
-### Smart Features & Persistence (v0.6)
-- [x] Auto-enhance — one-click histogram analysis to auto-adjust brightness, contrast, exposure, saturation
-- [x] Project save/load — auto-save to localStorage every 10s, save on unload, restore prompt on upload screen
+### Color Grading (v0.6)
+- [x] HSL sliders — per-color hue/saturation/luminance for 8 color ranges
+- [x] RGB curves — interactive canvas with draggable control points
+- [x] Channel selector (RGB, Red, Green, Blue) with smooth-step interpolation
 
-### Responsive & Mobile (v0.7)
-- [x] Responsive header — mobile overflow "⋯" menu for secondary actions, undo/redo always visible
-- [x] Mobile tab navigation — sidebar sections organized into swipeable tabs (Adjust, Color, Crop, Draw, Layers, Filters)
-- [x] Touch support — single-touch drawing/pan, two-finger pinch-to-zoom on canvas
-- [x] Scroll prevention — `touch-none` on canvas to prevent page scroll during editing
-- [x] Click-outside dismissal — mobile header menu closes on outside tap
+### Smart Features (v0.7)
+- [x] Auto-enhance — one-click histogram analysis for brightness/contrast/exposure/saturation
+- [x] Project save — auto-save to localStorage every 10s, restore on reload
+
+### Layer Management (v0.8)
+- [x] Layer panel — unified view of text and shape layers
+- [x] Layer visibility toggle, reorder (up/down), delete
+- [x] layerVisibility state integrated into canvas rendering
+
+### Mobile & Export (v0.9)
+- [x] Responsive header — collapse to overflow menu on mobile
+- [x] Mobile tab navigation — 6 tabs (Adjust, Color, Crop, Draw, Layers, Filters)
+- [x] Touch support — single-finger draw/pan, two-finger pinch zoom
+- [x] Watermark on export — text, position, opacity
+- [x] Preset export formats — IG Square/Story/Post, FB Cover, YT Thumb, Twitter

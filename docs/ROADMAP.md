@@ -47,7 +47,7 @@
 
 - [ ] **TypeScript** — Add types for state, props, canvas APIs
 - [x] **Image size limits** — Warn/cap large uploads (20MB, 8192px)
-- [x] **Responsive layout** — Mobile-friendly toolbar and sidebar
+- [x] **Responsive layout** — Mobile tabs, responsive header, touch support
 
 ---
 
@@ -59,7 +59,7 @@
 
 - [x] **Text overlay** — Add text with content, color
 - [x] **Stickers / shapes** — Basic shapes (circle, square, triangle, star, heart, arrows)
-- [ ] **Layer panel** — Reorder, toggle visibility, delete
+- [x] **Layer panel** — Reorder, toggle visibility, delete
 
 ### 2.2 Drawing & Brushes
 
@@ -69,10 +69,10 @@
 
 ### 2.3 Curves & Color Grading
 
-- [ ] RGB curves
+- [x] RGB curves
 - [ ] Color wheels (shadows, midtones, highlights)
 - [ ] Split toning
-- [ ] HSL sliders per color
+- [x] HSL sliders per color
 
 ### 2.4 Local Adjustments
 
