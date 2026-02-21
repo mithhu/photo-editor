@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Slider } from './Slider'
 import { HSLPanel } from './HSLPanel'
+import { ColorWheelPanel } from './ColorWheelPanel'
+import { SplitTonePanel } from './SplitTonePanel'
 import { CurvesPanel } from './CurvesPanel'
 import { LayerPanel } from './LayerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
@@ -123,7 +125,7 @@ export function EditorSidebar({
         </div>
       </div>
 
-      {/* Color tab: HSL Panel */}
+      {/* Color tab: HSL Panel + Color Grading + Split Toning */}
       <div className={activeTab !== 'color' ? 'hidden lg:block' : ''}>
         <HSLPanel
           hsl={editState.hsl}
@@ -137,6 +139,23 @@ export function EditorSidebar({
             }))
           }
         />
+        <div className="mt-4 lg:mt-6">
+          <ColorWheelPanel
+            colorGrade={editState.colorGrade}
+            onChange={(zone, val) =>
+              applyChange((s) => ({
+                ...s,
+                colorGrade: { ...(s.colorGrade || {}), [zone]: val },
+              }))
+            }
+          />
+        </div>
+        <div className="mt-4 lg:mt-6">
+          <SplitTonePanel
+            splitTone={editState.splitTone}
+            onChange={(val) => applyChange((s) => ({ ...s, splitTone: val }))}
+          />
+        </div>
       </div>
 
       {/* Crop tab: Crop + Rotate */}

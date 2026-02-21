@@ -3,6 +3,7 @@ import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
 import { buildCurveLUT } from '../utils/curvesUtils'
+import { useThrottledDraw } from '../hooks/useThrottledDraw'
 
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
@@ -35,6 +36,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
     hsl,
     curves,
+    colorGrade,
+    splitTone,
   } = editState
 
   const cropActive = cropRatio !== 'original'
@@ -68,7 +71,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasCurves = curves && Object.entries(curves).some(([, pts]) =>
     pts.length > 2 || (pts.length === 2 && (pts[0][0] !== 0 || pts[0][1] !== 0 || pts[1][0] !== 1 || pts[1][1] !== 1))
   )
-  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves)
+  const hasColorGrade = colorGrade && Object.values(colorGrade).some(
+    (c) => (c?.r !== 0 || c?.g !== 0 || c?.b !== 0)
+  )
+  const hasSplitTone = splitTone && (splitTone.highlightSat > 0 || splitTone.shadowSat > 0)
+  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -219,6 +226,51 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           d[i + 1] = gLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 1])))]]
           d[i + 2] = bLUT[rgbLUT[Math.min(255, Math.max(0, Math.round(d[i + 2])))]]
         }
+        if (hasColorGrade) {
+          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
+          const shadowWeight = Math.max(0, 1 - lum * 3)
+          const highlightWeight = Math.max(0, (lum - 0.66) * 3)
+          const midtoneWeight = 1 - shadowWeight - highlightWeight
+
+          const sr = (colorGrade.shadows?.r || 0) * shadowWeight * 30
+          const sg = (colorGrade.shadows?.g || 0) * shadowWeight * 30
+          const sb = (colorGrade.shadows?.b || 0) * shadowWeight * 30
+          const mr = (colorGrade.midtones?.r || 0) * midtoneWeight * 30
+          const mg = (colorGrade.midtones?.g || 0) * midtoneWeight * 30
+          const mb = (colorGrade.midtones?.b || 0) * midtoneWeight * 30
+          const hr = (colorGrade.highlights?.r || 0) * highlightWeight * 30
+          const hg = (colorGrade.highlights?.g || 0) * highlightWeight * 30
+          const hb = (colorGrade.highlights?.b || 0) * highlightWeight * 30
+
+          d[i] = Math.min(255, Math.max(0, d[i] + sr + mr + hr))
+          d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + sg + mg + hg))
+          d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + sb + mb + hb))
+        }
+        if (hasSplitTone) {
+          const lum = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255
+          const bal = (splitTone.balance || 0) * 0.5 + 0.5
+
+          let hue, sat, weight
+          if (lum < bal) {
+            hue = splitTone.shadowHue || 0
+            sat = splitTone.shadowSat || 0
+            weight = (bal - lum) / Math.max(bal, 0.01)
+          } else {
+            hue = splitTone.highlightHue || 0
+            sat = splitTone.highlightSat || 0
+            weight = (lum - bal) / Math.max(1 - bal, 0.01)
+          }
+
+          if (sat > 0) {
+            const angle = hue * Math.PI * 2
+            const tr = Math.cos(angle) * sat * weight * 40
+            const tg = Math.cos(angle - 2.094) * sat * weight * 40
+            const tb = Math.cos(angle + 2.094) * sat * weight * 40
+            d[i] = Math.min(255, Math.max(0, d[i] + tr))
+            d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + tg))
+            d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + tb))
+          }
+        }
       }
       ctx.putImageData(imgData, 0, 0)
     }
@@ -345,17 +397,19 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone])
+
+  const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
   const handleImageLoad = useCallback(() => {
     const img = imageRef.current
     if (img) setImageDims({ w: img.naturalWidth, h: img.naturalHeight })
-    drawCanvas()
-  }, [drawCanvas])
+    throttledDraw()
+  }, [throttledDraw])
 
   useEffect(() => {
-    drawCanvas()
-  }, [drawCanvas, imageSrc])
+    throttledDraw()
+  }, [throttledDraw, imageSrc])
 
   const getCanvasPoint = useCallback((e) => {
     const canvas = canvasRef.current
@@ -419,7 +473,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           ...currentStrokeRef.current,
           points: [...currentStrokeRef.current.points, pt],
         }
-        drawCanvas()
+        throttledDraw()
         return
       }
       if (!isDragging || !onZoomPanChange) return
@@ -431,7 +485,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         panY: dragStartRef.current.panY + dy,
       })
     },
-    [isDragging, isDrawing, zoom, onZoomPanChange, getCanvasPoint, drawCanvas],
+    [isDragging, isDrawing, zoom, onZoomPanChange, getCanvasPoint, throttledDraw],
   )
 
   const handleMouseUp = useCallback(() => {
@@ -494,7 +548,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           ...currentStrokeRef.current,
           points: [...currentStrokeRef.current.points, pt],
         }
-        drawCanvas()
+        throttledDraw()
       } else if (isDragging && onZoomPanChange) {
         e.preventDefault()
         const dx = touch.clientX - dragStartRef.current.x
@@ -518,7 +572,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       touchRef.current.lastDistance = distance
     }
-  }, [isDrawing, isDragging, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, drawCanvas])
+  }, [isDrawing, isDragging, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw])
 
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {

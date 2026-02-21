@@ -44,6 +44,18 @@ export const INITIAL_EDIT_STATE = {
     green: [[0, 0], [1, 1]],
     blue: [[0, 0], [1, 1]],
   },
+  colorGrade: {
+    shadows: { r: 0, g: 0, b: 0 },
+    midtones: { r: 0, g: 0, b: 0 },
+    highlights: { r: 0, g: 0, b: 0 },
+  },
+  splitTone: {
+    highlightHue: 0,
+    highlightSat: 0,
+    shadowHue: 0,
+    shadowSat: 0,
+    balance: 0,
+  },
 }
 
 export const FILTER_PRESETS = [

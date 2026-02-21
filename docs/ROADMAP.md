@@ -88,7 +88,7 @@
 
 ### 3.1 AI Features (client-side or API)
 
-- [ ] **Background removal** — TensorFlow.js or Remove.bg-style API
+- [x] **Background removal** — @imgly/background-removal (ONNX, client-side)
 - [x] **Smart auto-crop** — COCO-SSD object detection + bounding box crop with padding
 - [x] **Style transfer** — Magenta arbitrary style transfer (4 presets + custom upload + strength)
 - [ ] **Upscaling** — 2x/4x upscale
