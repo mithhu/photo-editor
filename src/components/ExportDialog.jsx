@@ -31,6 +31,11 @@ export function ExportDialog({ canvasRef, onClose }) {
   const [format, setFormat] = useState('png')
   const [quality, setQuality] = useState(DEFAULT_QUALITY)
   const [estimatedSize, setEstimatedSize] = useState(null)
+  const [resize, setResize] = useState(false)
+  const [resizeW, setResizeW] = useState(0)
+  const [resizeH, setResizeH] = useState(0)
+  const [lockRatio, setLockRatio] = useState(true)
+  const aspectRatioRef = useRef(1)
   const initRef = useRef(false)
 
   const currentFormat = FORMATS.find((f) => f.id === format)
@@ -50,8 +55,14 @@ export function ExportDialog({ canvasRef, onClose }) {
   useEffect(() => {
     if (initRef.current) return
     initRef.current = true
+    const canvas = canvasRef.current
     const fmt = FORMATS.find((f) => f.id === 'png')
-    setEstimatedSize(computeSize(canvasRef.current, fmt, DEFAULT_QUALITY))
+    setEstimatedSize(computeSize(canvas, fmt, DEFAULT_QUALITY))
+    if (canvas) {
+      setResizeW(canvas.width)
+      setResizeH(canvas.height)
+      aspectRatioRef.current = canvas.width / canvas.height
+    }
   }, [canvasRef])
 
   const handleFormatChange = (id) => {
@@ -65,12 +76,38 @@ export function ExportDialog({ canvasRef, onClose }) {
     setEstimatedSize(computeSize(canvasRef.current, currentFormat, val))
   }
 
+  const handleWidthChange = (w) => {
+    const clamped = Math.max(1, Math.round(w))
+    setResizeW(clamped)
+    if (lockRatio) setResizeH(Math.max(1, Math.round(clamped / aspectRatioRef.current)))
+  }
+
+  const handleHeightChange = (h) => {
+    const clamped = Math.max(1, Math.round(h))
+    setResizeH(clamped)
+    if (lockRatio) setResizeW(Math.max(1, Math.round(clamped * aspectRatioRef.current)))
+  }
+
+  const getExportCanvas = () => {
+    const source = canvasRef.current
+    if (!source) return null
+    if (!resize) return source
+    const tmp = document.createElement('canvas')
+    tmp.width = resizeW
+    tmp.height = resizeH
+    const ctx = tmp.getContext('2d')
+    ctx.drawImage(source, 0, 0, resizeW, resizeH)
+    return tmp
+  }
+
   const handleDownload = () => {
     if (!canvasRef?.current || !currentFormat) return
+    const exportCanvas = getExportCanvas()
+    if (!exportCanvas) return
     const { mimeType, ext } = currentFormat
     const dataUrl = currentFormat.hasQuality
-      ? canvasRef.current.toDataURL(mimeType, quality / 100)
-      : canvasRef.current.toDataURL(mimeType)
+      ? exportCanvas.toDataURL(mimeType, quality / 100)
+      : exportCanvas.toDataURL(mimeType)
     const link = document.createElement('a')
     link.download = `edited-${Date.now()}.${ext}`
     link.href = dataUrl
@@ -117,6 +154,51 @@ export function ExportDialog({ canvasRef, onClose }) {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={resize}
+                onChange={(e) => setResize(e.target.checked)}
+                className="accent-amber-500 w-4 h-4 rounded"
+              />
+              <span className="text-sm text-zinc-300">Resize</span>
+            </label>
+            {resize && (
+              <div className="mt-3 flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="text-xs text-zinc-500 block mb-1">Width</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={resizeW}
+                    onChange={(e) => handleWidthChange(Number(e.target.value))}
+                    className="w-full bg-zinc-800 border border-zinc-700 px-2 py-1.5 rounded-lg text-sm text-zinc-200 tabular-nums"
+                  />
+                </div>
+                <button
+                  onClick={() => setLockRatio((v) => !v)}
+                  className={`mb-0.5 p-1.5 rounded-lg text-sm transition-colors ${
+                    lockRatio ? 'bg-amber-500/20 text-amber-400' : 'bg-zinc-800 text-zinc-500'
+                  }`}
+                  title={lockRatio ? 'Aspect ratio locked' : 'Aspect ratio unlocked'}
+                >
+                  {lockRatio ? '🔗' : '🔓'}
+                </button>
+                <div className="flex-1">
+                  <label className="text-xs text-zinc-500 block mb-1">Height</label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={resizeH}
+                    onChange={(e) => handleHeightChange(Number(e.target.value))}
+                    className="w-full bg-zinc-800 border border-zinc-700 px-2 py-1.5 rounded-lg text-sm text-zinc-200 tabular-nums"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {currentFormat?.hasQuality && (

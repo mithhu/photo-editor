@@ -15,6 +15,7 @@ export default function App() {
   const [uploadLoading, setUploadLoading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const [isComparing, setIsComparing] = useState(false)
   const canvasRef = useRef(null)
 
   const {
@@ -26,6 +27,8 @@ export default function App() {
     reset,
     canUndo,
     canRedo,
+    historyIndex,
+    historyLength,
   } = useEditHistory(INITIAL_EDIT_STATE)
 
   useEffect(() => {
@@ -98,6 +101,8 @@ export default function App() {
         onRedo={redo}
         canUndo={canUndo}
         canRedo={canRedo}
+        onCompareStart={() => setIsComparing(true)}
+        onCompareEnd={() => setIsComparing(false)}
         onNewImage={handleNewImage}
         onDownload={handleDownload}
         onShare={() => setShowShareModal(true)}
@@ -108,6 +113,7 @@ export default function App() {
           imageSrc={imageSrc}
           editState={editState}
           canvasRef={canvasRef}
+          isComparing={isComparing}
           onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
           onApplyChange={applyChange}
         />
@@ -121,6 +127,8 @@ export default function App() {
               textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
             }))
           }
+          historyIndex={historyIndex}
+          historyLength={historyLength}
         />
       </div>
 

@@ -2,7 +2,7 @@ import { useRef, useCallback, useEffect, useState } from 'react'
 import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 
-export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, onApplyChange }) {
+export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -35,8 +35,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
   const presetFilter = FILTER_PRESETS.find((p) => p.id === preset)?.filter || ''
   const highlightContrast = 2 - highlights
   const shadowBrightness = shadows
-  const adjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
-  const needsPixelPass = warmth !== 0 || tint !== 0 || vibrance !== 0
+  const fullAdjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
+  const adjustmentFilter = isComparing ? 'none' : fullAdjustmentFilter
+  const needsPixelPass = !isComparing && (warmth !== 0 || tint !== 0 || vibrance !== 0)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -108,6 +109,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
       ctx.putImageData(imgData, 0, 0)
     }
 
+    if (!isComparing) {
     const allStrokes = currentStrokeRef.current
       ? [...(brushStrokes || []), currentStrokeRef.current]
       : (brushStrokes || [])
@@ -215,7 +217,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange, 
         ctx.restore()
       })
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes])
+    }
+  }, [rotation, flipH, flipV, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, shapeOverlays, containerSize, brushStrokes, isComparing])
 
   useEffect(() => {
     drawCanvas()

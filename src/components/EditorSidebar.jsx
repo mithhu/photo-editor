@@ -7,6 +7,8 @@ export function EditorSidebar({
   applyChange,
   applySliderChange,
   onAddText,
+  historyIndex,
+  historyLength,
 }) {
   const {
     brightness,
@@ -336,6 +338,26 @@ export function EditorSidebar({
           ))}
         </div>
       </div>
+
+      {historyLength > 0 && (
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-3">History</h3>
+          <div className="space-y-1 max-h-40 overflow-y-auto">
+            {Array.from({ length: historyLength }, (_, i) => {
+              const isCurrent = i === historyIndex
+              const label = i === 0 ? 'Initial' : `Step ${i}`
+              return (
+                <div
+                  key={i}
+                  className={`text-xs px-2 py-1.5 rounded ${isCurrent ? 'bg-amber-500/20 text-amber-400' : 'text-zinc-500'}`}
+                >
+                  {label}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </aside>
   )
 }

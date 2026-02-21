@@ -1,4 +1,4 @@
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onNewImage, onDownload, onShare }) {
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart, onCompareEnd, onNewImage, onDownload, onShare }) {
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
       <h1 className="text-xl font-bold text-amber-500">Photo Editor</h1>
@@ -21,6 +21,15 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onNewImage, onD
             ↷
           </button>
         </div>
+        <button
+          onMouseDown={onCompareStart}
+          onMouseUp={onCompareEnd}
+          onMouseLeave={onCompareEnd}
+          title="Hold to compare"
+          className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+        >
+          Compare
+        </button>
         <button
           onClick={onNewImage}
           className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"

@@ -60,5 +60,7 @@ export function useEditHistory(initialState) {
     reset,
     canUndo: history.length > 0,
     canRedo: future.length > 0,
+    historyIndex: history.length,
+    historyLength: history.length + 1 + future.length,
   }
 }
