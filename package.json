@@ -12,6 +12,10 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
+    "@magenta/image": "^0.2.1",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs": "^4.22.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

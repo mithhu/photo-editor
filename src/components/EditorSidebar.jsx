@@ -3,10 +3,12 @@ import { Slider } from './Slider'
 import { HSLPanel } from './HSLPanel'
 import { CurvesPanel } from './CurvesPanel'
 import { LayerPanel } from './LayerPanel'
+import { AIToolsPanel } from './AIToolsPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 
 const MOBILE_TABS = [
+  { id: 'ai', label: 'AI' },
   { id: 'adjust', label: 'Adjust' },
   { id: 'color', label: 'Color' },
   { id: 'crop', label: 'Crop' },
@@ -22,6 +24,10 @@ export function EditorSidebar({
   onAddText,
   historyIndex,
   historyLength,
+  imageSrc,
+  onImageReplace,
+  canvasRef,
+  onApplyChange,
 }) {
   const [activeTab, setActiveTab] = useState('adjust')
 
@@ -66,6 +72,16 @@ export function EditorSidebar({
             {tab.label}
           </button>
         ))}
+      </div>
+
+      {/* AI tab: AI Tools */}
+      <div className={activeTab !== 'ai' ? 'hidden lg:block' : ''}>
+        <AIToolsPanel
+          imageSrc={imageSrc}
+          onImageReplace={onImageReplace}
+          canvasRef={canvasRef}
+          onApplyChange={onApplyChange}
+        />
       </div>
 
       {/* Adjust tab: Adjustments + Curves */}

@@ -159,6 +159,12 @@ export default function App() {
           }
           historyIndex={historyIndex}
           historyLength={historyLength}
+          imageSrc={imageSrc}
+          onImageReplace={(newSrc) => {
+            setImageSrc(newSrc)
+          }}
+          canvasRef={canvasRef}
+          onApplyChange={applyChange}
         />
       </div>
 

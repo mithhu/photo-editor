@@ -89,6 +89,8 @@
 ### 3.1 AI Features (client-side or API)
 
 - [ ] **Background removal** — TensorFlow.js or Remove.bg-style API
+- [x] **Smart auto-crop** — COCO-SSD object detection + bounding box crop with padding
+- [x] **Style transfer** — Magenta arbitrary style transfer (4 presets + custom upload + strength)
 - [ ] **Upscaling** — 2x/4x upscale
 - [ ] **Denoise** — Reduce noise
 - [x] **Auto-enhance** — One-click balance (exposure, contrast, color)
@@ -96,7 +98,7 @@
 
 ### 3.2 Smart Suggestions
 
-- [ ] Auto crop / composition suggestions
+- [x] Auto crop / composition suggestions (via smart crop)
 - [ ] Suggested filters based on image content
 - [ ] Exposure/white balance suggestions
 

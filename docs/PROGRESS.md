@@ -74,3 +74,8 @@
 - [x] Touch support — single-finger draw/pan, two-finger pinch zoom
 - [x] Watermark on export — text, position, opacity
 - [x] Preset export formats — IG Square/Story/Post, FB Cover, YT Thumb, Twitter
+
+### AI Features (v1.0)
+- [x] Smart auto-crop — COCO-SSD object detection to find subjects and auto-crop with 15% padding
+- [x] Style transfer — Magenta arbitrary style transfer with 4 built-in presets + custom upload
+- [x] Style strength slider (10–100%) for blending original and stylized output
