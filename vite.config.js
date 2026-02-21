@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/proxy-wiki': {
+        target: 'https://upload.wikimedia.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy-wiki/, ''),
+      },
+    },
+  },
   build: {
     chunkSizeWarningLimit: 1500,
     minify: 'esbuild',

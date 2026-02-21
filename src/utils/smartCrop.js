@@ -3,9 +3,13 @@ let model = null
 async function loadModel() {
   if (!model) {
     const tf = await import('@tensorflow/tfjs')
-    const cocoSsd = await import('@tensorflow-models/coco-ssd')
     await tf.ready()
-    model = await cocoSsd.load()
+    const cocoSsd = await import('@tensorflow-models/coco-ssd')
+    try {
+      model = await cocoSsd.load()
+    } catch (e) {
+      throw new Error(`COCO-SSD model failed to load: ${e.message}. Check your network connection.`)
+    }
   }
   return model
 }

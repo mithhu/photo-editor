@@ -13,13 +13,22 @@ async function getTf() {
 async function loadModels(onProgress) {
   const tf = await getTf()
   if (!styleNet) {
-    onProgress?.('Loading style model...')
+    onProgress?.('Initializing TF.js...')
     await tf.ready()
-    styleNet = await tf.loadGraphModel(STYLE_NET_URL)
+    onProgress?.('Loading style model (~10 MB)...')
+    try {
+      styleNet = await tf.loadGraphModel(STYLE_NET_URL)
+    } catch (e) {
+      throw new Error(`Style model failed to load: ${e.message}. Check your network connection.`)
+    }
   }
   if (!transformNet) {
-    onProgress?.('Loading transform model...')
-    transformNet = await tf.loadGraphModel(TRANSFORM_NET_URL)
+    onProgress?.('Loading transform model (~2.5 MB)...')
+    try {
+      transformNet = await tf.loadGraphModel(TRANSFORM_NET_URL)
+    } catch (e) {
+      throw new Error(`Transform model failed to load: ${e.message}. Check your network connection.`)
+    }
   }
 }
 
@@ -66,14 +75,19 @@ function loadImage(src) {
     const img = new Image()
     img.crossOrigin = 'anonymous'
     img.onload = () => resolve(img)
-    img.onerror = reject
+    img.onerror = () => reject(new Error(`Failed to load style image. The image URL may have CORS restrictions.`))
     img.src = src
   })
 }
 
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+const WIKI_BASE = isDev
+  ? '/proxy-wiki'
+  : 'https://upload.wikimedia.org'
+
 export const STYLE_PRESETS = [
-  { id: 'starry-night', name: 'Starry Night', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/300px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg' },
-  { id: 'great-wave', name: 'Great Wave', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/300px-Tsunami_by_hokusai_19th_century.jpg' },
-  { id: 'scream', name: 'The Scream', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg/300px-Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg' },
-  { id: 'mosaic', name: 'Mosaic', url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Pompeii_-_Casa_del_Fauno_-_Alexanderschlacht_-_Detail.jpg/300px-Pompeii_-_Casa_del_Fauno_-_Alexanderschlacht_-_Detail.jpg' },
+  { id: 'starry-night', name: 'Starry Night', url: `${WIKI_BASE}/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/300px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg` },
+  { id: 'great-wave', name: 'Great Wave', url: `${WIKI_BASE}/wikipedia/commons/thumb/a/a5/Tsunami_by_hokusai_19th_century.jpg/300px-Tsunami_by_hokusai_19th_century.jpg` },
+  { id: 'scream', name: 'The Scream', url: `${WIKI_BASE}/wikipedia/commons/thumb/c/c5/Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg/300px-Edvard_Munch%2C_1893%2C_The_Scream%2C_oil%2C_tempera_and_pastel_on_cardboard%2C_91_x_73_cm%2C_National_Gallery_of_Norway.jpg` },
+  { id: 'mosaic', name: 'Mosaic', url: `${WIKI_BASE}/wikipedia/commons/thumb/8/8a/Pompeii_-_Casa_del_Fauno_-_Alexanderschlacht_-_Detail.jpg/300px-Pompeii_-_Casa_del_Fauno_-_Alexanderschlacht_-_Detail.jpg` },
 ]

@@ -48,10 +48,11 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     setDetectedCount(null)
     try {
       const img = new Image()
+      img.crossOrigin = 'anonymous'
       img.src = imageSrc
       await new Promise((resolve, reject) => {
         img.onload = resolve
-        img.onerror = reject
+        img.onerror = () => reject(new Error('Failed to load image for detection'))
       })
       const predictions = await detectSubjects(img)
       if (predictions.length === 0) {
@@ -117,7 +118,10 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     <div className="space-y-4">
       {/* Background Removal */}
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-4">AI Tools</h3>
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">AI Tools</h3>
+        <p className="text-[10px] text-zinc-500 mb-3">
+          AI features run entirely in your browser. First use downloads models (~10-50 MB).
+        </p>
 
         <div className="space-y-3">
           <button
@@ -144,26 +148,27 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           )}
 
           {bgError && (
-            <p className="text-xs text-red-400">{bgError}</p>
+            <div className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {bgError}
+            </div>
           )}
         </div>
       </div>
 
       {/* Smart Auto-Crop */}
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-4">Smart Crop</h3>
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">Smart Crop</h3>
+        <p className="text-[10px] text-zinc-500 mb-3">
+          Uses object detection to find subjects and crop around them.
+        </p>
 
         <div className="space-y-3">
-          <p className="text-xs text-zinc-500">
-            Detect subjects and auto-crop to focus on them.
-          </p>
-
           <button
             onClick={handleSmartCrop}
             disabled={smartCropLoading || !imageSrc}
             className="w-full py-2.5 text-sm bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 border border-amber-500/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {smartCropLoading ? 'Detecting...' : 'Smart Crop'}
+            {smartCropLoading ? 'Detecting subjects...' : 'Smart Crop'}
           </button>
 
           {detectedCount !== null && (
@@ -173,14 +178,19 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           )}
 
           {smartCropError && (
-            <p className="text-xs text-red-400">{smartCropError}</p>
+            <div className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {smartCropError}
+            </div>
           )}
         </div>
       </div>
 
       {/* Style Transfer */}
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-4">Style Transfer</h3>
+        <h3 className="text-sm font-semibold text-zinc-300 mb-2">Style Transfer</h3>
+        <p className="text-[10px] text-zinc-500 mb-3">
+          Apply the visual style of famous paintings to your photo. First use downloads ~12 MB of models.
+        </p>
 
         <div className="space-y-3">
           <div>
@@ -239,14 +249,16 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           </div>
 
           {styleStatus && (
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2 bg-amber-500/10 rounded-lg p-2 border border-amber-500/20">
+              <div className="w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin shrink-0" />
               <span className="text-xs text-amber-400">{styleStatus}</span>
             </div>
           )}
 
           {styleError && (
-            <p className="text-xs text-red-400">{styleError}</p>
+            <div className="text-xs text-red-400 bg-red-500/10 rounded-lg p-2 border border-red-500/20">
+              {styleError}
+            </div>
           )}
         </div>
       </div>
