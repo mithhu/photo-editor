@@ -24,6 +24,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
 
   const {
     brightness, contrast, saturation, exposure, highlights, shadows,
+    warmth, tint, vibrance,
     rotation, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
   } = editState
 
@@ -31,6 +32,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
   const highlightContrast = 2 - highlights
   const shadowBrightness = shadows
   const adjustmentFilter = `brightness(${brightness * exposure * shadowBrightness}) contrast(${contrast * highlightContrast}) saturate(${saturation}) ${presetFilter}`
+  const needsPixelPass = warmth !== 0 || tint !== 0 || vibrance !== 0
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -78,6 +80,29 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh)
     ctx.restore()
 
+    if (needsPixelPass) {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const d = imgData.data
+      const warmShift = warmth * 30
+      const tintShift = tint * 30
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = Math.min(255, Math.max(0, d[i] + warmShift))
+        d[i + 2] = Math.min(255, Math.max(0, d[i + 2] - warmShift))
+        d[i + 1] = Math.min(255, Math.max(0, d[i + 1] + tintShift))
+
+        if (vibrance !== 0) {
+          const r = d[i], g = d[i + 1], b = d[i + 2]
+          const mx = Math.max(r, g, b)
+          const avg = (r + g + b) / 3
+          const amt = ((mx - avg) / 255) * (-vibrance * 2)
+          d[i] += (mx - r) * amt
+          d[i + 1] += (mx - g) * amt
+          d[i + 2] += (mx - b) * amt
+        }
+      }
+      ctx.putImageData(imgData, 0, 0)
+    }
+
     if (textOverlays?.length) {
       textOverlays.forEach((t) => {
         ctx.save()
@@ -89,7 +114,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, onZoomPanChange }
         ctx.restore()
       })
     }
-  }, [rotation, cropRatio, customCrop, adjustmentFilter, canvasRef, textOverlays, containerSize])
+  }, [rotation, cropRatio, customCrop, adjustmentFilter, needsPixelPass, warmth, tint, vibrance, canvasRef, textOverlays, containerSize])
 
   useEffect(() => {
     drawCanvas()

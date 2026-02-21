@@ -15,6 +15,9 @@ export function EditorSidebar({
     exposure,
     highlights,
     shadows,
+    warmth,
+    tint,
+    vibrance,
     cropRatio,
     preset,
   } = editState
@@ -32,6 +35,9 @@ export function EditorSidebar({
           <Slider label="Exposure" value={exposure} onChange={(v) => applySliderChange('exposure', v)} min={0.5} max={1.5} />
           <Slider label="Highlights" value={highlights} onChange={(v) => applySliderChange('highlights', v)} min={0.5} max={1.5} />
           <Slider label="Shadows" value={shadows} onChange={(v) => applySliderChange('shadows', v)} min={0.5} max={1.5} />
+          <Slider label="Warmth" value={warmth} onChange={(v) => applySliderChange('warmth', v)} min={-1} max={1} />
+          <Slider label="Tint" value={tint} onChange={(v) => applySliderChange('tint', v)} min={-1} max={1} />
+          <Slider label="Vibrance" value={vibrance} onChange={(v) => applySliderChange('vibrance', v)} min={-1} max={1} />
         </div>
         <button
           onClick={() => applyChange(INITIAL_EDIT_STATE)}

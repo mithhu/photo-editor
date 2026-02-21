@@ -7,12 +7,14 @@ import {
   EditorCanvas,
   EditorSidebar,
   ShareModal,
+  ExportDialog,
 } from './components'
 
 export default function App() {
   const [imageSrc, setImageSrc] = useState(null)
   const [uploadLoading, setUploadLoading] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
   const canvasRef = useRef(null)
 
   const {
@@ -53,14 +55,7 @@ export default function App() {
     reset()
   }
 
-  const handleDownload = () => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const link = document.createElement('a')
-    link.download = `edited-${Date.now()}.png`
-    link.href = canvas.toDataURL('image/png')
-    link.click()
-  }
+  const handleDownload = () => setShowExportDialog(true)
 
   if (!imageSrc) {
     return (
@@ -110,6 +105,13 @@ export default function App() {
         <ShareModal
           canvasRef={canvasRef}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {showExportDialog && (
+        <ExportDialog
+          canvasRef={canvasRef}
+          onClose={() => setShowExportDialog(false)}
         />
       )}
     </div>

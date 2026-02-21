@@ -1,9 +1,14 @@
 export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01 }) {
+  const isSigned = min < 0
+  const displayValue = isSigned
+    ? `${value >= 0 ? '+' : ''}${(value * 100).toFixed(0)}`
+    : `${(value * 100).toFixed(0)}%`
+
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
         <span className="text-zinc-400">{label}</span>
-        <span className="text-zinc-300 tabular-nums">{(value * 100).toFixed(0)}%</span>
+        <span className="text-zinc-300 tabular-nums">{displayValue}</span>
       </div>
       <input
         type="range"
