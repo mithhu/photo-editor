@@ -70,7 +70,8 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
 
   const autoBeauty = useCallback(() => {
     onUpdate({
-      beauty: { smooth: 40, blemish: 35, evenness: 25, brightenEyes: 20, teethWhiten: 15 },
+      beauty: { smooth: 20, blemish: 15, evenness: 12, brightenEyes: 15, teethWhiten: 10 },
+      faceReshape: { slimFace: 15, biggerEyes: 10, noseSlim: 5, jawline: 10 },
     })
   }, [onUpdate])
 
@@ -109,30 +110,31 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
         ))}
       </div>
 
-      {/* Auto Beauty Button */}
+      {/* Auto Beauty Button — visible on beauty and reshape tabs */}
+      {(tab === 'beauty' || tab === 'reshape') && (
+        <button
+          onClick={autoBeauty}
+          className="w-full py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400 transition-all"
+        >
+          Auto Beauty + Reshape
+        </button>
+      )}
+
       {tab === 'beauty' && (
-        <>
-          <button
-            onClick={autoBeauty}
-            className="w-full py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400 transition-all"
-          >
-            ✨ Auto Beauty
-          </button>
-          <div className="space-y-2">
-            {BEAUTY_SLIDERS.map(s => (
-              <Slider
-                key={s.key}
-                label={s.label}
-                min={0}
-                max={s.max}
-                step={1}
-                unit="%"
-                value={beauty[s.key]}
-                onChange={v => updateBeauty(s.key, v)}
-              />
-            ))}
-          </div>
-        </>
+        <div className="space-y-2">
+          {BEAUTY_SLIDERS.map(s => (
+            <Slider
+              key={s.key}
+              label={s.label}
+              min={0}
+              max={s.max}
+              step={1}
+              unit="%"
+              value={beauty[s.key]}
+              onChange={v => updateBeauty(s.key, v)}
+            />
+          ))}
+        </div>
       )}
 
       {/* Reshape */}

@@ -906,10 +906,10 @@ export function initWebGL() {
     }
 
     const verts = new Float32Array([
-      -1, -1, 0, 1,
-       1, -1, 1, 1,
-      -1,  1, 0, 0,
-       1,  1, 1, 0,
+      -1, -1, 0, 0,
+       1, -1, 1, 0,
+      -1,  1, 0, 1,
+       1,  1, 1, 1,
     ])
     _quadBuf = _gl.createBuffer()
     _gl.bindBuffer(_gl.ARRAY_BUFFER, _quadBuf)
@@ -1060,9 +1060,11 @@ export function renderWithWebGL(sourceCanvas, params) {
 
   ensureFBOs(gl, w, h)
 
-  // Upload source image
+  // Upload source image — flip Y so canvas top-down matches GL bottom-up
   gl.bindTexture(gl.TEXTURE_2D, _sourceTexture)
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, sourceCanvas)
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false)
 
   let readTex = _sourceTexture
   let pingPong = 0

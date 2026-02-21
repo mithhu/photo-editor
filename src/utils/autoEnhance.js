@@ -82,6 +82,6 @@ export function analyzeAndEnhance(canvas) {
     vibrance: Math.round(vibranceBoost * 100) / 100,
     warmth: warmthBoost,
     beauty: { smooth: 10, blemish: 10, evenness: 8, brightenEyes: 12, teethWhiten: 8 },
-    reshape: { slimFace: 8, biggerEyes: 5, noseSlim: 0, jawline: 5 },
+    reshape: { slimFace: 15, biggerEyes: 10, noseSlim: 5, jawline: 10 },
   }
 }
