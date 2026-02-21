@@ -11,6 +11,9 @@ const EditorCanvas = lazy(() =>
 const EditorSidebar = lazy(() =>
   import('./components/EditorSidebar').then((m) => ({ default: m.EditorSidebar }))
 )
+const MobileBottomTray = lazy(() =>
+  import('./components/MobileBottomTray').then((m) => ({ default: m.MobileBottomTray }))
+)
 const ShareModal = lazy(() =>
   import('./components/ShareModal').then((m) => ({ default: m.ShareModal }))
 )
@@ -209,6 +212,12 @@ export default function App() {
     )
   }
 
+  const addTextOverlay = () =>
+    applyChange((s) => ({
+      ...s,
+      textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
+    }))
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <EditorHeader
@@ -226,7 +235,8 @@ export default function App() {
         onResetAll={reset}
       />
 
-      <div className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden">
+      {/* Desktop: side-by-side layout */}
+      <div className="flex-1 hidden lg:flex flex-row gap-4 p-4 min-h-0 overflow-hidden">
         <Suspense fallback={<EditorFallback />}>
           <EditorCanvas
             imageSrc={imageSrc}
@@ -240,18 +250,37 @@ export default function App() {
             editState={editState}
             applyChange={applyChange}
             applySliderChange={applySliderChange}
-            onAddText={() =>
-              applyChange((s) => ({
-                ...s,
-                textOverlays: [...(s.textOverlays || []), { id: Date.now(), text: 'Text', x: 0.5, y: 0.5, fontSize: 32, color: '#ffffff' }],
-              }))
-            }
+            onAddText={addTextOverlay}
             historyIndex={historyIndex}
             historyLength={historyLength}
             imageSrc={imageSrc}
-            onImageReplace={(newSrc) => {
-              setImageSrc(newSrc)
-            }}
+            onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
+            canvasRef={canvasRef}
+            onApplyChange={applyChange}
+          />
+        </Suspense>
+      </div>
+
+      {/* Mobile: full-screen canvas + bottom tray overlay */}
+      <div className="flex-1 flex flex-col lg:hidden min-h-0">
+        <Suspense fallback={<EditorFallback />}>
+          <div className="flex-1 min-h-0 p-2 pb-20">
+            <EditorCanvas
+              imageSrc={imageSrc}
+              editState={editState}
+              canvasRef={canvasRef}
+              isComparing={isComparing}
+              onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
+              onApplyChange={applyChange}
+            />
+          </div>
+          <MobileBottomTray
+            editState={editState}
+            applyChange={applyChange}
+            applySliderChange={applySliderChange}
+            onAddText={addTextOverlay}
+            imageSrc={imageSrc}
+            onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
             canvasRef={canvasRef}
             onApplyChange={applyChange}
           />

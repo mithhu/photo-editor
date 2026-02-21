@@ -12,17 +12,6 @@ import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../const
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 
-const MOBILE_TABS = [
-  { id: 'ai', label: 'AI' },
-  { id: 'adjust', label: 'Adjust' },
-  { id: 'color', label: 'Color' },
-  { id: 'crop', label: 'Crop' },
-  { id: 'draw', label: 'Draw' },
-  { id: 'layers', label: 'Layers' },
-  { id: 'templates', label: 'Templates' },
-  { id: 'filters', label: 'Filters' },
-]
-
 export function EditorSidebar({
   editState,
   applyChange,
@@ -35,7 +24,6 @@ export function EditorSidebar({
   canvasRef,
   onApplyChange,
 }) {
-  const [activeTab, setActiveTab] = useState('adjust')
   const [expandedTextId, setExpandedTextId] = useState(null)
 
   const {
@@ -63,26 +51,9 @@ export function EditorSidebar({
   const ratioLabels = { original: 'Original', '1:1': '1:1', '4:5': '4:5', '16:9': '16:9', '9:16': '9:16', '3:4': '3:4', '2:3': '2:3', custom: 'Custom' }
 
   return (
-    <aside className="w-full lg:w-80 flex-shrink-0 lg:flex-shrink lg:min-h-0 flex flex-col gap-4 lg:gap-6 overflow-y-auto">
-      {/* Mobile tab bar */}
-      <div className="flex lg:hidden gap-1 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none">
-        {MOBILE_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`px-3 py-1.5 text-xs rounded-lg whitespace-nowrap shrink-0 transition-colors ${
-              activeTab === tab.id
-                ? 'bg-amber-500 text-zinc-900 font-medium'
-                : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* AI tab: AI Tools */}
-      <div className={activeTab !== 'ai' ? 'hidden lg:block' : ''}>
+    <aside className="w-80 flex-shrink lg:min-h-0 flex flex-col gap-6 overflow-y-auto">
+      {/* AI Tools */}
+      <div>
         <AIToolsPanel
           imageSrc={imageSrc}
           onImageReplace={onImageReplace}
@@ -91,8 +62,8 @@ export function EditorSidebar({
         />
       </div>
 
-      {/* Adjust tab: Adjustments + Curves */}
-      <div className={activeTab !== 'adjust' ? 'hidden lg:block' : ''}>
+      {/* Adjustments + Curves */}
+      <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Adjustments</h3>
           <div className="space-y-4">
@@ -117,7 +88,7 @@ export function EditorSidebar({
           </button>
         </div>
 
-        <div className="mt-4 lg:mt-6">
+        <div className="mt-6">
           <CurvesPanel
             curves={editState.curves}
             onChange={(channel, points) =>
@@ -134,8 +105,8 @@ export function EditorSidebar({
         />
       </div>
 
-      {/* Color tab: HSL Panel + Color Grading + Split Toning */}
-      <div className={activeTab !== 'color' ? 'hidden lg:block' : ''}>
+      {/* HSL Panel + Color Grading + Split Toning */}
+      <div>
         <HSLPanel
           hsl={editState.hsl}
           onChange={(colorId, channel, value) =>
@@ -148,7 +119,7 @@ export function EditorSidebar({
             }))
           }
         />
-        <div className="mt-4 lg:mt-6">
+        <div className="mt-6">
           <ColorWheelPanel
             colorGrade={editState.colorGrade}
             onChange={(zone, val) =>
@@ -159,7 +130,7 @@ export function EditorSidebar({
             }
           />
         </div>
-        <div className="mt-4 lg:mt-6">
+        <div className="mt-6">
           <SplitTonePanel
             splitTone={editState.splitTone}
             onChange={(val) => applyChange((s) => ({ ...s, splitTone: val }))}
@@ -167,8 +138,8 @@ export function EditorSidebar({
         </div>
       </div>
 
-      {/* Crop tab: Crop + Rotate */}
-      <div className={activeTab !== 'crop' ? 'hidden lg:block' : ''}>
+      {/* Crop + Rotate */}
+      <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Crop</h3>
           <div className="flex flex-wrap gap-2">
@@ -234,7 +205,7 @@ export function EditorSidebar({
           )}
         </div>
 
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Rotate</h3>
           <div className="flex gap-2">
             <button
@@ -267,8 +238,8 @@ export function EditorSidebar({
         </div>
       </div>
 
-      {/* Draw tab: Drawing + Shapes */}
-      <div className={activeTab !== 'draw' ? 'hidden lg:block' : ''}>
+      {/* Drawing + Shapes */}
+      <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Drawing</h3>
           <div className="flex gap-2 mb-4">
@@ -332,7 +303,7 @@ export function EditorSidebar({
           )}
         </div>
 
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Shapes</h3>
           <div className="grid grid-cols-3 gap-2 mb-4">
             {[
@@ -408,8 +379,8 @@ export function EditorSidebar({
         </div>
       </div>
 
-      {/* Layers tab: Layers + Text */}
-      <div className={activeTab !== 'layers' ? 'hidden lg:block' : ''}>
+      {/* Layers + Text */}
+      <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Text</h3>
           <button
@@ -559,7 +530,7 @@ export function EditorSidebar({
           )}
         </div>
 
-        <div className="mt-4 lg:mt-6">
+        <div className="mt-6">
           <LayerPanel
             textOverlays={editState.textOverlays}
             shapeOverlays={editState.shapeOverlays}
@@ -590,13 +561,13 @@ export function EditorSidebar({
         </div>
       </div>
 
-      {/* Templates tab */}
-      <div className={activeTab !== 'templates' ? 'hidden lg:block' : ''}>
+      {/* Templates */}
+      <div>
         <TemplatePanel applyChange={applyChange} editState={editState} />
       </div>
 
-      {/* Filters tab: Film Emulations + Filters + History */}
-      <div className={activeTab !== 'filters' ? 'hidden lg:block' : ''}>
+      {/* Film Emulations + Filters + History */}
+      <div>
         <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Film Emulation</h3>
           <div className="grid grid-cols-3 gap-2 mb-3">
@@ -649,7 +620,7 @@ export function EditorSidebar({
           )}
         </div>
 
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
           <div className="grid grid-cols-3 gap-2">
             {FILTER_PRESETS.map((p) => (
@@ -669,7 +640,7 @@ export function EditorSidebar({
         </div>
 
         {historyLength > 0 && (
-          <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-4 lg:mt-6">
+          <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
             <h3 className="text-sm font-semibold text-zinc-300 mb-3">History</h3>
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {Array.from({ length: historyLength }, (_, i) => {
