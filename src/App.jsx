@@ -231,8 +231,10 @@ export default function App() {
             <button onClick={() => setSwRegistration(null)} className="text-zinc-800 hover:text-zinc-900 text-lg leading-none">×</button>
           </div>
         )}
-        <h1 className="text-3xl font-bold text-indigo-400 mb-2">PhotosAI</h1>
-        <p className="text-zinc-500 mb-8">Edit your photos with filters and adjustments</p>
+        <h1 className="text-4xl font-bold tracking-tight mb-1">
+          <span className="text-indigo-400">Photos</span><span className="text-zinc-200">AI</span>
+        </h1>
+        <p className="text-zinc-500 text-sm mb-8">AI-powered photo editing in your browser</p>
         {hasSavedProject && (
           <div className="mb-4 p-4 bg-zinc-800 border border-zinc-700 rounded-xl text-center">
             <p className="text-zinc-300 text-sm mb-2">You have an unsaved project</p>

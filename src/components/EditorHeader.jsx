@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 
 function KeyboardIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
       <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10" />
     </svg>
@@ -25,81 +25,91 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
   }, [showMenu, closeMenu])
 
   return (
-    <header className="relative z-50 flex items-center justify-between px-3 py-2 lg:px-4 lg:py-3 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-sm">
-      <h1 className="text-lg lg:text-xl font-bold text-indigo-400">PhotosAI</h1>
+    <header className="relative z-50 flex items-center justify-between px-3 py-1.5 lg:px-5 lg:py-2 border-b border-zinc-800/50 bg-zinc-950/80 backdrop-blur-md">
+      {/* Left: Logo + Undo/Redo */}
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-bold tracking-tight">
+          <span className="text-indigo-400">Photos</span><span className="text-zinc-300">AI</span>
+        </h1>
 
-      <div className="flex items-center gap-2">
-        {/* Undo / Redo — always visible */}
-        <div className="flex rounded-lg overflow-hidden border border-zinc-700">
+        <div className="flex items-center gap-0.5 ml-1">
           <button
             onClick={onUndo}
             disabled={!canUndo}
             title="Undo (⌘Z)"
-            className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-700 transition-colors"
+            className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            ↶
+            <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor"><path fillRule="evenodd" d="M7.793 2.232a.75.75 0 01-.025 1.06L3.622 7.25h10.003a5.375 5.375 0 010 10.75H10.75a.75.75 0 010-1.5h2.875a3.875 3.875 0 000-7.75H3.622l4.146 3.957a.75.75 0 01-1.036 1.085l-5.5-5.25a.75.75 0 010-1.085l5.5-5.25a.75.75 0 011.06.025z" clipRule="evenodd" /></svg>
           </button>
           <button
             onClick={onRedo}
             disabled={!canRedo}
             title="Redo (⌘⇧Z)"
-            className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-zinc-700 transition-colors border-l border-zinc-600"
+            className="p-1.5 rounded-md hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
           >
-            ↷
+            <svg viewBox="0 0 20 20" className="w-4 h-4" fill="currentColor"><path fillRule="evenodd" d="M12.207 2.232a.75.75 0 00.025 1.06l4.146 3.958H6.375a5.375 5.375 0 000 10.75H9.25a.75.75 0 000-1.5H6.375a3.875 3.875 0 010-7.75h10.003l-4.146 3.957a.75.75 0 001.036 1.085l5.5-5.25a.75.75 0 000-1.085l-5.5-5.25a.75.75 0 00-1.06.025z" clipRule="evenodd" /></svg>
           </button>
         </div>
+      </div>
 
-        {/* Desktop-only buttons */}
-        <div className="hidden lg:flex items-center gap-2">
+      {/* Right: Actions */}
+      <div className="flex items-center gap-1.5">
+        {/* Desktop actions */}
+        <div className="hidden lg:flex items-center gap-1.5">
           <button
             onClick={onToggleCompare}
             title="Compare original vs edited"
-            className={`px-4 py-2 text-sm rounded-lg transition-colors ${showCompare ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-200'}`}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${showCompare ? 'bg-indigo-500/20 text-indigo-400' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'}`}
           >
             Compare
           </button>
           <button
+            onClick={onAutoEnhance}
+            className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
+          >
+            Enhance
+          </button>
+          <button
             onClick={onResetAll}
-            className="px-4 py-2 text-sm bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/25 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-zinc-500 hover:text-red-400 hover:bg-zinc-800 rounded-md transition-colors"
           >
             Reset
           </button>
-          <button
-            onClick={onAutoEnhance}
-            className="px-4 py-2 text-sm bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-400 border border-indigo-500/30 rounded-lg transition-colors"
-          >
-            Auto Enhance
-          </button>
+
+          <div className="w-px h-5 bg-zinc-800 mx-1" />
+
           <button
             onClick={onNewImage}
-            className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
           >
-            New Image
+            New
           </button>
           <button
             onClick={onBatch}
-            className="px-4 py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
           >
-            Edit Multiple
+            Batch
           </button>
           <button
             onClick={onShare}
-            className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
           >
             Share
           </button>
-          <button
-            onClick={onDownload}
-            className="px-4 py-2 text-sm bg-indigo-500 hover:bg-indigo-400 text-zinc-900 font-medium rounded-lg transition-colors"
-          >
-            Download
-          </button>
+
           <button
             onClick={onOpenShortcuts}
             title="Keyboard shortcuts (?)"
-            className="hidden lg:flex px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-400 hover:text-zinc-200 rounded-lg transition-colors"
+            className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-md transition-colors"
           >
             <KeyboardIcon />
+          </button>
+
+          <button
+            onClick={onDownload}
+            className="ml-1 px-4 py-1.5 text-xs font-semibold bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors shadow-sm shadow-indigo-500/20"
+          >
+            Export
           </button>
         </div>
 
@@ -107,53 +117,34 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
         <div className="lg:hidden relative" ref={menuRef}>
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-200 rounded-lg transition-colors"
+            className="p-2 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-md transition-colors"
           >
-            ⋯
+            <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor"><circle cx="4" cy="10" r="1.5" /><circle cx="10" cy="10" r="1.5" /><circle cx="16" cy="10" r="1.5" /></svg>
           </button>
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
-              <button
-                onClick={() => { onToggleCompare?.(); closeMenu() }}
-                className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-700 ${showCompare ? 'text-indigo-400' : 'text-zinc-300'}`}
-              >
+            <div className="absolute right-0 top-full mt-1 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl z-50 py-1 min-w-[170px] backdrop-blur-xl">
+              <button onClick={() => { onToggleCompare?.(); closeMenu() }} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-zinc-800 ${showCompare ? 'text-indigo-400' : 'text-zinc-300'}`}>
                 {showCompare ? '✓ Compare' : 'Compare'}
               </button>
-              <button
-                onClick={() => { onResetAll?.(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-700"
-              >
+              <button onClick={() => { onAutoEnhance?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
+                Enhance
+              </button>
+              <button onClick={() => { onResetAll?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:bg-zinc-800">
                 Reset All
               </button>
-              <button
-                onClick={() => { onAutoEnhance?.(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
-              >
-                Auto Enhance
-              </button>
-              <button
-                onClick={() => { onNewImage(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
-              >
+              <div className="h-px bg-zinc-800 my-1" />
+              <button onClick={() => { onNewImage(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
                 New Image
               </button>
-              <button
-                onClick={() => { onBatch?.(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-purple-400 hover:bg-zinc-700"
-              >
+              <button onClick={() => { onBatch?.(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
                 Edit Multiple
               </button>
-              <button
-                onClick={() => { onShare(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700"
-              >
+              <button onClick={() => { onShare(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-zinc-300 hover:bg-zinc-800">
                 Share
               </button>
-              <button
-                onClick={() => { onDownload(); closeMenu() }}
-                className="w-full text-left px-4 py-2 text-sm text-indigo-400 hover:bg-zinc-700 font-medium"
-              >
-                Download
+              <div className="h-px bg-zinc-800 my-1" />
+              <button onClick={() => { onDownload(); closeMenu() }} className="w-full text-left px-4 py-2.5 text-sm text-indigo-400 hover:bg-zinc-800 font-medium">
+                Export
               </button>
             </div>
           )}
