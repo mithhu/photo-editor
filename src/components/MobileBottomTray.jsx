@@ -334,9 +334,9 @@ export function MobileBottomTray({
 
       case 'filters':
         return (
-          <div className="space-y-4 px-1">
+          <div className="space-y-3 px-1">
             <div>
-              <h4 className="text-xs font-medium text-zinc-400 mb-2">Film Emulation</h4>
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Film Emulation</h4>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                 <button
                   onClick={() => applyChange({ filmEmulation: null, filmGrain: 0 })}
@@ -366,7 +366,7 @@ export function MobileBottomTray({
               )}
             </div>
             <div>
-              <h4 className="text-xs font-medium text-zinc-400 mb-2">Filters</h4>
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Filters</h4>
               <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
                 {FILTER_PRESETS.map((p) => (
                   <button
@@ -402,7 +402,7 @@ export function MobileBottomTray({
               </div>
             </div>
             <div>
-              <h4 className="text-xs font-medium text-zinc-400 mb-2">LUT (Color Grading)</h4>
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">LUT</h4>
               <input
                 ref={lutInputRef}
                 type="file"
@@ -505,7 +505,7 @@ export function MobileBottomTray({
         if (subPanel === 'transform') {
           return (
             <div className="px-1 space-y-3">
-              <h4 className="text-xs font-medium text-zinc-400">Transform</h4>
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider">Transform</h4>
               <Slider
                 label="Horizontal"
                 value={editState.perspective?.horizontal ?? 0}
@@ -761,7 +761,7 @@ export function MobileBottomTray({
               </button>
             )}
             <div>
-              <h4 className="text-xs font-medium text-zinc-400 mb-2 mt-2">Quick Shapes</h4>
+              <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5 mt-2">Quick Shapes</h4>
               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
                 {[
                   { type: 'circle', icon: '●' },
@@ -941,10 +941,10 @@ export function MobileBottomTray({
       {activeCategory && (
         <div
           ref={panelRef}
-          className="pointer-events-auto bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-700/50 rounded-t-2xl max-h-[45vh] overflow-y-auto overscroll-contain"
+          className="pointer-events-auto bg-zinc-900/80 backdrop-blur-xl border-t border-zinc-700/50 rounded-t-2xl max-h-[38vh] overflow-y-auto overscroll-contain"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          <div className="sticky top-0 z-10 bg-zinc-900/95 backdrop-blur-xl px-4 pt-3 pb-2 flex items-center justify-between border-b border-zinc-800/50">
+          <div className="sticky top-0 z-10 bg-zinc-900/80 backdrop-blur-xl px-4 pt-2 pb-1.5 flex items-center justify-between border-b border-zinc-800/50">
             {subPanel ? (
               <button onClick={() => setSubPanel(null)} className="text-xs text-amber-400">← Back</button>
             ) : (
@@ -952,14 +952,14 @@ export function MobileBottomTray({
             )}
             <button onClick={() => { setActiveCategory(null); setSubPanel(null) }} className="text-xs text-zinc-500">Done</button>
           </div>
-          <div className="p-4">
+          <div className="px-3 py-2">
             {renderPanel()}
           </div>
         </div>
       )}
 
       {/* Category icon bar */}
-      <div className="pointer-events-auto bg-zinc-900/95 backdrop-blur-xl border-t border-zinc-700/50 safe-area-bottom">
+      <div className="pointer-events-auto bg-zinc-900/85 backdrop-blur-xl border-t border-zinc-700/50 safe-area-bottom">
         <div className="flex justify-around px-2 py-2">
           {CATEGORIES.map((cat) => (
             <button
