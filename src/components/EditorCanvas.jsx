@@ -6,8 +6,9 @@ import { buildCurveLUT } from '../utils/curvesUtils'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
 import { applyPixelFilters } from '../utils/pixelFilters'
+import { applyTiltShift } from '../utils/tiltShift'
 
-export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange }) {
+export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -15,6 +16,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const currentStrokeRef = useRef(null)
   const touchRef = useRef({ lastDistance: 0, startPanX: 0, startPanY: 0 })
   const [containerSize, setContainerSize] = useState(null)
+  const [healCursor, setHealCursor] = useState(null)
+  const healingRef = useRef({ active: false, offset: null, snapshotData: null })
 
   useEffect(() => {
     const el = containerRef.current
@@ -35,6 +38,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     rotation, flipH, flipV, cropRatio, customCrop, preset, zoom, panX, panY, textOverlays,
     shapeOverlays, layerVisibility,
     brushStrokes, drawingMode, brushColor, brushSize, brushOpacity,
+    healSource,
     hsl,
     curves,
     colorGrade,
@@ -43,6 +47,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     filmEmulation,
     filmIntensity,
     filmGrain,
+    tiltShift,
   } = editState
 
   const cropActive = cropRatio !== 'original'
@@ -91,6 +96,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   )
   const hasSplitTone = splitTone && (splitTone.highlightSat > 0 || splitTone.shadowSat > 0)
   const hasFilmEmulation = !isComparing && !!filmEmulation
+  const hasTiltShift = !isComparing && tiltShift && (tiltShift.blur ?? 0) > 0
   const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation)
 
   const drawCanvas = useCallback(() => {
@@ -370,6 +376,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       ctx.putImageData(maskData, 0, 0)
     }
 
+    if (hasTiltShift) {
+      applyTiltShift(ctx, canvas.width, canvas.height, tiltShift)
+    }
+
     if (!isComparing) {
     const allStrokes = currentStrokeRef.current
       ? [...(brushStrokes || []), currentStrokeRef.current]
@@ -494,8 +504,67 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         ctx.restore()
       })
     }
+    if (drawingMode === 'heal' && healSource) {
+      const srcX = healSource.x * displayW
+      const srcY = healSource.y * displayH
+      const radius = (brushSize ?? 5) * 0.5
+
+      ctx.save()
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.8)'
+      ctx.lineWidth = 1.5
+
+      const crossLen = Math.max(8, radius)
+      ctx.beginPath()
+      ctx.moveTo(srcX - crossLen, srcY)
+      ctx.lineTo(srcX + crossLen, srcY)
+      ctx.moveTo(srcX, srcY - crossLen)
+      ctx.lineTo(srcX, srcY + crossLen)
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.arc(srcX, srcY, radius, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain])
+
+    if (drawingMode === 'heal' && healCursor) {
+      const curX = healCursor.x * displayW
+      const curY = healCursor.y * displayH
+      const radius = (brushSize ?? 5) * 0.5
+
+      ctx.save()
+      ctx.strokeStyle = 'rgba(255, 255, 0, 0.8)'
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([4, 4])
+      ctx.beginPath()
+      ctx.arc(curX, curY, radius, 0, Math.PI * 2)
+      ctx.stroke()
+      ctx.restore()
+
+      if (healSource && healingRef.current.active) {
+        const off = healingRef.current.offset
+        if (off) {
+          const liveSrcX = (healCursor.x + off.x) * displayW
+          const liveSrcY = (healCursor.y + off.y) * displayH
+
+          ctx.save()
+          ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)'
+          ctx.lineWidth = 1
+          ctx.setLineDash([3, 3])
+          ctx.beginPath()
+          ctx.arc(liveSrcX, liveSrcY, radius, 0, Math.PI * 2)
+          ctx.stroke()
+
+          ctx.beginPath()
+          ctx.moveTo(liveSrcX, liveSrcY)
+          ctx.lineTo(curX, curY)
+          ctx.stroke()
+          ctx.restore()
+        }
+      }
+    }
+    }
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
@@ -541,8 +610,88 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     [zoom, panX, panY, onZoomPanChange],
   )
 
+  const applyHealBrush = useCallback((destX, destY, srcOffX, srcOffY, size) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const dpr = window.devicePixelRatio || 1
+    const cw = canvas.width
+    const ch = canvas.height
+    const rect = canvas.getBoundingClientRect()
+
+    const dxPx = Math.round(destX * rect.width * dpr)
+    const dyPx = Math.round(destY * rect.height * dpr)
+    const sxPx = Math.round((destX + srcOffX) * rect.width * dpr)
+    const syPx = Math.round((destY + srcOffY) * rect.height * dpr)
+    const radius = Math.round(size * 0.5 * dpr)
+
+    const snap = healingRef.current.snapshotData
+    if (!snap) return
+    const sw = snap.width
+    const sh = snap.height
+    const sd = snap.data
+
+    const region = radius + 2
+    const x0 = Math.max(0, dxPx - region)
+    const y0 = Math.max(0, dyPx - region)
+    const x1 = Math.min(cw, dxPx + region)
+    const y1 = Math.min(ch, dyPx + region)
+    if (x1 <= x0 || y1 <= y0) return
+
+    const imgData = ctx.getImageData(x0, y0, x1 - x0, y1 - y0)
+    const d = imgData.data
+    const w = imgData.width
+
+    const r2 = radius * radius
+
+    for (let py = y0; py < y1; py++) {
+      for (let px = x0; px < x1; px++) {
+        const ddx = px - dxPx
+        const ddy = py - dyPx
+        const dist2 = ddx * ddx + ddy * ddy
+        if (dist2 > r2) continue
+
+        const spx = sxPx + ddx
+        const spy = syPx + ddy
+        if (spx < 0 || spx >= sw || spy < 0 || spy >= sh) continue
+
+        const falloff = 1 - Math.sqrt(dist2) / radius
+        const alpha = falloff * falloff * 0.7
+
+        const si = (spy * sw + spx) * 4
+        const di = ((py - y0) * w + (px - x0)) * 4
+
+        d[di] = Math.round(d[di] * (1 - alpha) + sd[si] * alpha)
+        d[di + 1] = Math.round(d[di + 1] * (1 - alpha) + sd[si + 1] * alpha)
+        d[di + 2] = Math.round(d[di + 2] * (1 - alpha) + sd[si + 2] * alpha)
+      }
+    }
+
+    ctx.putImageData(imgData, x0, y0)
+  }, [canvasRef])
+
   const handleMouseDown = useCallback(
     (e) => {
+      if (drawingMode === 'heal') {
+        const pt = getCanvasPoint(e)
+        if (!pt) return
+
+        if (!healSource) {
+          onApplyChange?.((s) => ({ ...s, healSource: pt }))
+          return
+        }
+
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        healingRef.current.snapshotData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        healingRef.current.offset = { x: healSource.x - pt.x, y: healSource.y - pt.y }
+        healingRef.current.active = true
+        setIsDrawing(true)
+
+        applyHealBrush(pt.x, pt.y, healingRef.current.offset.x, healingRef.current.offset.y, brushSize)
+        return
+      }
       if (drawingMode) {
         const pt = getCanvasPoint(e)
         if (!pt) return
@@ -556,11 +705,22 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         }
       }
     },
-    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush],
   )
 
   const handleMouseMove = useCallback(
     (e) => {
+      if (drawingMode === 'heal') {
+        const pt = getCanvasPoint(e)
+        if (pt) setHealCursor(pt)
+
+        if (isDrawing && healingRef.current.active) {
+          if (!pt) return
+          applyHealBrush(pt.x, pt.y, healingRef.current.offset.x, healingRef.current.offset.y, brushSize)
+          throttledDraw()
+          return
+        }
+      }
       if (isDrawing && currentStrokeRef.current) {
         const pt = getCanvasPoint(e)
         if (!pt) return
@@ -571,10 +731,21 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         throttledDraw()
       }
     },
-    [isDrawing, getCanvasPoint, throttledDraw],
+    [isDrawing, getCanvasPoint, throttledDraw, drawingMode, brushSize, applyHealBrush],
   )
 
   const handleMouseUp = useCallback(() => {
+    if (isDrawing && healingRef.current.active) {
+      healingRef.current.active = false
+      healingRef.current.snapshotData = null
+      setIsDrawing(false)
+
+      const canvas = canvasRef.current
+      if (canvas && onImageReplace) {
+        onImageReplace(canvas.toDataURL('image/png'))
+      }
+      return
+    }
     if (isDrawing && currentStrokeRef.current && onApplyChange) {
       const finishedStroke = currentStrokeRef.current
       currentStrokeRef.current = null
@@ -585,7 +756,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }))
       return
     }
-  }, [isDrawing, onApplyChange])
+  }, [isDrawing, onApplyChange, canvasRef, onImageReplace])
 
   // --- Touch event handlers (single-finger: drawing only, two-finger: pinch zoom) ---
 
@@ -595,6 +766,24 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       const touch = e.touches[0]
       const pt = getCanvasPointFromTouch(touch)
       if (!pt) return
+
+      if (drawingMode === 'heal') {
+        setHealCursor(pt)
+        if (!healSource) {
+          onApplyChange?.((s) => ({ ...s, healSource: pt }))
+          return
+        }
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        healingRef.current.snapshotData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        healingRef.current.offset = { x: healSource.x - pt.x, y: healSource.y - pt.y }
+        healingRef.current.active = true
+        setIsDrawing(true)
+        applyHealBrush(pt.x, pt.y, healingRef.current.offset.x, healingRef.current.offset.y, brushSize)
+        return
+      }
+
       setIsDrawing(true)
       currentStrokeRef.current = {
         points: [pt],
@@ -607,16 +796,25 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       e.preventDefault()
       setIsDrawing(false)
       currentStrokeRef.current = null
+      healingRef.current.active = false
       const dx = e.touches[0].clientX - e.touches[1].clientX
       const dy = e.touches[0].clientY - e.touches[1].clientY
       touchRef.current.lastDistance = Math.sqrt(dx * dx + dy * dy)
       touchRef.current.startPanX = panX
       touchRef.current.startPanY = panY
     }
-  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch])
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush])
 
   const handleTouchMove = useCallback((e) => {
-    if (e.touches.length === 1 && isDrawing && currentStrokeRef.current) {
+    if (e.touches.length === 1 && isDrawing && healingRef.current.active) {
+      e.preventDefault()
+      const touch = e.touches[0]
+      const pt = getCanvasPointFromTouch(touch)
+      if (!pt) return
+      setHealCursor(pt)
+      applyHealBrush(pt.x, pt.y, healingRef.current.offset.x, healingRef.current.offset.y, brushSize)
+      throttledDraw()
+    } else if (e.touches.length === 1 && isDrawing && currentStrokeRef.current) {
       e.preventDefault()
       const touch = e.touches[0]
       const pt = getCanvasPointFromTouch(touch)
@@ -639,10 +837,20 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       touchRef.current.lastDistance = distance
     }
-  }, [isDrawing, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw])
+  }, [isDrawing, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw, brushSize, applyHealBrush])
 
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
+      if (isDrawing && healingRef.current.active) {
+        healingRef.current.active = false
+        healingRef.current.snapshotData = null
+        setIsDrawing(false)
+        const canvas = canvasRef.current
+        if (canvas && onImageReplace) {
+          onImageReplace(canvas.toDataURL('image/png'))
+        }
+        return
+      }
       if (isDrawing && currentStrokeRef.current && onApplyChange) {
         const finishedStroke = currentStrokeRef.current
         currentStrokeRef.current = null
@@ -657,7 +865,22 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     } else if (e.touches.length === 1) {
       touchRef.current.lastDistance = 0
     }
-  }, [isDrawing, onApplyChange])
+  }, [isDrawing, onApplyChange, canvasRef, onImageReplace])
+
+  const handleContainerMouseMove = useCallback((e) => {
+    if (drawingMode === 'heal' && !isDrawing) {
+      const pt = getCanvasPoint(e)
+      if (pt) setHealCursor(pt)
+      throttledDraw()
+    }
+  }, [drawingMode, isDrawing, getCanvasPoint, throttledDraw])
+
+  const handleMouseLeave = useCallback(() => {
+    if (drawingMode === 'heal') {
+      setHealCursor(null)
+      throttledDraw()
+    }
+  }, [drawingMode, throttledDraw])
 
   useEffect(() => {
     window.addEventListener('mousemove', handleMouseMove)
@@ -674,10 +897,12 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       className="min-w-0 flex-1 min-h-0 relative bg-zinc-900/50 lg:rounded-xl p-2 pb-16 lg:p-4 lg:pb-4 overflow-hidden flex items-center justify-center touch-none"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
+      onMouseMove={handleContainerMouseMove}
+      onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: drawingMode ? 'crosshair' : 'default' }}
+      style={{ cursor: drawingMode === 'heal' ? (healSource ? 'cell' : 'crosshair') : drawingMode ? 'crosshair' : 'default' }}
     >
       {loadedSrc !== imageSrc && (
         <div className="absolute inset-0 flex items-center justify-center z-10">

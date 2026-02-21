@@ -65,7 +65,7 @@
 
 - [x] **Brush tool** — Draw with adjustable size, opacity, color
 - [x] **Eraser**
-- [ ] **Healing brush** — Clone/stamp (simplified)
+- [x] **Healing brush** — Clone/stamp with source point, soft blending, visual feedback
 
 ### 2.3 Curves & Color Grading
 
@@ -79,6 +79,11 @@
 - [x] Radial mask
 - [x] Linear/gradient mask
 - [x] Apply adjustments only within mask
+
+### 2.5 Focus & Blur
+
+- [x] Tilt-shift / focus blur — linear and radial modes
+- [x] Image info panel — dimensions, file type, estimated size
 
 ---
 

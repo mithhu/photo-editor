@@ -103,6 +103,21 @@
 - [x] Suggestion chips in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
 - [x] One-tap apply for suggested brightness, exposure, warmth, tint, contrast changes
 
+### Healing Brush (v1.5)
+- [x] Heal / clone stamp tool — set source point, drag to clone pixels with soft blending
+- [x] Visual feedback — crosshair at source, dashed circle at cursor, connecting line during drag
+- [x] Destructive apply via onImageReplace for undo support
+- [x] Keyboard shortcut: H to toggle heal mode
+- [x] Heal button in EditorSidebar (Drawing section) and MobileBottomTray (Draw panel)
+
+### Image Info & Focus Blur (v1.6)
+- [x] Image info panel — collapsible section showing dimensions, megapixels, file type, estimated size
+- [x] Available in EditorSidebar (bottom) and MobileBottomTray (More panel)
+- [x] Tilt-shift / focus blur — linear and radial modes with position, size, and blur controls
+- [x] Multi-pass box blur for quality (3-pass Gaussian approximation)
+- [x] Controls in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
+- [x] Applied as post-processing step in EditorCanvas after masks, before overlays
+
 ### Loading States (v1.4)
 - [x] Full-screen loading spinner overlay in App.jsx during large image upload
 - [x] Skeleton/loading indicator in EditorCanvas before image finishes loading

@@ -1,6 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 
-export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, onToggleCompare, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll }) {
+function KeyboardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="16" rx="2" ry="2" />
+      <path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M7 16h10" />
+    </svg>
+  )
+}
+
+export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, onToggleCompare, onAutoEnhance, onNewImage, onDownload, onShare, onBatch, onResetAll, onOpenShortcuts }) {
   const [showMenu, setShowMenu] = useState(false)
   const menuRef = useRef(null)
 
@@ -84,6 +93,13 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
             className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg transition-colors"
           >
             Download
+          </button>
+          <button
+            onClick={onOpenShortcuts}
+            title="Keyboard shortcuts (?)"
+            className="hidden lg:flex px-3 py-2 bg-zinc-700 hover:bg-zinc-600 text-zinc-400 hover:text-zinc-200 rounded-lg transition-colors"
+          >
+            <KeyboardIcon />
           </button>
         </div>
 

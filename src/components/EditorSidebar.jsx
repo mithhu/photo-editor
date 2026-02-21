@@ -9,6 +9,7 @@ import { MaskPanel } from './MaskPanel'
 import { LayerPanel } from './LayerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
+import { ImageInfoPanel } from './ImageInfoPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -94,6 +95,59 @@ export function EditorSidebar({
             <Slider label="Dehaze" value={dehaze} onChange={(v) => applySliderChange('dehaze', v)} min={-1} max={1} defaultValue={0} />
             <Slider label="Vignette" value={vignette} onChange={(v) => applySliderChange('vignette', v)} min={0} max={1} defaultValue={0} />
           </div>
+
+          {/* Tilt-Shift / Focus Blur */}
+          <div className="mt-4 pt-3 border-t border-zinc-700/50">
+            <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-2">Focus / Tilt-Shift</h4>
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'linear' } }))}
+                className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
+                  editState.tiltShift?.mode === 'linear' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+              >
+                Linear
+              </button>
+              <button
+                onClick={() => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, mode: 'radial' } }))}
+                className={`flex-1 py-1.5 text-xs rounded-lg transition-colors ${
+                  editState.tiltShift?.mode === 'radial' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+              >
+                Radial
+              </button>
+            </div>
+            <div className="space-y-4">
+              <Slider
+                label="Blur"
+                value={editState.tiltShift?.blur ?? 0}
+                onChange={(v) => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, blur: v } }))}
+                min={0}
+                max={20}
+                step={0.5}
+                defaultValue={0}
+              />
+              <Slider
+                label="Position"
+                value={editState.tiltShift?.position ?? 50}
+                onChange={(v) => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, position: v } }))}
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={50}
+              />
+              <Slider
+                label="Size"
+                value={editState.tiltShift?.size ?? 30}
+                onChange={(v) => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, size: v } }))}
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={30}
+              />
+            </div>
+          </div>
+
           <button
             onClick={() => applyChange(INITIAL_EDIT_STATE)}
             className="mt-4 w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
@@ -273,7 +327,32 @@ export function EditorSidebar({
             >
               Eraser
             </button>
+            <button
+              onClick={() => applyChange({ drawingMode: drawingMode === 'heal' ? null : 'heal', healSource: null })}
+              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+                drawingMode === 'heal' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+            >
+              Heal
+            </button>
           </div>
+          {drawingMode === 'heal' && (
+            <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
+              <p className="text-xs text-zinc-400 mb-1">
+                {editState.healSource
+                  ? 'Source set — click & drag on the area to heal'
+                  : 'Click on the image to set the source point'}
+              </p>
+              {editState.healSource && (
+                <button
+                  onClick={() => applyChange({ healSource: null })}
+                  className="mt-1 text-xs text-amber-400 hover:text-amber-300"
+                >
+                  Reset source
+                </button>
+              )}
+            </div>
+          )}
           {drawingMode === 'brush' && (
             <div className="flex items-center gap-3 mb-4">
               <span className="text-sm text-zinc-400">Color</span>
@@ -694,6 +773,11 @@ export function EditorSidebar({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Image Info */}
+      <div>
+        <ImageInfoPanel imageSrc={imageSrc} />
       </div>
     </aside>
   )

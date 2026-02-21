@@ -3,7 +3,7 @@ import { INITIAL_EDIT_STATE } from './constants'
 import { useEditHistory } from './hooks/useEditHistory'
 import { useProjectSave } from './hooks/useProjectSave'
 import { analyzeAndEnhance } from './utils/autoEnhance'
-import { ImageUpload, EditorHeader } from './components'
+import { ImageUpload, EditorHeader, ShortcutsOverlay } from './components'
 
 const EditorCanvas = lazy(() =>
   import('./components/EditorCanvas').then((m) => ({ default: m.EditorCanvas }))
@@ -49,6 +49,7 @@ export default function App() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showCompare, setShowCompare] = useState(false)
+  const [showShortcutsOverlay, setShowShortcutsOverlay] = useState(false)
   const [swRegistration, setSwRegistration] = useState(null)
   const canvasRef = useRef(null)
 
@@ -99,9 +100,25 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!imageSrc) return
       const tag = document.activeElement?.tagName?.toLowerCase()
       if (tag === 'input' || tag === 'textarea') return
+
+      if (e.key === '?') {
+        e.preventDefault()
+        if (imageSrc) setShowShortcutsOverlay((v) => !v)
+        return
+      }
+
+      if (showShortcutsOverlay) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShowShortcutsOverlay(false)
+        }
+        return
+      }
+
+      if (!imageSrc) return
+
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
         e.preventDefault()
         if (e.shiftKey) redo()
@@ -119,22 +136,26 @@ export default function App() {
         e.preventDefault()
         applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'eraser' ? null : 'eraser' }))
       }
+      if (e.key === 'h') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'heal' ? null : 'heal', healSource: null }))
+      }
       if (e.key === 'Escape') {
         e.preventDefault()
-        applyChange((s) => ({ ...s, drawingMode: null }))
+        applyChange((s) => ({ ...s, drawingMode: null, healSource: null }))
       }
-      if (e.key === '[') {
+      if (e.key === '[' || e.key === '-') {
         e.preventDefault()
         applyChange((s) => ({ ...s, brushSize: Math.max(1, (s.brushSize ?? 5) - 5) }))
       }
-      if (e.key === ']') {
+      if (e.key === ']' || e.key === '+' || e.key === '=') {
         e.preventDefault()
         applyChange((s) => ({ ...s, brushSize: Math.min(50, (s.brushSize ?? 5) + 5) }))
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [imageSrc, undo, redo, applyChange])
+  }, [imageSrc, showShortcutsOverlay, undo, redo, applyChange])
 
   const handleImageLoad = (src) => {
     setImageSrc(src)
@@ -282,6 +303,7 @@ export default function App() {
         onShare={() => setShowShareModal(true)}
         onBatch={() => setMode('batch')}
         onResetAll={reset}
+        onOpenShortcuts={() => setShowShortcutsOverlay(true)}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row lg:gap-4 lg:p-4 min-h-0 overflow-hidden relative">
@@ -293,6 +315,7 @@ export default function App() {
             isComparing={false}
             onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
             onApplyChange={applyChange}
+            onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
           />
 
           {/* Desktop sidebar */}
@@ -346,6 +369,10 @@ export default function App() {
             onClose={() => setShowExportDialog(false)}
           />
         )}
+        <ShortcutsOverlay
+          visible={showShortcutsOverlay}
+          onClose={() => setShowShortcutsOverlay(false)}
+        />
       </Suspense>
     </div>
   )

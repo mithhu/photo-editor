@@ -24,7 +24,8 @@ export const INITIAL_EDIT_STATE = {
   layerVisibility: {}, // { [layerId]: boolean } — defaults to true if not present
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
   brushStrokes: [],
-  drawingMode: null, // 'brush' | 'eraser' | null
+  drawingMode: null, // 'brush' | 'eraser' | 'heal' | null
+  healSource: null, // { x, y } in 0-1 canvas coords — set on first click in heal mode
   brushColor: '#ffffff',
   brushSize: 5,
   brushOpacity: 1,
@@ -60,6 +61,7 @@ export const INITIAL_EDIT_STATE = {
   filmEmulation: null, // film emulation preset id (e.g. 'koji', 'portra')
   filmIntensity: 1, // 0-1 blend strength
   filmGrain: 0, // 0-1 grain amount
+  tiltShift: { mode: 'linear', position: 50, size: 30, blur: 0 },
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */
