@@ -7,6 +7,8 @@ import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
 import { applyPixelFilters } from '../utils/pixelFilters'
 import { applyTiltShift } from '../utils/tiltShift'
+import { applyGrain } from '../utils/grain'
+import { applyLightLeak } from '../utils/lightLeaks'
 
 function drawFrame(ctx, displayW, displayH, frame) {
   if (!frame || frame.type === 'none') return
@@ -176,6 +178,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     tiltShift,
     frame,
     perspective,
+    grain,
+    selectiveColor,
+    lightLeak,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -227,7 +232,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasSplitTone = splitTone && (splitTone.highlightSat > 0 || splitTone.shadowSat > 0)
   const hasFilmEmulation = !isComparing && !!filmEmulation
   const hasTiltShift = !isComparing && tiltShift && (tiltShift.blur ?? 0) > 0
-  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation)
+  const hasSelectiveColor = !isComparing && selectiveColor?.enabled
+  const hasGrain = !isComparing && grain && (grain.amount ?? 0) > 0
+  const hasLightLeak = !isComparing && lightLeak && lightLeak.type !== 'none' && (lightLeak.intensity ?? 0) > 0
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor)
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current
@@ -432,6 +440,34 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
             d[i + 2] = Math.min(255, Math.max(0, d[i + 2] + tb))
           }
         }
+        if (hasSelectiveColor) {
+          const sr = d[i] / 255, sg = d[i + 1] / 255, sb = d[i + 2] / 255
+          const smax = Math.max(sr, sg, sb), smin = Math.min(sr, sg, sb)
+          if (smax !== smin) {
+            const sdelta = smax - smin
+            let sh
+            if (smax === sr) sh = ((sg - sb) / sdelta + (sg < sb ? 6 : 0)) * 60
+            else if (smax === sg) sh = ((sb - sr) / sdelta + 2) * 60
+            else sh = ((sr - sg) / sdelta + 4) * 60
+
+            const targetHue = selectiveColor.hue
+            const range = selectiveColor.range
+            let hueDiff = Math.abs(sh - targetHue)
+            if (hueDiff > 180) hueDiff = 360 - hueDiff
+
+            if (hueDiff > range) {
+              const gray = Math.round((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]))
+              d[i] = gray
+              d[i + 1] = gray
+              d[i + 2] = gray
+            }
+          } else {
+            const gray = Math.round((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]))
+            d[i] = gray
+            d[i + 1] = gray
+            d[i + 2] = gray
+          }
+        }
       }
 
       if (hasFilmEmulation) {
@@ -443,6 +479,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
     if (!isComparing && filmGrain > 0) {
       addFilmGrain(ctx, canvas.width, canvas.height, filmGrain)
+    }
+
+    if (hasGrain) {
+      applyGrain(ctx, canvas.width, canvas.height, grain.amount, grain.size)
+    }
+
+    if (hasLightLeak) {
+      applyLightLeak(ctx, canvas.width, canvas.height, lightLeak.type, lightLeak.intensity)
     }
 
     if (!isComparing && vignette > 0) {
@@ -711,7 +755,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation, hasGrain, grain, hasLightLeak, lightLeak, hasSelectiveColor, selectiveColor])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 

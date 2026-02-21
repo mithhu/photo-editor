@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Slider } from './Slider'
 import { SuggestionChips } from './SuggestionChips'
 import { ImageInfoPanel } from './ImageInfoPanel'
-import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS } from '../constants'
+import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 import { useFilterPreviews } from '../hooks/useFilterPreviews'
@@ -154,6 +154,119 @@ export function MobileBottomTray({
                 <Slider label="Position" value={editState.tiltShift?.position ?? 50} onChange={(v) => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, position: v } }))} min={0} max={100} step={1} defaultValue={50} />
                 <Slider label="Size" value={editState.tiltShift?.size ?? 30} onChange={(v) => applyChange((s) => ({ ...s, tiltShift: { ...s.tiltShift, size: v } }))} min={0} max={100} step={1} defaultValue={30} />
               </div>
+            </div>
+
+            {/* Film Grain */}
+            <div className="pt-2 border-t border-zinc-800/50">
+              <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5">Film Grain</h4>
+              <div className="space-y-3">
+                <Slider
+                  label="Amount"
+                  value={editState.grain?.amount ?? 0}
+                  onChange={(v) => applyChange((s) => ({ ...s, grain: { ...s.grain, amount: v } }))}
+                  min={0}
+                  max={100}
+                  step={1}
+                  defaultValue={0}
+                />
+                <Slider
+                  label="Size"
+                  value={editState.grain?.size ?? 1}
+                  onChange={(v) => applyChange((s) => ({ ...s, grain: { ...s.grain, size: v } }))}
+                  min={1}
+                  max={3}
+                  step={1}
+                  defaultValue={1}
+                />
+              </div>
+            </div>
+
+            {/* Selective Color */}
+            <div className="pt-2 border-t border-zinc-800/50">
+              <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5">Selective Color</h4>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, enabled: !s.selectiveColor?.enabled } }))}
+                  className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                    editState.selectiveColor?.enabled ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  {editState.selectiveColor?.enabled ? 'On' : 'Off'}
+                </button>
+                <span className="text-[10px] text-zinc-500">Color splash</span>
+              </div>
+              {editState.selectiveColor?.enabled && (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-zinc-400">Hue</span>
+                      <span className="text-xs text-zinc-500">{editState.selectiveColor?.hue ?? 0}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={editState.selectiveColor?.hue ?? 0}
+                      onChange={(e) => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, hue: Number(e.target.value) } }))}
+                      className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                      style={{
+                        background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+                      }}
+                    />
+                  </div>
+                  <Slider
+                    label="Range"
+                    value={editState.selectiveColor?.range ?? 30}
+                    onChange={(v) => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, range: v } }))}
+                    min={5}
+                    max={90}
+                    step={1}
+                    defaultValue={30}
+                    unit="°"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Light Leaks */}
+            <div className="pt-2 border-t border-zinc-800/50">
+              <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-1.5">Light Leaks</h4>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {LIGHT_LEAK_PRESETS.map((ll) => (
+                  <button
+                    key={ll.id}
+                    onClick={() =>
+                      applyChange((s) => ({
+                        ...s,
+                        lightLeak: {
+                          ...s.lightLeak,
+                          type: ll.id,
+                          intensity: ll.id === 'none' ? 0 : (s.lightLeak?.intensity || 0.5),
+                        },
+                      }))
+                    }
+                    className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
+                      editState.lightLeak?.type === ll.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                    }`}
+                  >
+                    {ll.name}
+                  </button>
+                ))}
+              </div>
+              {editState.lightLeak?.type && editState.lightLeak.type !== 'none' && (
+                <div className="mt-2">
+                  <Slider
+                    label="Intensity"
+                    value={editState.lightLeak?.intensity ?? 0.5}
+                    onChange={(v) => applyChange((s) => ({ ...s, lightLeak: { ...s.lightLeak, intensity: v } }))}
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    defaultValue={0.5}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2 pt-2">

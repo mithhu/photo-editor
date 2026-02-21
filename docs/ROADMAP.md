@@ -91,6 +91,12 @@
 - [x] Frame controls — color picker, width slider
 - [x] Eyedropper / color picker — sample pixel color from canvas, copy hex, use as brush color
 
+### 2.7 Creative Effects
+
+- [x] Film grain — monochromatic noise overlay with amount and size controls
+- [x] Selective color (color splash) — keep one hue range, desaturate everything else
+- [x] Light leaks / bokeh — 5 canvas-generated overlay presets with intensity control
+
 ---
 
 ## Phase 3: AI & Smart Features (8–12 weeks)

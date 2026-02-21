@@ -65,6 +65,9 @@ export const INITIAL_EDIT_STATE = {
   tiltShift: { mode: 'linear', position: 50, size: 30, blur: 0 },
   frame: { type: 'none', color: '#ffffff', width: 0 },
   pickedColor: null,
+  grain: { amount: 0, size: 1 },
+  selectiveColor: { enabled: false, hue: 0, range: 30 },
+  lightLeak: { type: 'none', intensity: 0.5 },
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */
@@ -110,6 +113,15 @@ export const FRAME_PRESETS = [
   { id: 'film', name: 'Film Strip' },
   { id: 'vintage', name: 'Vintage' },
   { id: 'gradient', name: 'Gradient' },
+]
+
+export const LIGHT_LEAK_PRESETS = [
+  { id: 'none', name: 'None' },
+  { id: 'warm', name: 'Warm' },
+  { id: 'cool', name: 'Cool' },
+  { id: 'rainbow', name: 'Rainbow' },
+  { id: 'flare', name: 'Flare' },
+  { id: 'bokeh', name: 'Bokeh' },
 ]
 
 /** Sticker categories and emoji characters for the sticker library */

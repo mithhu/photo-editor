@@ -133,6 +133,13 @@
 - [x] Keyboard shortcut: I to toggle picker mode
 - [x] pickedColor state persisted in edit state
 
+### Creative Effects (v1.8)
+- [x] Film grain — per-pixel monochromatic noise with amount (0-100) and size (1=fine, 2=medium, 3=coarse)
+- [x] Selective color (color splash) — keep one hue range colored while desaturating the rest; hue slider (0-360) with rainbow gradient track, range slider (5-90°)
+- [x] Light leaks / bokeh overlays — 5 canvas-generated presets (Warm, Cool, Rainbow, Flare, Bokeh) composited via screen blend mode with intensity slider (0-1)
+- [x] Controls in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
+- [x] Utility modules: src/utils/grain.js, src/utils/lightLeaks.js
+
 ### Loading States (v1.4)
 - [x] Full-screen loading spinner overlay in App.jsx during large image upload
 - [x] Skeleton/loading indicator in EditorCanvas before image finishes loading

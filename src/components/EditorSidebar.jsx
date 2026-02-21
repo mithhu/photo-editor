@@ -11,7 +11,7 @@ import { StickerPanel } from './StickerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
 import { ImageInfoPanel } from './ImageInfoPanel'
-import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS } from '../constants'
+import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 import { useFilterPreviews } from '../hooks/useFilterPreviews'
@@ -147,6 +147,119 @@ export function EditorSidebar({
                 defaultValue={30}
               />
             </div>
+          </div>
+
+          {/* Film Grain */}
+          <div className="mt-4 pt-3 border-t border-zinc-700/50">
+            <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-2">Film Grain</h4>
+            <div className="space-y-4">
+              <Slider
+                label="Amount"
+                value={editState.grain?.amount ?? 0}
+                onChange={(v) => applyChange((s) => ({ ...s, grain: { ...s.grain, amount: v } }))}
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={0}
+              />
+              <Slider
+                label="Size"
+                value={editState.grain?.size ?? 1}
+                onChange={(v) => applyChange((s) => ({ ...s, grain: { ...s.grain, size: v } }))}
+                min={1}
+                max={3}
+                step={1}
+                defaultValue={1}
+              />
+            </div>
+          </div>
+
+          {/* Selective Color (Color Splash) */}
+          <div className="mt-4 pt-3 border-t border-zinc-700/50">
+            <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-2">Selective Color</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={() => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, enabled: !s.selectiveColor?.enabled } }))}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                  editState.selectiveColor?.enabled ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+              >
+                {editState.selectiveColor?.enabled ? 'On' : 'Off'}
+              </button>
+              <span className="text-xs text-zinc-500">Keep one color, desaturate the rest</span>
+            </div>
+            {editState.selectiveColor?.enabled && (
+              <div className="space-y-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-zinc-400">Hue</span>
+                    <span className="text-xs text-zinc-500">{editState.selectiveColor?.hue ?? 0}°</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={360}
+                    step={1}
+                    value={editState.selectiveColor?.hue ?? 0}
+                    onChange={(e) => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, hue: Number(e.target.value) } }))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      background: 'linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+                    }}
+                  />
+                </div>
+                <Slider
+                  label="Range"
+                  value={editState.selectiveColor?.range ?? 30}
+                  onChange={(v) => applyChange((s) => ({ ...s, selectiveColor: { ...s.selectiveColor, range: v } }))}
+                  min={5}
+                  max={90}
+                  step={1}
+                  defaultValue={30}
+                  unit="°"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Light Leaks / Bokeh */}
+          <div className="mt-4 pt-3 border-t border-zinc-700/50">
+            <h4 className="text-[10px] font-medium text-zinc-500 uppercase tracking-wide mb-2">Light Leaks</h4>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {LIGHT_LEAK_PRESETS.map((ll) => (
+                <button
+                  key={ll.id}
+                  onClick={() =>
+                    applyChange((s) => ({
+                      ...s,
+                      lightLeak: {
+                        ...s.lightLeak,
+                        type: ll.id,
+                        intensity: ll.id === 'none' ? 0 : (s.lightLeak?.intensity || 0.5),
+                      },
+                    }))
+                  }
+                  className={`py-1.5 px-3 text-xs rounded-lg transition-colors ${
+                    editState.lightLeak?.type === ll.id
+                      ? 'bg-amber-500 text-zinc-900 font-medium'
+                      : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                  }`}
+                >
+                  {ll.name}
+                </button>
+              ))}
+            </div>
+            {editState.lightLeak?.type && editState.lightLeak.type !== 'none' && (
+              <Slider
+                label="Intensity"
+                value={editState.lightLeak?.intensity ?? 0.5}
+                onChange={(v) => applyChange((s) => ({ ...s, lightLeak: { ...s.lightLeak, intensity: v } }))}
+                min={0}
+                max={1}
+                step={0.05}
+                defaultValue={0.5}
+              />
+            )}
           </div>
 
           <button
