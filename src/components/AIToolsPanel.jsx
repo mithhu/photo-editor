@@ -123,13 +123,18 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     if (!imageSrc) return
     setUpscaleLoading(true)
     setUpscaleError(null)
-    setUpscaleStatus(null)
+    setUpscaleStatus('Preparing...')
     try {
       const result = await upscaleImage(imageSrc, setUpscaleStatus)
       onImageReplace(result)
-      setUpscaleStatus('Done! Image upscaled 2x.')
     } catch (e) {
-      setUpscaleError(e.message || 'Upscaling failed')
+      const msg = e.message || 'Upscaling failed'
+      if (msg.includes('array length') || msg.includes('memory') || msg.includes('OOM')) {
+        setUpscaleError('Image too large to upscale. Try cropping or resizing first.')
+      } else {
+        setUpscaleError(msg)
+      }
+      setUpscaleStatus(null)
     } finally {
       setUpscaleLoading(false)
     }
