@@ -147,6 +147,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const [healCursor, setHealCursor] = useState(null)
   const healingRef = useRef({ active: false, offset: null, snapshotData: null })
   const [pickerBadge, setPickerBadge] = useState(null)
+  const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY }
 
   useEffect(() => {
     const el = containerRef.current
@@ -891,6 +892,46 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.putImageData(imgData, x0, y0)
   }, [canvasRef])
 
+  const hitTestOverlay = useCallback((pt) => {
+    const canvas = canvasRef.current
+    if (!canvas) return null
+    const displayW = canvas.width
+    const displayH = canvas.height
+
+    // Check text overlays (last drawn = top, so iterate in reverse)
+    if (textOverlays?.length) {
+      for (let i = textOverlays.length - 1; i >= 0; i--) {
+        const t = textOverlays[i]
+        if (layerVisibility?.[t.id] === false) continue
+        const tx = t.x ?? 0.5
+        const ty = t.y ?? 0.5
+        const fontSize = t.fontSize ?? 32
+        const hitW = Math.max(60, fontSize * (t.text?.length || 4) * 0.6) / displayW
+        const hitH = Math.max(40, fontSize * 1.4) / displayH
+        if (Math.abs(pt.x - tx) < hitW / 2 && Math.abs(pt.y - ty) < hitH / 2) {
+          return { type: 'text', id: t.id, offsetX: pt.x - tx, offsetY: pt.y - ty }
+        }
+      }
+    }
+
+    // Check shape/sticker overlays
+    if (shapeOverlays?.length) {
+      for (let i = shapeOverlays.length - 1; i >= 0; i--) {
+        const s = shapeOverlays[i]
+        if (layerVisibility?.[s.id] === false) continue
+        const sx = s.x ?? 0.5
+        const sy = s.y ?? 0.5
+        const size = (s.size ?? 40) / displayW
+        const hitR = Math.max(size, 30 / displayW)
+        if (Math.abs(pt.x - sx) < hitR && Math.abs(pt.y - sy) < hitR) {
+          return { type: 'shape', id: s.id, offsetX: pt.x - sx, offsetY: pt.y - sy }
+        }
+      }
+    }
+
+    return null
+  }, [canvasRef, textOverlays, shapeOverlays, layerVisibility])
+
   const handlePickColor = useCallback((e) => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -944,9 +985,19 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           opacity: brushOpacity,
           tool: drawingMode,
         }
+        return
+      }
+
+      // No drawing mode — check if clicking on a text/sticker overlay to drag
+      const pt = getCanvasPoint(e)
+      if (!pt) return
+      const hit = hitTestOverlay(pt)
+      if (hit) {
+        e.preventDefault()
+        draggingRef.current = hit
       }
     },
-    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor, hitTestOverlay],
   )
 
   const handleMouseMove = useCallback(
@@ -970,12 +1021,33 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           points: [...currentStrokeRef.current.points, pt],
         }
         throttledDraw()
+        return
+      }
+
+      // Drag overlay
+      if (draggingRef.current && onApplyChange) {
+        const pt = getCanvasPoint(e)
+        if (!pt) return
+        const d = draggingRef.current
+        const newX = Math.max(0, Math.min(1, pt.x - d.offsetX))
+        const newY = Math.max(0, Math.min(1, pt.y - d.offsetY))
+        const key = d.type === 'text' ? 'textOverlays' : 'shapeOverlays'
+        onApplyChange((s) => ({
+          ...s,
+          [key]: (s[key] || []).map((item) =>
+            item.id === d.id ? { ...item, x: newX, y: newY } : item
+          ),
+        }))
       }
     },
-    [isDrawing, getCanvasPoint, throttledDraw, drawingMode, brushSize, applyHealBrush],
+    [isDrawing, getCanvasPoint, throttledDraw, drawingMode, brushSize, applyHealBrush, onApplyChange],
   )
 
   const handleMouseUp = useCallback(() => {
+    if (draggingRef.current) {
+      draggingRef.current = null
+      return
+    }
     if (isDrawing && healingRef.current.active) {
       healingRef.current.active = false
       healingRef.current.snapshotData = null
@@ -1050,6 +1122,16 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         opacity: brushOpacity,
         tool: drawingMode,
       }
+    } else if (e.touches.length === 1 && !drawingMode) {
+      // No drawing mode — check for overlay drag
+      const touch = e.touches[0]
+      const pt = getCanvasPointFromTouch(touch)
+      if (!pt) return
+      const hit = hitTestOverlay(pt)
+      if (hit) {
+        e.preventDefault()
+        draggingRef.current = hit
+      }
     } else if (e.touches.length === 2) {
       e.preventDefault()
       setIsDrawing(false)
@@ -1061,7 +1143,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       touchRef.current.startPanX = panX
       touchRef.current.startPanY = panY
     }
-  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush])
+  }, [drawingMode, brushColor, brushSize, brushOpacity, panX, panY, getCanvasPointFromTouch, healSource, onApplyChange, canvasRef, applyHealBrush, hitTestOverlay])
 
   const handleTouchMove = useCallback((e) => {
     if (e.touches.length === 1 && isDrawing && healingRef.current.active) {
@@ -1082,6 +1164,21 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         points: [...currentStrokeRef.current.points, pt],
       }
       throttledDraw()
+    } else if (e.touches.length === 1 && draggingRef.current && onApplyChange) {
+      e.preventDefault()
+      const touch = e.touches[0]
+      const pt = getCanvasPointFromTouch(touch)
+      if (!pt) return
+      const d = draggingRef.current
+      const newX = Math.max(0, Math.min(1, pt.x - d.offsetX))
+      const newY = Math.max(0, Math.min(1, pt.y - d.offsetY))
+      const key = d.type === 'text' ? 'textOverlays' : 'shapeOverlays'
+      onApplyChange((s) => ({
+        ...s,
+        [key]: (s[key] || []).map((item) =>
+          item.id === d.id ? { ...item, x: newX, y: newY } : item
+        ),
+      }))
     } else if (e.touches.length === 2 && onZoomPanChange) {
       e.preventDefault()
       const dx = e.touches[0].clientX - e.touches[1].clientX
@@ -1095,10 +1192,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       touchRef.current.lastDistance = distance
     }
-  }, [isDrawing, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw, brushSize, applyHealBrush])
+  }, [isDrawing, zoom, panX, panY, onZoomPanChange, getCanvasPointFromTouch, throttledDraw, brushSize, applyHealBrush, onApplyChange])
 
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
+      if (draggingRef.current) {
+        draggingRef.current = null
+        return
+      }
       if (isDrawing && healingRef.current.active) {
         healingRef.current.active = false
         healingRef.current.snapshotData = null
