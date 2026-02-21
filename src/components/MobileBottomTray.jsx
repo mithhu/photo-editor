@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Slider } from './Slider'
 import { SuggestionChips } from './SuggestionChips'
 import { ImageInfoPanel } from './ImageInfoPanel'
-import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
+import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 import { useFilterPreviews } from '../hooks/useFilterPreviews'
@@ -15,11 +15,14 @@ const SplitTonePanel = lazy(() => import('./SplitTonePanel').then((m) => ({ defa
 const MaskPanel = lazy(() => import('./MaskPanel').then((m) => ({ default: m.MaskPanel })))
 const AIToolsPanel = lazy(() => import('./AIToolsPanel').then((m) => ({ default: m.AIToolsPanel })))
 const TemplatePanel = lazy(() => import('./TemplatePanel').then((m) => ({ default: m.TemplatePanel })))
+const StickerPanel = lazy(() => import('./StickerPanel').then((m) => ({ default: m.StickerPanel })))
+const LayerPanel = lazy(() => import('./LayerPanel').then((m) => ({ default: m.LayerPanel })))
 
 const CATEGORIES = [
   { id: 'adjust', icon: '☀', label: 'Adjust' },
   { id: 'filters', icon: '✦', label: 'Filters' },
   { id: 'crop', icon: '⬡', label: 'Crop' },
+  { id: 'frames', icon: '▣', label: 'Frames' },
   { id: 'color', icon: '🎨', label: 'Color' },
   { id: 'draw', icon: '✎', label: 'Draw' },
   { id: 'layers', icon: '◫', label: 'Layers' },
@@ -234,6 +237,51 @@ export function MobileBottomTray({
         )
 
       case 'crop':
+        if (subPanel === 'transform') {
+          return (
+            <div className="px-1 space-y-3">
+              <h4 className="text-xs font-medium text-zinc-400">Transform</h4>
+              <Slider
+                label="Horizontal"
+                value={editState.perspective?.horizontal ?? 0}
+                onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), horizontal: v } }))}
+                min={-45}
+                max={45}
+                step={0.5}
+                defaultValue={0}
+                unit="deg"
+              />
+              <Slider
+                label="Vertical"
+                value={editState.perspective?.vertical ?? 0}
+                onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), vertical: v } }))}
+                min={-45}
+                max={45}
+                step={0.5}
+                defaultValue={0}
+                unit="deg"
+              />
+              <Slider
+                label="Fine rotation"
+                value={editState.perspective?.rotation ?? 0}
+                onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), rotation: v } }))}
+                min={-180}
+                max={180}
+                step={0.1}
+                defaultValue={0}
+                unit="deg"
+              />
+              <button
+                onClick={() =>
+                  applyChange((s) => ({ ...s, perspective: { horizontal: 0, vertical: 0, rotation: 0 } }))
+                }
+                className="w-full py-2 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg"
+              >
+                Reset Transform
+              </button>
+            </div>
+          )
+        }
         return (
           <div className="px-1">
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
@@ -265,6 +313,12 @@ export function MobileBottomTray({
                 ↕
               </button>
             </div>
+            <button
+              onClick={() => setSubPanel('transform')}
+              className="mt-2 w-full py-2 text-xs bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg"
+            >
+              Transform / Perspective
+            </button>
             {cropRatio !== 'original' && (
               <button
                 onClick={() => applyChange({ cropRatio: 'original', customCrop: null })}
@@ -272,6 +326,61 @@ export function MobileBottomTray({
               >
                 Reset Crop
               </button>
+            )}
+          </div>
+        )
+
+      case 'frames':
+        return (
+          <div className="space-y-3 px-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {FRAME_PRESETS.map((fp) => (
+                <button
+                  key={fp.id}
+                  onClick={() =>
+                    applyChange((s) => ({
+                      ...s,
+                      frame: {
+                        ...s.frame,
+                        type: fp.id,
+                        width: fp.id === 'none' ? 0 : Math.max(s.frame?.width || 0, 10),
+                      },
+                    }))
+                  }
+                  className={`shrink-0 py-1.5 px-3 text-xs rounded-full transition-colors ${
+                    editState.frame?.type === fp.id ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'
+                  }`}
+                >
+                  {fp.name}
+                </button>
+              ))}
+            </div>
+            {editState.frame?.type && editState.frame.type !== 'none' && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-zinc-400">Color</span>
+                  <input
+                    type="color"
+                    value={editState.frame?.color || '#ffffff'}
+                    onChange={(e) =>
+                      applyChange((s) => ({ ...s, frame: { ...s.frame, color: e.target.value } }))
+                    }
+                    className="w-8 h-8 rounded cursor-pointer border border-zinc-700"
+                  />
+                </div>
+                <Slider
+                  label="Width"
+                  value={editState.frame?.width ?? 10}
+                  onChange={(v) =>
+                    applyChange((s) => ({ ...s, frame: { ...s.frame, width: v } }))
+                  }
+                  min={0}
+                  max={50}
+                  step={1}
+                  defaultValue={10}
+                  unit="px"
+                />
+              </div>
             )}
           </div>
         )
@@ -322,6 +431,13 @@ export function MobileBottomTray({
               >
                 Heal
               </button>
+              <button
+                onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
+                className={`shrink-0 w-10 h-10 text-sm rounded-lg ${drawingMode === 'picker' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 text-zinc-300'}`}
+                title="Pick color"
+              >
+                💧
+              </button>
               {drawingMode === 'brush' && (
                 <input
                   type="color"
@@ -331,6 +447,18 @@ export function MobileBottomTray({
                 />
               )}
             </div>
+            {editState.pickedColor && (
+              <div className="flex items-center gap-2 p-2 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
+                <span className="w-6 h-6 rounded border border-zinc-600 shrink-0" style={{ background: editState.pickedColor }} />
+                <span className="text-xs font-mono text-zinc-200">{editState.pickedColor}</span>
+                <button
+                  onClick={() => applyChange({ brushColor: editState.pickedColor })}
+                  className="ml-auto text-[10px] text-amber-400 hover:text-amber-300"
+                >
+                  Use as brush
+                </button>
+              </div>
+            )}
             {drawingMode === 'heal' && (
               <div className="p-2 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
                 <p className="text-xs text-zinc-400">
@@ -386,14 +514,65 @@ export function MobileBottomTray({
         )
 
       case 'layers':
+        if (subPanel === 'stickers') {
+          return (
+            <Suspense fallback={<PanelLoader />}>
+              <StickerPanel
+                onAddSticker={(sticker) =>
+                  applyChange((s) => ({
+                    ...s,
+                    shapeOverlays: [...(s.shapeOverlays || []), sticker],
+                  }))
+                }
+              />
+            </Suspense>
+          )
+        }
         return (
           <div className="space-y-3 px-1">
-            <button
-              onClick={onAddText}
-              className="w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg"
-            >
-              + Add Text
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={onAddText}
+                className="flex-1 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg"
+              >
+                + Add Text
+              </button>
+              <button
+                onClick={() => setSubPanel('stickers')}
+                className="flex-1 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg"
+              >
+                📎 Stickers
+              </button>
+            </div>
+            <Suspense fallback={<PanelLoader />}>
+              <LayerPanel
+                textOverlays={editState.textOverlays}
+                shapeOverlays={editState.shapeOverlays}
+                layerVisibility={editState.layerVisibility}
+                onToggleVisibility={(id) =>
+                  applyChange((s) => ({
+                    ...s,
+                    layerVisibility: { ...s.layerVisibility, [id]: s.layerVisibility?.[id] === false },
+                  }))
+                }
+                onReorder={(type, from, to) =>
+                  applyChange((s) => {
+                    const key = type === 'text' ? 'textOverlays' : 'shapeOverlays'
+                    const arr = [...(s[key] || [])]
+                    if (to < 0 || to >= arr.length) return s
+                    const [item] = arr.splice(from, 1)
+                    arr.splice(to, 0, item)
+                    return { ...s, [key]: arr }
+                  })
+                }
+                onDelete={(type, index) =>
+                  applyChange((s) => {
+                    const key = type === 'text' ? 'textOverlays' : 'shapeOverlays'
+                    return { ...s, [key]: (s[key] || []).filter((_, i) => i !== index) }
+                  })
+                }
+              />
+            </Suspense>
             {(editState.textOverlays || []).map((t, i) => {
               const updateText = (prop, value) =>
                 applyChange((s) => ({

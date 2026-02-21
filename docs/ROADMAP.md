@@ -85,6 +85,12 @@
 - [x] Tilt-shift / focus blur — linear and radial modes
 - [x] Image info panel — dimensions, file type, estimated size
 
+### 2.6 Frames & Color Picker
+
+- [x] Decorative frames — 8 presets (Simple, Rounded, Shadow, Polaroid, Film Strip, Vintage, Gradient)
+- [x] Frame controls — color picker, width slider
+- [x] Eyedropper / color picker — sample pixel color from canvas, copy hex, use as brush color
+
 ---
 
 ## Phase 3: AI & Smart Features (8–12 weeks)

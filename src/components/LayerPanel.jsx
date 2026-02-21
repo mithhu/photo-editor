@@ -1,11 +1,17 @@
 import { useMemo } from 'react'
 
-const SHAPE_ICONS = { circle: '●', square: '■', triangle: '▲', star: '★', heart: '♥', 'arrow-right': '→', 'arrow-up': '↑' }
+const SHAPE_ICONS = { circle: '●', square: '■', triangle: '▲', star: '★', heart: '♥', 'arrow-right': '→', 'arrow-up': '↑', sticker: '📎' }
 
 export function LayerPanel({ textOverlays, shapeOverlays, layerVisibility, onReorder, onToggleVisibility, onDelete }) {
   const layers = useMemo(() => {
     const texts = (textOverlays || []).map((t, i) => ({ ...t, layerType: 'text', originalIndex: i, label: t.text || 'Text', icon: 'T' }))
-    const shapes = (shapeOverlays || []).map((s, i) => ({ ...s, layerType: 'shape', originalIndex: i, label: s.type?.replace('-', ' ') || 'Shape', icon: SHAPE_ICONS[s.type] || '●' }))
+    const shapes = (shapeOverlays || []).map((s, i) => ({
+      ...s,
+      layerType: 'shape',
+      originalIndex: i,
+      label: s.type === 'sticker' ? `${s.emoji || ''} Sticker` : (s.type?.replace('-', ' ') || 'Shape'),
+      icon: s.type === 'sticker' ? (s.emoji || '📎') : (SHAPE_ICONS[s.type] || '●'),
+    }))
     return [...texts, ...shapes].sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
   }, [textOverlays, shapeOverlays])
 

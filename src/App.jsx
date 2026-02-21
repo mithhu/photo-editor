@@ -140,6 +140,10 @@ export default function App() {
         e.preventDefault()
         applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'heal' ? null : 'heal', healSource: null }))
       }
+      if (e.key === 'i') {
+        e.preventDefault()
+        applyChange((s) => ({ ...s, drawingMode: s.drawingMode === 'picker' ? null : 'picker' }))
+      }
       if (e.key === 'Escape') {
         e.preventDefault()
         applyChange((s) => ({ ...s, drawingMode: null, healSource: null }))

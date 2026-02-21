@@ -8,6 +8,131 @@ import { applyFilmEmulation, addFilmGrain } from '../utils/filmEmulation'
 import { applyPixelFilters } from '../utils/pixelFilters'
 import { applyTiltShift } from '../utils/tiltShift'
 
+function drawFrame(ctx, displayW, displayH, frame) {
+  if (!frame || frame.type === 'none') return
+  const w = frame.width || 10
+  const color = frame.color || '#ffffff'
+
+  ctx.save()
+  switch (frame.type) {
+    case 'simple': {
+      ctx.strokeStyle = color
+      ctx.lineWidth = w
+      ctx.strokeRect(w / 2, w / 2, displayW - w, displayH - w)
+      break
+    }
+    case 'rounded': {
+      const r = Math.min(w * 2, displayW / 4, displayH / 4)
+      ctx.globalCompositeOperation = 'destination-in'
+      ctx.beginPath()
+      ctx.roundRect(0, 0, displayW, displayH, r)
+      ctx.fill()
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.strokeStyle = color
+      ctx.lineWidth = w
+      ctx.beginPath()
+      ctx.roundRect(w / 2, w / 2, displayW - w, displayH - w, Math.max(0, r - w / 2))
+      ctx.stroke()
+      break
+    }
+    case 'shadow': {
+      const grad = ctx.createRadialGradient(
+        displayW / 2, displayH / 2, Math.min(displayW, displayH) * 0.35,
+        displayW / 2, displayH / 2, Math.max(displayW, displayH) * 0.55
+      )
+      grad.addColorStop(0, 'rgba(0,0,0,0)')
+      grad.addColorStop(1, `rgba(0,0,0,${Math.min(1, w / 25)})`)
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, displayW, displayH)
+      break
+    }
+    case 'polaroid': {
+      const side = Math.max(4, w * 0.6)
+      const top = Math.max(4, w * 0.6)
+      const bottom = Math.max(16, w * 2.5)
+      ctx.fillStyle = color
+      ctx.fillRect(0, 0, displayW, top)
+      ctx.fillRect(0, displayH - bottom, displayW, bottom)
+      ctx.fillRect(0, 0, side, displayH)
+      ctx.fillRect(displayW - side, 0, side, displayH)
+      break
+    }
+    case 'film': {
+      const borderH = Math.max(14, w * 1.2)
+      ctx.fillStyle = '#111111'
+      ctx.fillRect(0, 0, displayW, borderH)
+      ctx.fillRect(0, displayH - borderH, displayW, borderH)
+      const holeR = Math.max(3, borderH * 0.22)
+      const holeSpacing = Math.max(holeR * 4, 20)
+      ctx.fillStyle = '#f5f5f5'
+      for (let x = holeSpacing / 2; x < displayW; x += holeSpacing) {
+        ctx.beginPath()
+        ctx.arc(x, borderH / 2, holeR, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.beginPath()
+        ctx.arc(x, displayH - borderH / 2, holeR, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      break
+    }
+    case 'vintage': {
+      const outerW = Math.max(3, w * 0.7)
+      const innerW = Math.max(1, w * 0.25)
+      const gap = Math.max(2, w * 0.3)
+      ctx.strokeStyle = color
+      ctx.lineWidth = outerW
+      ctx.strokeRect(outerW / 2, outerW / 2, displayW - outerW, displayH - outerW)
+      ctx.lineWidth = innerW
+      const inset = outerW + gap
+      ctx.strokeRect(inset + innerW / 2, inset + innerW / 2, displayW - 2 * inset - innerW, displayH - 2 * inset - innerW)
+      const cLen = Math.max(6, w * 0.8)
+      const cInset = outerW / 2
+      ctx.lineWidth = Math.max(1, outerW * 0.6)
+      const corners = [
+        [cInset, cInset, 1, 1],
+        [displayW - cInset, cInset, -1, 1],
+        [cInset, displayH - cInset, 1, -1],
+        [displayW - cInset, displayH - cInset, -1, -1],
+      ]
+      corners.forEach(([cx, cy, dx, dy]) => {
+        ctx.beginPath()
+        ctx.moveTo(cx, cy + dy * cLen)
+        ctx.lineTo(cx + dx * cLen * 0.3, cy + dy * cLen * 0.3)
+        ctx.lineTo(cx + dx * cLen, cy)
+        ctx.stroke()
+      })
+      break
+    }
+    case 'gradient': {
+      const gradT = ctx.createLinearGradient(0, 0, 0, w)
+      gradT.addColorStop(0, color)
+      gradT.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = gradT
+      ctx.fillRect(0, 0, displayW, w)
+
+      const gradB = ctx.createLinearGradient(0, displayH, 0, displayH - w)
+      gradB.addColorStop(0, color)
+      gradB.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = gradB
+      ctx.fillRect(0, displayH - w, displayW, w)
+
+      const gradL = ctx.createLinearGradient(0, 0, w, 0)
+      gradL.addColorStop(0, color)
+      gradL.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = gradL
+      ctx.fillRect(0, 0, w, displayH)
+
+      const gradR = ctx.createLinearGradient(displayW, 0, displayW - w, 0)
+      gradR.addColorStop(0, color)
+      gradR.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = gradR
+      ctx.fillRect(displayW - w, 0, w, displayH)
+      break
+    }
+  }
+  ctx.restore()
+}
+
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
@@ -18,6 +143,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const [containerSize, setContainerSize] = useState(null)
   const [healCursor, setHealCursor] = useState(null)
   const healingRef = useRef({ active: false, offset: null, snapshotData: null })
+  const [pickerBadge, setPickerBadge] = useState(null)
 
   useEffect(() => {
     const el = containerRef.current
@@ -48,7 +174,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     filmIntensity,
     filmGrain,
     tiltShift,
+    frame,
+    perspective,
   } = editState
+
+  const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
 
   const cropActive = cropRatio !== 'original'
   const [imageDims, setImageDims] = useState(null)
@@ -126,7 +256,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     const cw = sw * cos + sh * sin
     const ch = sw * sin + sh * cos
 
-    const scale = Math.min(containerSize.w / cw, containerSize.h / ch, 1)
+    const hasPerspective = (p.horizontal !== 0 || p.vertical !== 0 || p.rotation !== 0)
+    const perspectiveScale = hasPerspective ? 0.88 : 1
+    const scale = Math.min(containerSize.w / cw, containerSize.h / ch, 1) * perspectiveScale
     const displayW = cw * scale
     const displayH = ch * scale
 
@@ -139,6 +271,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.save()
     ctx.translate(displayW / 2, displayH / 2)
     ctx.rotate(rot)
+    if (p.rotation !== 0) ctx.rotate((p.rotation * Math.PI) / 180)
+    if (p.horizontal !== 0) ctx.transform(1, 0, Math.tan((p.horizontal * Math.PI) / 180), 1, 0, 0)
+    if (p.vertical !== 0) ctx.transform(1, Math.tan((p.vertical * Math.PI) / 180), 0, 1, 0, 0)
     ctx.scale(scale, scale)
     ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1)
     ctx.translate(-sw / 2, -sh / 2)
@@ -380,6 +515,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       applyTiltShift(ctx, canvas.width, canvas.height, tiltShift)
     }
 
+    if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
+      drawFrame(ctx, displayW, displayH, frame)
+    }
+
     if (!isComparing) {
     const allStrokes = currentStrokeRef.current
       ? [...(brushStrokes || []), currentStrokeRef.current]
@@ -418,6 +557,13 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         ctx.save()
         ctx.translate(cx, cy)
         ctx.rotate(rot)
+        if (shape.type === 'sticker' && shape.emoji) {
+          const fontSize = Math.max(12, size * 0.85)
+          ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(shape.emoji, 0, 0)
+        } else {
         ctx.fillStyle = color
         if (shape.type === 'square') {
           ctx.fillRect(-size / 2, -size / 2, size, size)
@@ -473,6 +619,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
             ctx.arc(0, 0, size / 2, 0, Math.PI * 2)
           }
           ctx.fill()
+        }
         }
         ctx.restore()
       })
@@ -564,7 +711,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
     }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, hasBaseFilters, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, vignette, masks, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, filmGrain, drawingMode, healSource, healCursor, brushSize, hasTiltShift, tiltShift, frame, p.horizontal, p.vertical, p.rotation])
 
   const throttledDraw = useThrottledDraw(drawCanvas, 32)
 
@@ -670,8 +817,28 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     ctx.putImageData(imgData, x0, y0)
   }, [canvasRef])
 
+  const handlePickColor = useCallback((e) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    const dpr = window.devicePixelRatio || 1
+    const cx = Math.round((e.clientX - rect.left) * dpr * (canvas.width / (rect.width * dpr)))
+    const cy = Math.round((e.clientY - rect.top) * dpr * (canvas.height / (rect.height * dpr)))
+    const ctx = canvas.getContext('2d')
+    const pixel = ctx.getImageData(cx, cy, 1, 1).data
+    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(c => c.toString(16).padStart(2, '0')).join('')
+    navigator.clipboard?.writeText(hex).catch(() => {})
+    onApplyChange?.((s) => ({ ...s, pickedColor: hex }))
+    setPickerBadge({ x: e.clientX - rect.left, y: e.clientY - rect.top, color: hex })
+    setTimeout(() => setPickerBadge(null), 2000)
+  }, [canvasRef, onApplyChange])
+
   const handleMouseDown = useCallback(
     (e) => {
+      if (drawingMode === 'picker') {
+        handlePickColor(e)
+        return
+      }
       if (drawingMode === 'heal') {
         const pt = getCanvasPoint(e)
         if (!pt) return
@@ -705,7 +872,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         }
       }
     },
-    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor],
   )
 
   const handleMouseMove = useCallback(
@@ -766,6 +933,23 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       const touch = e.touches[0]
       const pt = getCanvasPointFromTouch(touch)
       if (!pt) return
+
+      if (drawingMode === 'picker') {
+        const canvas = canvasRef.current
+        if (!canvas) return
+        const rect = canvas.getBoundingClientRect()
+        const dpr = window.devicePixelRatio || 1
+        const cx = Math.round((touch.clientX - rect.left) * dpr * (canvas.width / (rect.width * dpr)))
+        const cy = Math.round((touch.clientY - rect.top) * dpr * (canvas.height / (rect.height * dpr)))
+        const ctx = canvas.getContext('2d')
+        const pixel = ctx.getImageData(cx, cy, 1, 1).data
+        const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(c => c.toString(16).padStart(2, '0')).join('')
+        navigator.clipboard?.writeText(hex).catch(() => {})
+        onApplyChange?.((s) => ({ ...s, pickedColor: hex }))
+        setPickerBadge({ x: touch.clientX - rect.left, y: touch.clientY - rect.top, color: hex })
+        setTimeout(() => setPickerBadge(null), 2000)
+        return
+      }
 
       if (drawingMode === 'heal') {
         setHealCursor(pt)
@@ -902,7 +1086,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      style={{ cursor: drawingMode === 'heal' ? (healSource ? 'cell' : 'crosshair') : drawingMode ? 'crosshair' : 'default' }}
+      style={{ cursor: drawingMode === 'picker' ? 'crosshair' : drawingMode === 'heal' ? (healSource ? 'cell' : 'crosshair') : drawingMode ? 'crosshair' : 'default' }}
     >
       {loadedSrc !== imageSrc && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -933,6 +1117,23 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           className="rounded-lg shadow-2xl"
           style={{ background: '#1a1a1a' }}
         />
+        {pickerBadge && (
+          <div
+            className="absolute z-20 pointer-events-none flex items-center gap-1.5 rounded-full px-2.5 py-1 shadow-lg border border-zinc-600 text-xs font-mono animate-fade-in"
+            style={{
+              left: pickerBadge.x + 12,
+              top: pickerBadge.y - 36,
+              background: '#1a1a1a',
+              color: '#e4e4e7',
+            }}
+          >
+            <span
+              className="inline-block w-4 h-4 rounded-full border border-zinc-500"
+              style={{ background: pickerBadge.color }}
+            />
+            {pickerBadge.color}
+          </div>
+        )}
         <CropOverlay
           cropRegion={cropOverlayRegion}
           onCropChange={handleCropChange}

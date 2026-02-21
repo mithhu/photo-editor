@@ -118,6 +118,21 @@
 - [x] Controls in EditorSidebar (Adjustments section) and MobileBottomTray (Adjust panel)
 - [x] Applied as post-processing step in EditorCanvas after masks, before overlays
 
+### Frames & Borders (v1.7)
+- [x] Frame presets — None, Simple, Rounded, Shadow, Polaroid, Film Strip, Vintage, Gradient
+- [x] Frame controls — type selector grid, color picker, width slider (0-50px)
+- [x] Canvas rendering — frames drawn as post-processing step over image edges
+- [x] Controls in EditorSidebar (new Frames section) and MobileBottomTray (new Frames tab)
+
+### Color Picker / Eyedropper (v1.7)
+- [x] Eyedropper tool — click on canvas to sample pixel color, converts RGB to hex
+- [x] Floating color badge near cursor showing sampled color
+- [x] Auto-copy hex to clipboard on pick
+- [x] "Use as brush" button to apply picked color to brush
+- [x] Picker button in Drawing section (sidebar + mobile) and next to brush color input
+- [x] Keyboard shortcut: I to toggle picker mode
+- [x] pickedColor state persisted in edit state
+
 ### Loading States (v1.4)
 - [x] Full-screen loading spinner overlay in App.jsx during large image upload
 - [x] Skeleton/loading indicator in EditorCanvas before image finishes loading

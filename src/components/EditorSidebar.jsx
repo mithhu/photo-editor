@@ -7,10 +7,11 @@ import { SplitTonePanel } from './SplitTonePanel'
 import { CurvesPanel } from './CurvesPanel'
 import { MaskPanel } from './MaskPanel'
 import { LayerPanel } from './LayerPanel'
+import { StickerPanel } from './StickerPanel'
 import { AIToolsPanel } from './AIToolsPanel'
 import { TemplatePanel } from './TemplatePanel'
 import { ImageInfoPanel } from './ImageInfoPanel'
-import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS } from '../constants'
+import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
 import { useFilterPreviews } from '../hooks/useFilterPreviews'
@@ -304,6 +305,112 @@ export function EditorSidebar({
             </button>
           </div>
         </div>
+
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-4">Transform</h3>
+          <div className="space-y-4">
+            <Slider
+              label="Horizontal"
+              value={editState.perspective?.horizontal ?? 0}
+              onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), horizontal: v } }))}
+              min={-45}
+              max={45}
+              step={0.5}
+              defaultValue={0}
+              unit="deg"
+            />
+            <Slider
+              label="Vertical"
+              value={editState.perspective?.vertical ?? 0}
+              onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), vertical: v } }))}
+              min={-45}
+              max={45}
+              step={0.5}
+              defaultValue={0}
+              unit="deg"
+            />
+            <Slider
+              label="Fine rotation"
+              value={editState.perspective?.rotation ?? 0}
+              onChange={(v) => applyChange((s) => ({ ...s, perspective: { ...(s.perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }), rotation: v } }))}
+              min={-180}
+              max={180}
+              step={0.1}
+              defaultValue={0}
+              unit="deg"
+            />
+            <button
+              onClick={() =>
+                applyChange((s) => ({
+                  ...s,
+                  perspective: { horizontal: 0, vertical: 0, rotation: 0 },
+                }))
+              }
+              className="w-full py-2 text-sm bg-zinc-700 hover:bg-zinc-600 text-zinc-300 rounded-lg transition-colors"
+            >
+              Reset Transform
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Frames */}
+      <div>
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-4">Frames</h3>
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {FRAME_PRESETS.map((fp) => (
+              <button
+                key={fp.id}
+                onClick={() =>
+                  applyChange((s) => ({
+                    ...s,
+                    frame: {
+                      ...s.frame,
+                      type: fp.id,
+                      width: fp.id === 'none' ? 0 : Math.max(s.frame?.width || 0, 10),
+                    },
+                  }))
+                }
+                className={`py-2 px-1 text-[11px] rounded-lg transition-colors text-center ${
+                  editState.frame?.type === fp.id
+                    ? 'bg-amber-500 text-zinc-900 font-medium'
+                    : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+                }`}
+              >
+                {fp.name}
+              </button>
+            ))}
+          </div>
+          {editState.frame?.type && editState.frame.type !== 'none' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-400">Color</span>
+                <input
+                  type="color"
+                  value={editState.frame?.color || '#ffffff'}
+                  onChange={(e) =>
+                    applyChange((s) => ({ ...s, frame: { ...s.frame, color: e.target.value } }))
+                  }
+                  className="w-8 h-8 rounded cursor-pointer border border-zinc-700"
+                />
+                <span className="text-xs text-zinc-500">{editState.frame?.color || '#ffffff'}</span>
+              </div>
+              <Slider
+                label="Width"
+                value={editState.frame?.width ?? 10}
+                onChange={(v) =>
+                  applyChange((s) => ({ ...s, frame: { ...s.frame, width: v } }))
+                }
+                min={0}
+                max={50}
+                step={1}
+                defaultValue={10}
+                unit="px"
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Drawing + Shapes */}
@@ -335,7 +442,34 @@ export function EditorSidebar({
             >
               Heal
             </button>
+            <button
+              onClick={() => applyChange({ drawingMode: drawingMode === 'picker' ? null : 'picker' })}
+              className={`flex-1 py-2 text-sm rounded-lg transition-colors ${
+                drawingMode === 'picker' ? 'bg-amber-500 text-zinc-900 font-medium' : 'bg-zinc-700 hover:bg-zinc-600 text-zinc-300'
+              }`}
+              title="Pick a color from the image"
+            >
+              💧 Pick
+            </button>
           </div>
+          {editState.pickedColor && (
+            <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50 flex items-center gap-3">
+              <span
+                className="w-8 h-8 rounded-lg border border-zinc-600 shrink-0"
+                style={{ background: editState.pickedColor }}
+              />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-mono text-zinc-200">{editState.pickedColor}</span>
+                <p className="text-[10px] text-zinc-500 mt-0.5">Copied to clipboard</p>
+              </div>
+              <button
+                onClick={() => applyChange({ brushColor: editState.pickedColor })}
+                className="text-xs text-amber-400 hover:text-amber-300 shrink-0"
+              >
+                Use as brush
+              </button>
+            </div>
+          )}
           {drawingMode === 'heal' && (
             <div className="mb-4 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700/50">
               <p className="text-xs text-zinc-400 mb-1">
@@ -362,6 +496,13 @@ export function EditorSidebar({
                 onChange={(e) => applyChange({ brushColor: e.target.value })}
                 className="w-8 h-8 rounded cursor-pointer border border-zinc-700"
               />
+              <button
+                onClick={() => applyChange({ drawingMode: 'picker' })}
+                className="w-8 h-8 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded border border-zinc-600 text-sm"
+                title="Pick color from image"
+              >
+                💧
+              </button>
               <span className="text-xs text-zinc-500">{brushColor}</span>
             </div>
           )}
@@ -422,13 +563,24 @@ export function EditorSidebar({
               </button>
             ))}
           </div>
+          <div className="mt-4">
+            <StickerPanel
+              onAddSticker={(sticker) =>
+                applyChange((s) => ({
+                  ...s,
+                  shapeOverlays: [...(s.shapeOverlays || []), sticker],
+                }))
+              }
+            />
+          </div>
           {(editState.shapeOverlays || []).length > 0 && (
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-48 overflow-y-auto mt-4">
               {(editState.shapeOverlays || []).map((shape, i) => (
                 <div key={shape.id ?? i} className="flex flex-wrap gap-2 items-center">
-                  <span className="text-xs text-zinc-400 w-20 shrink-0 capitalize">
-                    {shape.type?.replace('-', ' ')}
+                  <span className="text-xs text-zinc-400 w-20 shrink-0 capitalize flex items-center gap-1">
+                    {shape.type === 'sticker' ? `${shape.emoji || ''} Sticker` : shape.type?.replace('-', ' ')}
                   </span>
+                  {shape.type !== 'sticker' && (
                   <input
                     type="color"
                     value={shape.color ?? '#ffffff'}
@@ -440,6 +592,7 @@ export function EditorSidebar({
                     }
                     className="w-8 h-8 rounded cursor-pointer"
                   />
+                  )}
                   <input
                     type="number"
                     min={10}

@@ -23,6 +23,7 @@ export const INITIAL_EDIT_STATE = {
   shapeOverlays: [],
   layerVisibility: {}, // { [layerId]: boolean } — defaults to true if not present
   customCrop: null, // { x, y, w, h } in 0-1 coords or null for preset crop
+  perspective: { horizontal: 0, vertical: 0, rotation: 0 }, // transform: skew ±45°, fine rotation ±180°
   brushStrokes: [],
   drawingMode: null, // 'brush' | 'eraser' | 'heal' | null
   healSource: null, // { x, y } in 0-1 canvas coords — set on first click in heal mode
@@ -62,6 +63,8 @@ export const INITIAL_EDIT_STATE = {
   filmIntensity: 1, // 0-1 blend strength
   filmGrain: 0, // 0-1 grain amount
   tiltShift: { mode: 'linear', position: 50, size: 30, blur: 0 },
+  frame: { type: 'none', color: '#ffffff', width: 0 },
+  pickedColor: null,
 }
 
 /** Font options for text overlays. Defaults: fontFamily 'sans-serif', fontWeight 'normal', fontStyle 'normal', textShadow false, opacity 1, rotation 0 */
@@ -97,3 +100,26 @@ export const FILTER_PRESETS = [
   { id: 'y2k', name: 'Y2K', ops: [{ type: 'contrast', value: 1.2 }, { type: 'saturate', value: 1.5 }, { type: 'brightness', value: 1.02 }] },
   { id: 'vhs', name: 'VHS / Retro', ops: [{ type: 'saturate', value: 0.6 }, { type: 'contrast', value: 1.1 }, { type: 'brightness', value: 0.95 }, { type: 'hue-rotate', value: -5 }] },
 ]
+
+export const FRAME_PRESETS = [
+  { id: 'none', name: 'None' },
+  { id: 'simple', name: 'Simple' },
+  { id: 'rounded', name: 'Rounded' },
+  { id: 'shadow', name: 'Shadow' },
+  { id: 'polaroid', name: 'Polaroid' },
+  { id: 'film', name: 'Film Strip' },
+  { id: 'vintage', name: 'Vintage' },
+  { id: 'gradient', name: 'Gradient' },
+]
+
+/** Sticker categories and emoji characters for the sticker library */
+export const STICKER_CATEGORIES = [
+  { id: 'popular', label: 'Popular', emojis: ['😍', '🔥', '✨', '💯', '❤️', '🌟', '💪', '🎉', '👑', '🦋'] },
+  { id: 'emoji', label: 'Emoji', emojis: ['😂', '🥺', '😎', '🤩', '🥳', '😜', '🤗', '😱', '🤯', '😤'] },
+  { id: 'arrows', label: 'Arrows', emojis: ['➡️', '⬆️', '⬇️', '↗️', '↘️', '↩️', '🔄', '➕', '✖️', '⭕'] },
+  { id: 'badges', label: 'Badges', emojis: ['⭐', '🏆', '🎯', '💎', '🔮', '🎁', '🎭', '🎪', '🎨', '🧩'] },
+  { id: 'decorative', label: 'Decorative', emojis: ['🌈', '🌸', '🍀', '🌙', '⚡', '🔥', '❄️', '💫', '🌊', '🎶'] },
+]
+
+/** Default sticker dimensions when added to canvas */
+export const STICKER_DEFAULT_SIZE = 60
