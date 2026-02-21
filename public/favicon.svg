@@ -1,7 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#18181b"/>
-  <circle cx="256" cy="230" r="100" fill="none" stroke="#f59e0b" stroke-width="24"/>
-  <rect x="200" y="340" width="112" height="8" rx="4" fill="#f59e0b"/>
-  <rect x="180" y="360" width="152" height="8" rx="4" fill="#f59e0b" opacity="0.6"/>
-  <rect x="210" y="380" width="92" height="8" rx="4" fill="#f59e0b" opacity="0.3"/>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c7d2fe"/>
+      <stop offset="100%" stop-color="#a5b4fc"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <circle cx="256" cy="220" r="105" fill="none" stroke="url(#lens)" stroke-width="22"/>
+  <circle cx="256" cy="220" r="50" fill="none" stroke="url(#lens)" stroke-width="14" opacity="0.6"/>
+  <circle cx="220" cy="185" r="14" fill="#e0e7ff" opacity="0.7"/>
+  <text x="256" y="405" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="100" fill="#e0e7ff" letter-spacing="-2">AI</text>
 </svg>

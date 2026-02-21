@@ -136,6 +136,46 @@ function drawFrame(ctx, displayW, displayH, frame) {
   ctx.restore()
 }
 
+function InlineTextEditor({ textOverlays, editingTextId, onSave, onCancel }) {
+  const t = textOverlays?.find((o) => o.id === editingTextId)
+  if (!t) return null
+  const fontSize = t.fontSize ?? 32
+  return (
+    <div
+      className="absolute z-30"
+      style={{
+        left: `${(t.x ?? 0.5) * 100}%`,
+        top: `${(t.y ?? 0.5) * 100}%`,
+        transform: `translate(-50%, -50%)${t.rotation ? ` rotate(${t.rotation}deg)` : ''}`,
+      }}
+    >
+      <input
+        autoFocus
+        type="text"
+        defaultValue={t.text || 'Text'}
+        onBlur={(e) => onSave(e.target.value.trim())}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.target.blur()
+          if (e.key === 'Escape') onCancel()
+        }}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
+        className="bg-black/60 backdrop-blur-sm border-2 border-indigo-500 rounded-lg px-3 py-1.5 text-center outline-none shadow-lg shadow-indigo-500/20"
+        style={{
+          color: t.color ?? '#ffffff',
+          fontSize: `${Math.min(fontSize, 48)}px`,
+          fontFamily: t.fontFamily || 'sans-serif',
+          fontWeight: t.fontWeight === 'bold' ? 'bold' : 'normal',
+          fontStyle: t.fontStyle === 'italic' ? 'italic' : 'normal',
+          minWidth: '80px',
+          caretColor: '#818cf8',
+        }}
+      />
+    </div>
+  )
+}
+
 export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
@@ -148,6 +188,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const healingRef = useRef({ active: false, offset: null, snapshotData: null })
   const [pickerBadge, setPickerBadge] = useState(null)
   const draggingRef = useRef(null) // { type: 'text'|'shape', id, offsetX, offsetY, resizing?, initDist?, initSize? }
+  const [editingTextId, setEditingTextId] = useState(null)
+  const dragMovedRef = useRef(false)
 
   useEffect(() => {
     const el = containerRef.current
@@ -950,6 +992,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
   const handleMouseDown = useCallback(
     (e) => {
+      if (editingTextId) setEditingTextId(null)
+
       if (drawingMode === 'picker') {
         handlePickColor(e)
         return
@@ -995,9 +1039,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       if (hit) {
         e.preventDefault()
         draggingRef.current = hit
+        dragMovedRef.current = false
       }
     },
-    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor, hitTestOverlay],
+    [drawingMode, brushColor, brushSize, brushOpacity, getCanvasPoint, healSource, onApplyChange, canvasRef, applyHealBrush, handlePickColor, hitTestOverlay, editingTextId],
   )
 
   const handleMouseMove = useCallback(
@@ -1026,6 +1071,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
       // Drag overlay
       if (draggingRef.current && onApplyChange) {
+        dragMovedRef.current = true
         const pt = getCanvasPoint(e)
         if (!pt) return
         const d = draggingRef.current
@@ -1045,7 +1091,12 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
   const handleMouseUp = useCallback(() => {
     if (draggingRef.current) {
+      const d = draggingRef.current
+      const wasTap = !dragMovedRef.current
       draggingRef.current = null
+      if (wasTap && d.type === 'text') {
+        setEditingTextId(d.id)
+      }
       return
     }
     if (isDrawing && healingRef.current.active) {
@@ -1131,6 +1182,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       if (hit) {
         e.preventDefault()
         draggingRef.current = hit
+        dragMovedRef.current = false
       }
     } else if (e.touches.length === 2) {
       e.preventDefault()
@@ -1183,6 +1235,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       throttledDraw()
     } else if (e.touches.length === 1 && draggingRef.current && onApplyChange) {
       e.preventDefault()
+      dragMovedRef.current = true
       const touch = e.touches[0]
       const pt = getCanvasPointFromTouch(touch)
       if (!pt) return
@@ -1232,7 +1285,12 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const handleTouchEnd = useCallback((e) => {
     if (e.touches.length === 0) {
       if (draggingRef.current) {
+        const d = draggingRef.current
+        const wasTap = !dragMovedRef.current
         draggingRef.current = null
+        if (wasTap && d.type === 'text') {
+          setEditingTextId(d.id)
+        }
         return
       }
       if (isDrawing && healingRef.current.active) {
@@ -1343,6 +1401,24 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
             />
             {pickerBadge.color}
           </div>
+        )}
+        {editingTextId && (
+          <InlineTextEditor
+            textOverlays={textOverlays}
+            editingTextId={editingTextId}
+            onSave={(val) => {
+              if (val && onApplyChange) {
+                onApplyChange((s) => ({
+                  ...s,
+                  textOverlays: (s.textOverlays || []).map((item) =>
+                    item.id === editingTextId ? { ...item, text: val } : item
+                  ),
+                }))
+              }
+              setEditingTextId(null)
+            }}
+            onCancel={() => setEditingTextId(null)}
+          />
         )}
         <CropOverlay
           cropRegion={cropOverlayRegion}
