@@ -264,16 +264,14 @@ export default function App() {
       {/* Mobile: full-screen canvas + bottom tray overlay */}
       <div className="flex-1 flex flex-col lg:hidden min-h-0">
         <Suspense fallback={<EditorFallback />}>
-          <div className="flex-1 min-h-0 p-2 pb-20">
-            <EditorCanvas
-              imageSrc={imageSrc}
-              editState={editState}
-              canvasRef={canvasRef}
-              isComparing={isComparing}
-              onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
-              onApplyChange={applyChange}
-            />
-          </div>
+          <EditorCanvas
+            imageSrc={imageSrc}
+            editState={editState}
+            canvasRef={canvasRef}
+            isComparing={isComparing}
+            onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
+            onApplyChange={applyChange}
+          />
           <MobileBottomTray
             editState={editState}
             applyChange={applyChange}

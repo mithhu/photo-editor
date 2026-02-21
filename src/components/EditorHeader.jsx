@@ -16,7 +16,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, onCompareStart,
   }, [showMenu, closeMenu])
 
   return (
-    <header className="flex items-center justify-between px-3 py-2 lg:px-4 lg:py-3 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-sm">
+    <header className="relative z-50 flex items-center justify-between px-3 py-2 lg:px-4 lg:py-3 border-b border-zinc-800/50 bg-zinc-900/90 backdrop-blur-sm">
       <h1 className="text-lg lg:text-xl font-bold text-amber-500">Photo Editor</h1>
 
       <div className="flex items-center gap-2">

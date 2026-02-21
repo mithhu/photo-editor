@@ -710,7 +710,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   return (
     <div
       ref={containerRef}
-      className="min-w-0 flex-1 min-h-0 relative bg-zinc-900/50 rounded-xl p-2 lg:p-4 overflow-hidden flex items-center justify-center touch-none"
+      className="min-w-0 flex-1 min-h-0 relative bg-zinc-900/50 lg:rounded-xl p-2 pb-16 lg:p-4 lg:pb-4 overflow-hidden flex items-center justify-center touch-none"
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
