@@ -753,6 +753,198 @@ function infrared(r, g, b) {
   return [r, g, b]
 }
 
+/**
+ * Moody — dark atmospheric. Deep shadows, teal midtones, desaturated.
+ */
+function moody(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.25)
+  g = clamp(g + (gray - g) * 0.25)
+  b = clamp(b + (gray - b) * 0.25)
+  const shW = Math.max(0, (0.35 - lum) * 3)
+  r = clamp(r - shW * 15)
+  g = clamp(g - shW * 10)
+  b = clamp(b - shW * 5)
+  r = clamp(r - 5)
+  g = clamp(g + 3)
+  b = clamp(b + 8)
+  const contrast = 1.18
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Golden — warm golden glow everywhere.
+ */
+function golden(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r + 15)
+  g = clamp(g + 8)
+  b = clamp(b - 12)
+  r = clamp(r * 0.9 + 25)
+  g = clamp(g * 0.9 + 18)
+  b = clamp(b * 0.9 + 8)
+  const hlW = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlW * 15)
+  g = clamp(g + hlW * 8)
+  const contrast = 0.95
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Faded — heavily faded vintage. Crushed whites, lifted blacks.
+ */
+function faded(r, g, b) {
+  r = clamp(r * 0.82 + 45)
+  g = clamp(g * 0.82 + 42)
+  b = clamp(b * 0.82 + 38)
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.15)
+  g = clamp(g + (gray - g) * 0.15)
+  b = clamp(b + (gray - b) * 0.15)
+  r = clamp(r + 5)
+  b = clamp(b - 3)
+  const contrast = 0.8
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Neon — vivid neon colors, high saturation, bright.
+ */
+function neon(r, g, b) {
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.45)
+  g = clamp(g + (g - gray) * 0.45)
+  b = clamp(b + (b - gray) * 0.45)
+  r = clamp(r + 10)
+  g = clamp(g + 5)
+  b = clamp(b + 10)
+  const contrast = 1.15
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Cinematic — teal-orange color grade, Hollywood blockbuster look.
+ */
+function cinematic(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const hlW = Math.max(0, (lum - 0.45) * 2)
+  r = clamp(r + hlW * 20)
+  g = clamp(g + hlW * 8)
+  b = clamp(b - hlW * 5)
+  const shW = Math.max(0, (0.4 - lum) * 2.5)
+  r = clamp(r - shW * 10)
+  g = clamp(g + shW * 5)
+  b = clamp(b + shW * 15)
+  const contrast = 1.12
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  r = clamp(r * 0.95 + 12)
+  g = clamp(g * 0.95 + 10)
+  b = clamp(b * 0.95 + 10)
+  return [r, g, b]
+}
+
+/**
+ * Polaroid — instant camera feel. Warm, slightly green cast, lifted blacks.
+ */
+function polaroid(r, g, b) {
+  r = clamp(r * 0.88 + 30)
+  g = clamp(g * 0.88 + 28)
+  b = clamp(b * 0.88 + 22)
+  r = clamp(r + 6)
+  g = clamp(g + 8)
+  b = clamp(b - 6)
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.1)
+  g = clamp(g + (gray - g) * 0.1)
+  b = clamp(b + (gray - b) * 0.1)
+  const contrast = 0.92
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Midnight — deep blue night aesthetic. Cool shadows, muted highlights.
+ */
+function midnight(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (gray - r) * 0.3)
+  g = clamp(g + (gray - g) * 0.3)
+  b = clamp(b + (gray - b) * 0.3)
+  r = clamp(r - 12)
+  g = clamp(g - 6)
+  b = clamp(b + 18)
+  const shW = Math.max(0, (0.4 - lum) * 2.5)
+  b = clamp(b + shW * 12)
+  const hlW = Math.max(0, (lum - 0.6) * 2.5)
+  r = clamp(r - hlW * 8)
+  g = clamp(g - hlW * 8)
+  const contrast = 1.15
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Peach — warm peachy skin-tone-friendly aesthetic.
+ */
+function peach(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  r = clamp(r * 0.85 + 38)
+  g = clamp(g * 0.85 + 30)
+  b = clamp(b * 0.85 + 25)
+  r = clamp(r + 12)
+  g = clamp(g + 4)
+  b = clamp(b - 8)
+  const hlW = Math.max(0, (lum - 0.5) * 2)
+  r = clamp(r + hlW * 10)
+  g = clamp(g + hlW * 5)
+  const contrast = 0.88
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
+/**
+ * Emerald — lush green tones, deep contrast, nature-focused.
+ */
+function emerald(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const gray = 0.299 * r + 0.587 * g + 0.114 * b
+  r = clamp(r + (r - gray) * 0.15)
+  g = clamp(g + (g - gray) * 0.25)
+  b = clamp(b + (b - gray) * 0.15)
+  r = clamp(r - 8)
+  g = clamp(g + 10)
+  b = clamp(b - 4)
+  const midW = 1 - Math.abs(lum - 0.5) * 2
+  g = clamp(g + midW * 8)
+  const contrast = 1.12
+  r = clamp(((r / 255 - 0.5) * contrast + 0.5) * 255)
+  g = clamp(((g / 255 - 0.5) * contrast + 0.5) * 255)
+  b = clamp(((b / 255 - 0.5) * contrast + 0.5) * 255)
+  return [r, g, b]
+}
+
 export const FILM_EMULATIONS = [
   { id: 'koji', name: 'Koji', fn: koji, description: 'Warm cinematic film', category: 'classic' },
   { id: 'tokyo', name: 'Tokyo', fn: tokyo, description: 'Cool urban teal', category: 'classic' },
@@ -775,6 +967,15 @@ export const FILM_EMULATIONS = [
   { id: 'chrome', name: 'Chrome', fn: chrome, description: 'Metallic chrome look', category: 'trending' },
   { id: 'matte', name: 'Matte', fn: matte, description: 'Matte flat look', category: 'trending' },
   { id: 'infrared', name: 'Infrared', fn: infrared, description: 'False color infrared', category: 'trending' },
+  { id: 'moody', name: 'Moody', fn: moody, description: 'Dark atmospheric', category: 'trending' },
+  { id: 'golden', name: 'Golden', fn: golden, description: 'Warm golden glow', category: 'trending' },
+  { id: 'faded', name: 'Faded', fn: faded, description: 'Heavily faded vintage', category: 'trending' },
+  { id: 'neon', name: 'Neon', fn: neon, description: 'Vivid neon colors', category: 'trending' },
+  { id: 'cinematic', name: 'Cinematic', fn: cinematic, description: 'Teal-orange Hollywood', category: 'trending' },
+  { id: 'polaroid', name: 'Polaroid', fn: polaroid, description: 'Instant camera feel', category: 'classic' },
+  { id: 'midnight', name: 'Midnight', fn: midnight, description: 'Deep blue night', category: 'trending' },
+  { id: 'peach', name: 'Peach', fn: peach, description: 'Warm peachy aesthetic', category: 'trending' },
+  { id: 'emerald', name: 'Emerald', fn: emerald, description: 'Lush green tones', category: 'trending' },
 ]
 
 export function applyFilmEmulation(imageData, emulationId, intensity = 1) {

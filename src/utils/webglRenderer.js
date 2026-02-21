@@ -383,6 +383,87 @@ vec3 filmTransform(vec3 c, int id) {
     o = (o - 0.5) * 1.18 + 0.5;
   }
 
+  // 21=moody
+  else if (id == 21) {
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o = mix(o, vec3(gray), 0.25);
+    float shW = max(0.0, (0.35 - lum) * 3.0);
+    o -= shW * vec3(15.0, 10.0, 5.0) / 255.0;
+    o += vec3(-5.0, 3.0, 8.0) / 255.0;
+    o = (o - 0.5) * 1.18 + 0.5;
+  }
+  // 22=golden
+  else if (id == 22) {
+    o += vec3(15.0, 8.0, -12.0) / 255.0;
+    o = o * 0.9 + vec3(25.0, 18.0, 8.0) / 255.0;
+    float hlW = max(0.0, (lum - 0.5) * 2.0);
+    o += hlW * vec3(15.0, 8.0, 0.0) / 255.0;
+    o = (o - 0.5) * 0.95 + 0.5;
+  }
+  // 23=faded
+  else if (id == 23) {
+    o = o * 0.82 + vec3(45.0, 42.0, 38.0) / 255.0;
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o = mix(o, vec3(gray), 0.15);
+    o += vec3(5.0, 0.0, -3.0) / 255.0;
+    o = (o - 0.5) * 0.8 + 0.5;
+  }
+  // 24=neon
+  else if (id == 24) {
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o += (o - gray) * 0.45;
+    o += vec3(10.0, 5.0, 10.0) / 255.0;
+    o = (o - 0.5) * 1.15 + 0.5;
+  }
+  // 25=cinematic
+  else if (id == 25) {
+    float hlW = max(0.0, (lum - 0.45) * 2.0);
+    o += hlW * vec3(20.0, 8.0, -5.0) / 255.0;
+    float shW = max(0.0, (0.4 - lum) * 2.5);
+    o += shW * vec3(-10.0, 5.0, 15.0) / 255.0;
+    o = (o - 0.5) * 1.12 + 0.5;
+    o = o * 0.95 + vec3(12.0, 10.0, 10.0) / 255.0;
+  }
+  // 26=polaroid
+  else if (id == 26) {
+    o = o * 0.88 + vec3(30.0, 28.0, 22.0) / 255.0;
+    o += vec3(6.0, 8.0, -6.0) / 255.0;
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o = mix(o, vec3(gray), 0.1);
+    o = (o - 0.5) * 0.92 + 0.5;
+  }
+  // 27=midnight
+  else if (id == 27) {
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o = mix(o, vec3(gray), 0.3);
+    o += vec3(-12.0, -6.0, 18.0) / 255.0;
+    float shW = max(0.0, (0.4 - lum) * 2.5);
+    o.b += shW * 12.0 / 255.0;
+    float hlW = max(0.0, (lum - 0.6) * 2.5);
+    o.r -= hlW * 8.0 / 255.0;
+    o.g -= hlW * 8.0 / 255.0;
+    o = (o - 0.5) * 1.15 + 0.5;
+  }
+  // 28=peach
+  else if (id == 28) {
+    o = o * 0.85 + vec3(38.0, 30.0, 25.0) / 255.0;
+    o += vec3(12.0, 4.0, -8.0) / 255.0;
+    float hlW = max(0.0, (lum - 0.5) * 2.0);
+    o += hlW * vec3(10.0, 5.0, 0.0) / 255.0;
+    o = (o - 0.5) * 0.88 + 0.5;
+  }
+  // 29=emerald
+  else if (id == 29) {
+    float gray = dot(o, vec3(0.299, 0.587, 0.114));
+    o.r += (o.r - gray) * 0.15;
+    o.g += (o.g - gray) * 0.25;
+    o.b += (o.b - gray) * 0.15;
+    o += vec3(-8.0, 10.0, -4.0) / 255.0;
+    float midW = 1.0 - abs(lum - 0.5) * 2.0;
+    o.g += midW * 8.0 / 255.0;
+    o = (o - 0.5) * 1.12 + 0.5;
+  }
+
   return o;
 }
 
@@ -954,6 +1035,8 @@ const FILM_ID_MAP = {
   havana: 6, berlin: 7, seoul: 8, paris: 9, bali: 10, nordic: 11,
   retroVhs: 12, disposable: 13, cyberpunk: 14, sunsetBlvd: 15,
   filmNoir: 16, pastelPop: 17, chrome: 18, matte: 19, infrared: 20,
+  moody: 21, golden: 22, faded: 23, neon: 24, cinematic: 25,
+  polaroid: 26, midnight: 27, peach: 28, emerald: 29,
 }
 
 // Filter type name to int

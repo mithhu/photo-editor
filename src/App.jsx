@@ -193,13 +193,16 @@ export default function App() {
   const handleAutoEnhance = () => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const { beauty: beautyHint, ...adjustments } = analyzeAndEnhance(canvas)
+    const { beauty: beautyHint, reshape: reshapeHint, ...adjustments } = analyzeAndEnhance(canvas)
     applyChange((prev) => ({
       ...prev,
       ...adjustments,
       beauty: beautyHint
         ? { ...prev.beauty, ...beautyHint }
         : prev.beauty,
+      reshape: reshapeHint
+        ? { ...prev.reshape, ...reshapeHint }
+        : prev.reshape,
     }))
   }
 
