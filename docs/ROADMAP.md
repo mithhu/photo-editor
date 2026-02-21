@@ -132,7 +132,7 @@
 
 ### 5.1 Performance
 
-- [ ] Web Workers for heavy processing (curves, filters)
+- [x] Throttled rendering via requestAnimationFrame (~30fps cap)
 - [ ] WebGL rendering (e.g. PixiJS or custom shaders)
 - [x] Lazy load editor UI
 - [ ] Virtual scrolling for layers
@@ -156,10 +156,10 @@
 Ideas to stand out:
 
 - **Presets marketplace** — Community filter and LUT packs
-- ~~**Batch processing** — Apply edits to multiple images~~ ✅ Done (v1.3)
+- ~~**Batch processing**~~ ✅ Done (v1.3)
 - **Plugins / extensions** — Third-party tools or filters
 - **Pro features** — RAW support, non-destructive edits, HDR merge
-- **Mobile PWA** — Camera capture, offline editing
+- ~~**Mobile PWA**~~ ✅ Done (manual SW + manifest + install prompt)
 - **Desktop app** — Electron/Tauri wrapper for installable app
 
 ---
