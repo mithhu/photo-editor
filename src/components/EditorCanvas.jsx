@@ -3,9 +3,6 @@ import { FILTER_PRESETS } from '../constants'
 import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
-import { addFilmGrain } from '../utils/filmEmulation'
-import { applyTiltShift } from '../utils/tiltShift'
-import { applyGrain } from '../utils/grain'
 import { applyLightLeak } from '../utils/lightLeaks'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
@@ -296,7 +293,6 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   }, [isComparing, preset, brightness, exposure, shadowBrightness, contrast, highlightContrast, saturation])
 
   const hasBaseFilters = baseFilterOps.length > 0
-  const hasPresetOps = !isComparing && preset !== 'none' && FILTER_PRESETS.find((p) => p.id === preset)?.ops?.length > 0
   const hasHSL = hsl && Object.values(hsl).some(c => c.h !== 0 || c.s !== 0 || c.l !== 0)
   const hasCurves = curves && Object.entries(curves).some(([, pts]) =>
     pts.length > 2 || (pts.length === 2 && (pts[0][0] !== 0 || pts[0][1] !== 0 || pts[1][0] !== 1 || pts[1][1] !== 1))
@@ -321,26 +317,11 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasSolarize = !isComparing && (solarize ?? 0) > 0
   const hasEmboss = !isComparing && (emboss ?? 0) > 0
   const hasChannelMixer = !isComparing && channelMixer && (channelMixer.red.r !== 100 || channelMixer.red.g !== 0 || channelMixer.red.b !== 0 || channelMixer.green.r !== 0 || channelMixer.green.g !== 100 || channelMixer.green.b !== 0 || channelMixer.blue.r !== 0 || channelMixer.blue.g !== 0 || channelMixer.blue.b !== 100)
-  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer)
+  const needsPixelPass = !isComparing && (hasBaseFilters || warmth !== 0 || tint !== 0 || vibrance !== 0 || clarity !== 0 || dehaze !== 0 || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer || vignette > 0 || hasGrain || filmGrain > 0 || hasTiltShift)
 
   const drawPostPixel = useCallback((ctx, canvas, displayW, displayH) => {
-    if (!isComparing && filmGrain > 0) {
-      addFilmGrain(ctx, canvas.width, canvas.height, filmGrain)
-    }
-    if (hasGrain) {
-      applyGrain(ctx, canvas.width, canvas.height, grain.amount, grain.size)
-    }
     if (hasLightLeak) {
       applyLightLeak(ctx, canvas.width, canvas.height, lightLeak.type, lightLeak.intensity)
-    }
-    if (!isComparing && vignette > 0) {
-      const cx = displayW / 2, cy = displayH / 2
-      const radius = Math.sqrt(cx * cx + cy * cy)
-      const gradient = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius)
-      gradient.addColorStop(0, 'rgba(0,0,0,0)')
-      gradient.addColorStop(1, `rgba(0,0,0,${vignette * 0.8})`)
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, displayW, displayH)
     }
     const hasMasks = !isComparing && masks?.length > 0
     if (hasMasks) {
@@ -388,13 +369,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       ctx.putImageData(maskData, 0, 0)
     }
-    if (hasTiltShift) {
-      applyTiltShift(ctx, canvas.width, canvas.height, tiltShift)
-    }
     if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
       drawFrame(ctx, displayW, displayH, frame)
     }
-  }, [isComparing, filmGrain, hasGrain, grain, hasLightLeak, lightLeak, vignette, masks, hasTiltShift, tiltShift, frame])
+  }, [isComparing, hasLightLeak, lightLeak, masks, frame])
 
   const displaySizeRef = useRef({ w: 0, h: 0 })
 
@@ -475,20 +453,43 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
 
       ctx.restore()
 
-    const hasComplexOps = hasPresetOps || hasHSL || hasCurves || hasColorGrade || hasSplitTone || hasFilmEmulation || hasSelectiveColor || hasLUT || hasGradientMap || hasChromaticAberration || hasSharpen || hasGlitch || hasOilPaint || hasPosterize || hasSolarize || hasEmboss || hasChannelMixer
-    const hasSimpleOnly = needsPixelPass && !hasComplexOps
+    // Worker-only effects: oil paint, glitch, LUT 3D
+    const needsWorker = hasOilPaint || hasGlitch || hasLUT
 
-    if (hasSimpleOnly) {
+    if (needsPixelPass) {
+      // Separate preset ops from base brightness/contrast/saturation
+      const presetOps = (!isComparing && preset !== 'none') ? (FILTER_PRESETS.find((pp) => pp.id === preset)?.ops || []) : []
+
       const glResult = renderWithWebGL(canvas, {
-        brightness: brightness * exposure * (shadows),
+        brightness: brightness * exposure * shadows,
         contrast: contrast * (2 - highlights),
         saturation,
         warmth,
+        tint,
         vibrance,
-        vignette: 0,
         clarity,
         dehaze,
+        filterOps: presetOps,
+        hsl: hasHSL ? hsl : null,
+        curves: hasCurves ? curves : null,
+        colorGrade: hasColorGrade ? colorGrade : null,
+        splitTone: hasSplitTone ? splitTone : null,
+        selectiveColor: hasSelectiveColor ? selectiveColor : null,
+        filmEmulation: hasFilmEmulation ? filmEmulation : null,
+        filmIntensity: filmIntensity ?? 1,
+        posterize: hasPosterize ? posterize : 0,
+        solarize: hasSolarize ? solarize : 0,
+        channelMixer: hasChannelMixer ? channelMixer : null,
+        gradientMap: hasGradientMap ? gradientMap : null,
+        chromaticAberration: hasChromaticAberration ? chromaticAberration : 0,
+        sharpen: hasSharpen ? sharpen : 0,
+        emboss: hasEmboss ? emboss : 0,
+        vignette: !isComparing ? vignette : 0,
+        grain: hasGrain ? grain : null,
+        filmGrain: (!isComparing && filmGrain > 0) ? filmGrain : 0,
+        tiltShift: hasTiltShift ? tiltShift : null,
       })
+
       if (glResult) {
         ctx.save()
         ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -496,7 +497,10 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         ctx.drawImage(glResult, 0, 0)
         ctx.restore()
       }
-    } else if (needsPixelPass) {
+    }
+
+    // Worker fallback for oil paint, glitch, and LUT 3D only
+    if (needsWorker) {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
       if (workerRef.current && !workerBusyRef.current) {
@@ -504,9 +508,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         const buffer = imgData.data.buffer.slice(0)
         const cw = canvas.width, ch = canvas.height
 
-        const postState = {
-          ctx, canvas, displayW, displayH, cw, ch,
-        }
+        const postState = { ctx, canvas, displayW, displayH, cw, ch }
 
         workerRef.current.onmessage = (evt) => {
           workerBusyRef.current = false
@@ -531,23 +533,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           {
             type: 'processPixels', data: buffer, width: cw, height: ch,
             params: {
-              baseFilterOps, warmth, tint, vibrance, clarity, dehaze,
-              hsl: hasHSL ? hsl : null, curves: hasCurves ? curves : null,
-              colorGrade: hasColorGrade ? colorGrade : null,
-              splitTone: hasSplitTone ? splitTone : null,
-              selectiveColor: hasSelectiveColor ? selectiveColor : null,
-              filmEmulation: hasFilmEmulation ? filmEmulation : null,
-              filmIntensity: filmIntensity ?? 1,
-              lut: hasLUT ? lut : null,
-              gradientMap: hasGradientMap ? gradientMap : null,
-              chromaticAberration: hasChromaticAberration ? chromaticAberration : 0,
-              sharpen: hasSharpen ? sharpen : 0,
               glitch: hasGlitch ? glitch : 0,
               oilPaint: hasOilPaint ? oilPaint : 0,
-              posterize: hasPosterize ? posterize : 0,
-              solarize: hasSolarize ? solarize : 0,
-              emboss: hasEmboss ? emboss : 0,
-              channelMixer: hasChannelMixer ? channelMixer : null,
+              lut: hasLUT ? lut : null,
             },
           },
           [buffer]
@@ -558,6 +546,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         workerPendingRef.current = true
         drawPostPixel(ctx, canvas, displayW, displayH)
       }
+    } else if (!needsPixelPass) {
+      drawPostPixel(ctx, canvas, displayW, displayH)
     } else {
       drawPostPixel(ctx, canvas, displayW, displayH)
     }
@@ -837,7 +827,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, baseFilterOps, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasPresetOps, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift])
 
   // Beauty pipeline refs — declared early so handleImageLoad can clear them
   const beautyTimerRef = useRef(null)
