@@ -1,0 +1,135 @@
+import React, { useCallback, useEffect } from 'react'
+
+interface ShortcutEntry {
+  keys: string[]
+  description: string
+}
+
+interface ShortcutGroup {
+  title: string
+  shortcuts: ShortcutEntry[]
+}
+
+const SHORTCUT_GROUPS: ShortcutGroup[] = [
+  {
+    title: 'General',
+    shortcuts: [
+      { keys: ['Ctrl', 'Z'], description: 'Undo' },
+      { keys: ['Ctrl', 'Shift', 'Z'], description: 'Redo' },
+    ],
+  },
+  {
+    title: 'Drawing & Selection',
+    shortcuts: [
+      { keys: ['B'], description: 'Brush tool' },
+      { keys: ['E'], description: 'Eraser tool' },
+      { keys: ['H'], description: 'Heal tool' },
+      { keys: ['G'], description: 'Blur brush tool' },
+      { keys: ['W'], description: 'Magic wand tool' },
+      { keys: ['I'], description: 'Color picker tool' },
+      { keys: ['Del'], description: 'Delete selected area' },
+      { keys: ['Escape'], description: 'Exit tool / Clear selection' },
+      { keys: ['+', '−'], description: 'Brush size (increase / decrease)' },
+    ],
+  },
+  {
+    title: 'View',
+    shortcuts: [
+      { keys: ['?'], description: 'Show shortcuts' },
+      { keys: ['Dbl-click'], description: 'Reset zoom to fit' },
+    ],
+  },
+]
+
+interface KeyBadgeProps {
+  children: React.ReactNode
+}
+
+function KeyBadge({ children }: KeyBadgeProps): React.JSX.Element {
+  return (
+    <kbd className="inline-flex items-center justify-center min-w-[1.75rem] h-7 px-2 text-xs font-mono font-medium bg-zinc-800 border border-zinc-600 rounded text-zinc-300">
+      {children}
+    </kbd>
+  )
+}
+
+interface ShortcutsOverlayProps {
+  visible: boolean
+  onClose: () => void
+}
+
+export function ShortcutsOverlay({ visible, onClose }: ShortcutsOverlayProps) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    },
+    [onClose]
+  )
+
+  useEffect(() => {
+    if (!visible) return
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [visible, handleKeyDown])
+
+  const handleBackdropClick = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.target === e.currentTarget) onClose()
+    },
+    [onClose]
+  )
+
+  if (!visible) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden"
+        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-zinc-800">
+          <h2 className="text-lg font-semibold text-zinc-100">Keyboard Shortcuts</h2>
+          <button
+            onClick={onClose}
+            className="text-zinc-400 hover:text-zinc-200 transition-colors text-xl leading-none p-1"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="px-5 py-4 flex flex-col gap-6 max-h-[70vh] overflow-y-auto">
+          {SHORTCUT_GROUPS.map((group) => (
+            <div key={group.title}>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">
+                {group.title}
+              </h3>
+              <div className="space-y-2">
+                {group.shortcuts.map(({ keys, description }) => (
+                  <div
+                    key={description}
+                    className="flex items-center justify-between gap-4 py-2 border-b border-zinc-800/60 last:border-0"
+                  >
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {keys.map((key) => (
+                        <KeyBadge key={key}>{key}</KeyBadge>
+                      ))}
+                    </div>
+                    <span className="text-zinc-300 text-sm text-right">{description}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-5 py-3 bg-zinc-800/40 border-t border-zinc-800 text-xs text-zinc-500">
+          Press <KeyBadge>Escape</KeyBadge> or click outside to close
+        </div>
+      </div>
+    </div>
+  )
+}
