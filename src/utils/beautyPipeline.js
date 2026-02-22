@@ -1,7 +1,7 @@
 /**
  * Combined beauty pipeline: single face detection, then beauty + reshape + makeup.
- * Processes on an OffscreenCanvas at the original image dimensions (not DPR-scaled).
- * Returns a canvas that drawCanvas can use as the source image instead of the raw photo.
+ * Processes on an HTMLCanvasElement at capped resolution (not DPR-scaled).
+ * Caches face detection results so slider tweaks skip the expensive TF.js inference.
  */
 
 import { detectFaceLandmarks } from './faceMesh'
@@ -23,16 +23,12 @@ export function hasActiveMakeup(makeup) {
 
 let runId = 0
 
-/**
- * Run the full beauty pipeline on the original image.
- * Uses the image element directly for face detection (better accuracy at natural resolution).
- *
- * @param {HTMLImageElement} imageElement - The original image element
- * @param {Object} beautySettings - { smooth, blemish, evenness, brightenEyes, teethWhiten }
- * @param {Object} reshapeSettings - { slimFace, biggerEyes, noseSlim, jawline }
- * @param {Object} makeupSettings - { lipstick, blush, eyeliner, eyeshadow }
- * @returns {Promise<{ canvas: HTMLCanvasElement, id: number } | null>}
- */
+// Face detection cache — avoids re-running TF.js when only sliders changed
+let _cachedFaces = null
+let _cachedImageSrc = null
+let _cachedProcW = 0
+let _cachedProcH = 0
+
 export async function runBeautyPipeline(imageElement, beautySettings, reshapeSettings, makeupSettings) {
   const doBeauty = hasActiveBeauty(beautySettings)
   const doReshape = hasActiveReshape(reshapeSettings)
@@ -46,29 +42,38 @@ export async function runBeautyPipeline(imageElement, beautySettings, reshapeSet
 
   if (width === 0 || height === 0) return null
 
-  // Work at a capped resolution for performance
-  const MAX_DIM = 1024
+  const MAX_DIM = 512
   const scale = Math.min(1, MAX_DIM / Math.max(width, height))
   const procW = Math.round(width * scale)
   const procH = Math.round(height * scale)
 
-  // Use a regular canvas for maximum TF.js compatibility
   const workCanvas = document.createElement('canvas')
   workCanvas.width = procW
   workCanvas.height = procH
   const ctx = workCanvas.getContext('2d', { willReadFrequently: true })
   ctx.drawImage(imageElement, 0, 0, procW, procH)
 
-  // Run face detection directly on the canvas (best supported input type)
-  const faces = await detectFaceLandmarks(workCanvas)
+  // Reuse cached face detection if the image hasn't changed
+  const imgSrc = imageElement.src
+  let faces
+  if (_cachedFaces && _cachedImageSrc === imgSrc && _cachedProcW === procW && _cachedProcH === procH) {
+    faces = _cachedFaces
+  } else {
+    faces = await detectFaceLandmarks(workCanvas)
+    if (faces?.length) {
+      _cachedFaces = faces
+      _cachedImageSrc = imgSrc
+      _cachedProcW = procW
+      _cachedProcH = procH
+    }
+  }
+
   if (!faces?.length) {
     console.warn('[Beauty] No faces detected')
     return null
   }
 
   if (id !== runId) return null
-
-  console.log(`[Beauty] Detected ${faces.length} face(s), keypoints: ${faces[0].keypoints.length}`)
 
   for (const face of faces) {
     const kp = face.keypoints
@@ -97,4 +102,9 @@ export async function runBeautyPipeline(imageElement, beautySettings, reshapeSet
 
 export function cancelBeautyPipeline() {
   runId++
+}
+
+export function invalidateFaceCache() {
+  _cachedFaces = null
+  _cachedImageSrc = null
 }

@@ -28,6 +28,8 @@ export function EditorSidebar({
   editState,
   applyChange,
   applySliderChange,
+  applyNestedSliderChange,
+  beautyProcessing,
   onAddText,
   historyIndex,
   historyLength,
@@ -137,6 +139,8 @@ export function EditorSidebar({
           faceReshape={editState.faceReshape}
           makeup={editState.makeup}
           onUpdate={(changes) => applyChange(changes)}
+          onSliderUpdate={(changes) => applyNestedSliderChange(changes)}
+          beautyProcessing={beautyProcessing}
         />
       </div>
 

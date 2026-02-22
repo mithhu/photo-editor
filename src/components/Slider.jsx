@@ -1,4 +1,4 @@
-export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, defaultValue, unit }) {
+export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, defaultValue, unit, disabled }) {
   const isRawUnit = unit === '%' || unit === 'px' || unit === 'deg' || unit === 'raw'
   const isIntegerRange = step >= 1 && max > 2
   const defaultVal = defaultValue ?? (isRawUnit || isIntegerRange ? min : (min + max) / 2)
@@ -46,8 +46,9 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
         max={max}
         step={step}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+        className={`w-full h-2 bg-zinc-700 rounded-lg appearance-none accent-indigo-500 ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
       />
     </div>
   )

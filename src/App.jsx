@@ -65,6 +65,7 @@ export default function App() {
     setEditState,
     applyChange,
     applySliderChange,
+    applyNestedSliderChange,
     undo,
     redo,
     reset,
@@ -74,7 +75,16 @@ export default function App() {
     historyLength,
   } = useEditHistory(INITIAL_EDIT_STATE)
 
+  const [beautyProcessing, setBeautyProcessing] = useState(false)
+
   const { clear, restore } = useProjectSave(imageSrc, editState, setEditState, setImageSrc)
+
+  // Preload the face mesh model as soon as user uploads an image
+  useEffect(() => {
+    if (imageSrc) {
+      import('./utils/faceMesh').then(m => m.loadFaceMesh())
+    }
+  }, [imageSrc])
 
   useEffect(() => {
     const handler = (e) => {
@@ -356,6 +366,7 @@ export default function App() {
             onZoomPanChange={(v) => applyChange((s) => ({ ...s, ...v }))}
             onApplyChange={applyChange}
             onImageReplace={(newSrc) => { setImageSrc(newSrc) }}
+            onBeautyProcessingChange={setBeautyProcessing}
           />
 
           {/* Desktop sidebar */}
@@ -364,6 +375,8 @@ export default function App() {
               editState={editState}
               applyChange={applyChange}
               applySliderChange={applySliderChange}
+              applyNestedSliderChange={applyNestedSliderChange}
+              beautyProcessing={beautyProcessing}
               onAddText={addTextOverlay}
               historyIndex={historyIndex}
               historyLength={historyLength}
@@ -379,6 +392,8 @@ export default function App() {
             editState={editState}
             applyChange={applyChange}
             applySliderChange={applySliderChange}
+            applyNestedSliderChange={applyNestedSliderChange}
+            beautyProcessing={beautyProcessing}
             onAddText={addTextOverlay}
             imageSrc={imageSrc}
             onImageReplace={(newSrc) => { setImageSrc(newSrc) }}

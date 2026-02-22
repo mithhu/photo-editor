@@ -30,25 +30,26 @@ const PRESET_COLORS = [
   '#c4a882', '#e0c0b0', '#d4b8cc', '#f0b0b0', '#dd6677',
 ]
 
-export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
+export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate, onSliderUpdate, beautyProcessing }) {
   const [tab, setTab] = useState('beauty')
+  const sliderChange = onSliderUpdate || onUpdate
 
   const updateBeauty = useCallback((key, value) => {
-    onUpdate({ beauty: { ...beauty, [key]: value } })
-  }, [beauty, onUpdate])
+    sliderChange({ beauty: { ...beauty, [key]: value } })
+  }, [beauty, sliderChange])
 
   const updateReshape = useCallback((key, value) => {
-    onUpdate({ faceReshape: { ...faceReshape, [key]: value } })
-  }, [faceReshape, onUpdate])
+    sliderChange({ faceReshape: { ...faceReshape, [key]: value } })
+  }, [faceReshape, sliderChange])
 
   const updateMakeup = useCallback((itemKey, field, value) => {
-    onUpdate({
+    sliderChange({
       makeup: {
         ...makeup,
         [itemKey]: { ...makeup[itemKey], [field]: value },
       },
     })
-  }, [makeup, onUpdate])
+  }, [makeup, sliderChange])
 
   const applyPreset = useCallback((presetKey) => {
     const preset = MAKEUP_PRESETS[presetKey]
@@ -114,9 +115,11 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
       {(tab === 'beauty' || tab === 'reshape') && (
         <button
           onClick={autoBeauty}
-          className="w-full py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-400 hover:to-purple-400 transition-all"
+          disabled={beautyProcessing}
+          className={`w-full py-1.5 text-xs font-medium rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white transition-all flex items-center justify-center gap-2 ${beautyProcessing ? 'opacity-70 cursor-wait' : 'hover:from-indigo-400 hover:to-purple-400'}`}
         >
-          Auto Beauty + Reshape
+          {beautyProcessing && <span className="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
+          {beautyProcessing ? 'Processing...' : 'Auto Beauty + Reshape'}
         </button>
       )}
 
@@ -166,7 +169,8 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
                 <button
                   key={key}
                   onClick={() => applyPreset(key)}
-                  className="px-2 py-0.5 text-[10px] rounded-full bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-colors"
+                  disabled={beautyProcessing}
+                  className={`px-2 py-0.5 text-[10px] rounded-full bg-zinc-700 text-zinc-300 transition-colors ${beautyProcessing ? 'opacity-40 cursor-not-allowed' : 'hover:bg-zinc-600'}`}
                 >
                   {preset.name}
                 </button>
@@ -192,11 +196,12 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate }) {
                     <button
                       key={c}
                       onClick={() => updateMakeup(item.key, 'color', c)}
+                      disabled={beautyProcessing}
                       className={`w-4 h-4 rounded-full border transition-transform ${
                         makeup[item.key].color === c
                           ? 'border-white scale-125'
                           : 'border-zinc-600 hover:scale-110'
-                      }`}
+                      } ${beautyProcessing ? 'opacity-40 cursor-not-allowed' : ''}`}
                       style={{ backgroundColor: c }}
                     />
                   ))}

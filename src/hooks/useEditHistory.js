@@ -7,6 +7,7 @@ export function useEditHistory(initialState) {
   const [history, setHistory] = useState([])
   const [future, setFuture] = useState([])
   const sliderCommitRef = useRef(null)
+  const nestedSliderCommitRef = useRef(null)
 
   const applyChange = useCallback((updater) => {
     setHistory((h) => [...h.slice(-(HISTORY_LIMIT - 1)), editState])
@@ -26,7 +27,22 @@ export function useEditHistory(initialState) {
     }, 500)
   }, [editState])
 
-  useEffect(() => () => clearTimeout(sliderCommitRef.current), [])
+  const applyNestedSliderChange = useCallback((updater) => {
+    if (!nestedSliderCommitRef.current) {
+      setHistory((h) => [...h.slice(-(HISTORY_LIMIT - 1)), editState])
+      setFuture([])
+    }
+    clearTimeout(nestedSliderCommitRef.current)
+    setEditState((s) => (typeof updater === 'function' ? updater(s) : { ...s, ...updater }))
+    nestedSliderCommitRef.current = setTimeout(() => {
+      nestedSliderCommitRef.current = null
+    }, 500)
+  }, [editState])
+
+  useEffect(() => () => {
+    clearTimeout(sliderCommitRef.current)
+    clearTimeout(nestedSliderCommitRef.current)
+  }, [])
 
   const undo = useCallback(() => {
     if (history.length === 0) return
@@ -55,6 +71,7 @@ export function useEditHistory(initialState) {
     setEditState,
     applyChange,
     applySliderChange,
+    applyNestedSliderChange,
     undo,
     redo,
     reset,

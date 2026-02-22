@@ -48,6 +48,8 @@ export function MobileBottomTray({
   editState,
   applyChange,
   applySliderChange,
+  applyNestedSliderChange,
+  beautyProcessing,
   onAddText,
   imageSrc,
   onImageReplace,
@@ -1299,6 +1301,8 @@ export function MobileBottomTray({
               faceReshape={editState.faceReshape}
               makeup={editState.makeup}
               onUpdate={(changes) => applyChange(changes)}
+              onSliderUpdate={(changes) => applyNestedSliderChange(changes)}
+              beautyProcessing={beautyProcessing}
             />
           </Suspense>
         )

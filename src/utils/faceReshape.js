@@ -65,7 +65,7 @@ function computeFaceEllipse(keypoints) {
  * Uses an elliptical mask that covers the face, with maximum displacement
  * at the jawline level, tapering off toward forehead and chin.
  */
-function gatherSlimFace(dispXY, width, height, keypoints, amount) {
+function gatherSlimFace(dispXY, width, height, keypoints, amount, bx0 = 0, by0 = 0, bw = width) {
   if (amount <= 0) return
 
   const ellipse = computeFaceEllipse(keypoints)
@@ -74,7 +74,6 @@ function gatherSlimFace(dispXY, width, height, keypoints, amount) {
   const { cx, cy, rx, ry } = ellipse
   const strength = (amount / 100) * 0.12
 
-  // Expand the region slightly beyond the face for smooth falloff
   const padX = rx * 1.3
   const padY = ry * 1.2
 
@@ -83,26 +82,22 @@ function gatherSlimFace(dispXY, width, height, keypoints, amount) {
   const minY = Math.max(0, Math.floor(cy - padY))
   const maxY = Math.min(height - 1, Math.ceil(cy + padY))
 
-  // Jawline Y range: displacement is strongest in the lower half of the face
   const jawY = cy + ry * 0.15
   const chinY = cy + ry
 
   for (let y = minY; y <= maxY; y++) {
     for (let x = minX; x <= maxX; x++) {
-      // Elliptical distance (0 at center, 1 at boundary)
       const nx = (x - cx) / padX
       const ny = (y - cy) / padY
       const ellDist = nx * nx + ny * ny
       if (ellDist >= 1) continue
 
-      // Smooth falloff at ellipse boundary
       const edgeFade = 1 - ellDist
       const edgeWeight = edgeFade * edgeFade * (3 - 2 * edgeFade)
 
-      // Vertical weighting: strongest at jaw level, zero at top of head
       let vertWeight
       if (y < cy - ry * 0.3) {
-        vertWeight = 0 // above eyes — no slimming
+        vertWeight = 0
       } else if (y < jawY) {
         vertWeight = (y - (cy - ry * 0.3)) / (jawY - (cy - ry * 0.3))
         vertWeight = vertWeight * vertWeight
@@ -112,11 +107,10 @@ function gatherSlimFace(dispXY, width, height, keypoints, amount) {
         vertWeight = 0
       }
 
-      // Horizontal displacement: pull inward toward center axis
       const offsetX = (x - cx)
       const dx = -offsetX * strength * edgeWeight * vertWeight
 
-      const idx = (y * width + x) * 2
+      const idx = ((y - by0) * bw + (x - bx0)) * 2
       dispXY[idx] += dx
     }
   }
@@ -125,7 +119,7 @@ function gatherSlimFace(dispXY, width, height, keypoints, amount) {
 /**
  * Bigger Eyes: magnify around each eye center.
  */
-function gatherBiggerEyes(dispXY, width, height, keypoints, amount) {
+function gatherBiggerEyes(dispXY, width, height, keypoints, amount, bx0 = 0, by0 = 0, bw = width) {
   if (amount <= 0) return
   const strength = amount / 100
 
@@ -161,7 +155,7 @@ function gatherBiggerEyes(dispXY, width, height, keypoints, amount) {
         const w = s * s * (3 - 2 * s) * scale
         if (w <= 0.001) continue
 
-        const idx = (y * width + x) * 2
+        const idx = ((y - by0) * bw + (x - bx0)) * 2
         dispXY[idx] += (x - ecx) * w
         dispXY[idx + 1] += (y - ecy) * w
       }
@@ -172,7 +166,7 @@ function gatherBiggerEyes(dispXY, width, height, keypoints, amount) {
 /**
  * Nose Slim: push nose sides inward.
  */
-function gatherNoseSlim(dispXY, width, height, keypoints, amount) {
+function gatherNoseSlim(dispXY, width, height, keypoints, amount, bx0 = 0, by0 = 0, bw = width) {
   if (amount <= 0) return
 
   const noseTip = keypoints[4]
@@ -208,7 +202,7 @@ function gatherNoseSlim(dispXY, width, height, keypoints, amount) {
       const w = edgeFade * edgeFade * (3 - 2 * edgeFade)
 
       const dx = -(x - noseCx) * strength * 0.06 * w
-      const idx = (y * width + x) * 2
+      const idx = ((y - by0) * bw + (x - bx0)) * 2
       dispXY[idx] += dx
     }
   }
@@ -217,7 +211,7 @@ function gatherNoseSlim(dispXY, width, height, keypoints, amount) {
 /**
  * Jawline: push chin up and jaw corners inward.
  */
-function gatherJawline(dispXY, width, height, keypoints, amount) {
+function gatherJawline(dispXY, width, height, keypoints, amount, bx0 = 0, by0 = 0, bw = width) {
   if (amount <= 0) return
 
   const ellipse = computeFaceEllipse(keypoints)
@@ -248,11 +242,10 @@ function gatherJawline(dispXY, width, height, keypoints, amount) {
       const edgeFade = 1 - ellDist
       const w = edgeFade * edgeFade * (3 - 2 * edgeFade)
 
-      // Push jaw corners inward, chin upward
       const dx = -(x - cx) * strength * w
       const dy = Math.max(0, (y - cy)) * strength * w * 0.5
 
-      const idx = (y * width + x) * 2
+      const idx = ((y - by0) * bw + (x - bx0)) * 2
       dispXY[idx] += dx
       dispXY[idx + 1] += dy
     }
@@ -262,6 +255,8 @@ function gatherJawline(dispXY, width, height, keypoints, amount) {
 /**
  * Apply face reshaping to ImageData using pre-detected keypoints.
  * Does NOT call face detection — caller provides keypoints.
+ *
+ * Uses a bounding-box-only displacement field to minimize memory and iteration.
  * @returns {ImageData} the modified destination image data
  */
 export function applyReshapeToImageData(srcData, keypoints, settings) {
@@ -272,24 +267,38 @@ export function applyReshapeToImageData(srcData, keypoints, settings) {
     return new ImageData(new Uint8ClampedArray(srcData.data), width, height)
   }
 
-  // Phase 1: Build unified displacement field
-  const dispXY = new Float32Array(width * height * 2)
+  // Compute face bounding box with generous padding
+  const ellipse = computeFaceEllipse(keypoints)
+  let bx0 = 0, by0 = 0, bx1 = width - 1, by1 = height - 1
+  if (ellipse) {
+    const pad = 1.5
+    bx0 = Math.max(0, Math.floor(ellipse.cx - ellipse.rx * pad))
+    bx1 = Math.min(width - 1, Math.ceil(ellipse.cx + ellipse.rx * pad))
+    by0 = Math.max(0, Math.floor(ellipse.cy - ellipse.ry * pad))
+    by1 = Math.min(height - 1, Math.ceil(ellipse.cy + ellipse.ry * pad))
+  }
 
-  gatherSlimFace(dispXY, width, height, keypoints, slimFace)
-  gatherBiggerEyes(dispXY, width, height, keypoints, biggerEyes)
-  gatherNoseSlim(dispXY, width, height, keypoints, noseSlim)
-  gatherJawline(dispXY, width, height, keypoints, jawline)
+  const bw = bx1 - bx0 + 1
+  const bh = by1 - by0 + 1
 
-  // Phase 2: Apply displacement in one pass with bilinear sampling
+  // Allocate displacement field only for the face bounding box
+  const dispXY = new Float32Array(bw * bh * 2)
+
+  gatherSlimFace(dispXY, width, height, keypoints, slimFace, bx0, by0, bw)
+  gatherBiggerEyes(dispXY, width, height, keypoints, biggerEyes, bx0, by0, bw)
+  gatherNoseSlim(dispXY, width, height, keypoints, noseSlim, bx0, by0, bw)
+  gatherJawline(dispXY, width, height, keypoints, jawline, bx0, by0, bw)
+
   const sd = srcData.data
   const dstData = new ImageData(new Uint8ClampedArray(sd), width, height)
   const dd = dstData.data
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * 2
-      const dx = dispXY[idx]
-      const dy = dispXY[idx + 1]
+  // Only iterate the bounding box
+  for (let y = by0; y <= by1; y++) {
+    for (let x = bx0; x <= bx1; x++) {
+      const li = ((y - by0) * bw + (x - bx0)) * 2
+      const dx = dispXY[li]
+      const dy = dispXY[li + 1]
       if (Math.abs(dx) < 0.01 && Math.abs(dy) < 0.01) continue
 
       const srcX = clamp(x - dx, 0, width - 1)

@@ -36,6 +36,17 @@ export async function loadFaceMesh() {
         }
       )
 
+      // Warm-up inference: the first estimateFaces call is slow due to
+      // GPU shader compilation. Run on a tiny canvas so it's nearly free.
+      try {
+        const warmup = document.createElement('canvas')
+        warmup.width = 32
+        warmup.height = 32
+        await detector.estimateFaces(warmup)
+      } catch {
+        // Warm-up failure is non-critical
+      }
+
       return detector
     } catch (err) {
       console.error('[FaceMesh] Model failed to load:', err)

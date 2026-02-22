@@ -6,7 +6,7 @@ import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyLightLeak } from '../utils/lightLeaks'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
-import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup } from '../utils/beautyPipeline'
+import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup, invalidateFaceCache, runBeautyPipeline } from '../utils/beautyPipeline'
 
 function drawFrame(ctx, displayW, displayH, frame) {
   if (!frame || frame.type === 'none') return
@@ -173,7 +173,7 @@ function InlineTextEditor({ textOverlays, editingTextId, onSave, onCancel }) {
   )
 }
 
-export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace }) {
+export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace, onBeautyProcessingChange }) {
   const imageRef = useRef(null)
   const containerRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -830,7 +830,6 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift])
 
   // Beauty pipeline refs — declared early so handleImageLoad can clear them
-  const beautyTimerRef = useRef(null)
   const beautyResultRef = useRef(null)
   const beautyRunIdRef = useRef(0)
 
@@ -844,6 +843,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     setLoadedSrc(imageSrc)
     beautyResultRef.current = null
     beautyRunIdRef.current++
+    invalidateFaceCache()
     throttledDraw()
   }, [throttledDraw, imageSrc])
 
@@ -852,29 +852,41 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   }, [throttledDraw, imageSrc])
 
   const hasBeautyEffect = hasActiveBeauty(beauty) || hasActiveReshape(faceReshape) || hasActiveMakeup(makeup)
+  const [beautyProcessing, setBeautyProcessing] = useState(false)
 
   useEffect(() => {
-    if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
+    onBeautyProcessingChange?.(beautyProcessing)
+  }, [beautyProcessing, onBeautyProcessingChange])
 
+  useEffect(() => {
     if (!hasBeautyEffect) {
       const hadResult = beautyResultRef.current !== null
       beautyResultRef.current = null
       beautyRunIdRef.current++
+      setBeautyProcessing(false)
       if (hadResult) redrawRef.current?.()
       return
     }
 
-    beautyTimerRef.current = setTimeout(async () => {
-      const img = imageRef.current
-      if (!img || !img.complete || img.naturalWidth === 0) return
+    const myRunId = ++beautyRunIdRef.current
+    setBeautyProcessing(true)
 
-      const myRunId = ++beautyRunIdRef.current
+    let cancelled = false
+    ;(async () => {
+      const img = imageRef.current
+      if (!img || !img.complete || img.naturalWidth === 0) {
+        if (!cancelled) setBeautyProcessing(false)
+        return
+      }
 
       try {
-        const { runBeautyPipeline } = await import('../utils/beautyPipeline')
+        // Yield so the UI can paint the spinner before heavy work
+        await new Promise(r => setTimeout(r, 0))
+        if (cancelled) return
+
         const result = await runBeautyPipeline(img, beauty, faceReshape, makeup)
 
-        if (beautyRunIdRef.current !== myRunId) return
+        if (cancelled || beautyRunIdRef.current !== myRunId) return
 
         if (result) {
           beautyResultRef.current = result.canvas
@@ -882,12 +894,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         }
       } catch {
         // Face detection may fail — no face in image, or model loading issue
+      } finally {
+        if (!cancelled && beautyRunIdRef.current === myRunId) {
+          setBeautyProcessing(false)
+        }
       }
-    }, 300)
+    })()
 
-    return () => {
-      if (beautyTimerRef.current) clearTimeout(beautyTimerRef.current)
-    }
+    return () => { cancelled = true }
   }, [hasBeautyEffect, beauty, faceReshape, makeup])
 
   const getCanvasPoint = useCallback((e) => {
@@ -1472,6 +1486,14 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
           className="rounded-lg shadow-2xl block"
           style={{ background: '#1a1a1a' }}
         />
+        {beautyProcessing && (
+          <div className="absolute inset-0 z-30 flex items-end justify-center pointer-events-none rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-1.5 mb-3 rounded-full bg-black/60 backdrop-blur-sm">
+              <div className="w-3.5 h-3.5 border-2 border-zinc-500 border-t-indigo-400 rounded-full animate-spin" />
+              <span className="text-[10px] text-zinc-300 font-medium">Processing beauty...</span>
+            </div>
+          </div>
+        )}
         {pickerBadge && (
           <div
             className="absolute z-20 pointer-events-none flex items-center gap-1.5 rounded-full px-2.5 py-1 shadow-lg border border-zinc-600 text-xs font-mono animate-fade-in"

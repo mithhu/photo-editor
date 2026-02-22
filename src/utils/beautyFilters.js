@@ -4,6 +4,9 @@
  *
  * Uses face oval as the primary skin mask with eye/mouth exclusion
  * for natural, artifact-free results.
+ *
+ * Performance: skin mask is computed once and shared across all filters.
+ * Skin blur uses a fast O(n*r) separable two-pass approach.
  */
 
 import { FACE_REGIONS } from './faceMesh'
@@ -24,10 +27,6 @@ function drawLandmarkPath(ctx, keypoints, indices) {
   return true
 }
 
-/**
- * Create a mask from multiple separate regions, each drawn as its own polygon.
- * This avoids the problem of connecting unrelated landmarks across the face.
- */
 function createMultiRegionMask(keypoints, regionArrays, width, height, feather = 8) {
   const canvas = new OffscreenCanvas(width, height)
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
@@ -54,34 +53,25 @@ function createMultiRegionMask(keypoints, regionArrays, width, height, feather =
   return mask
 }
 
-/**
- * Build a smooth skin mask using the face oval, excluding eyes, brows, and mouth.
- * Uses inward-only feathering so the mask never bleeds outside the face oval.
- */
 function createSkinMask(keypoints, width, height) {
   const canvas = new OffscreenCanvas(width, height)
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
 
-  // Draw the hard face oval boundary
   ctx.fillStyle = 'white'
   if (!drawLandmarkPath(ctx, keypoints, FACE_REGIONS.faceOval)) return null
   ctx.fill()
 
-  // Read the hard boundary before exclusions (used to clamp the feathered mask)
   const hardBoundary = ctx.getImageData(0, 0, width, height)
   const hardMask = new Uint8Array(width * height)
   for (let i = 0; i < hardMask.length; i++) {
     hardMask[i] = hardBoundary.data[i * 4] > 128 ? 1 : 0
   }
 
-  // Cut out eyes, eyebrows, and mouth
   ctx.globalCompositeOperation = 'destination-out'
   ctx.fillStyle = 'white'
   const exclusions = [
-    FACE_REGIONS.leftEye,
-    FACE_REGIONS.rightEye,
-    FACE_REGIONS.leftEyebrow,
-    FACE_REGIONS.rightEyebrow,
+    FACE_REGIONS.leftEye, FACE_REGIONS.rightEye,
+    FACE_REGIONS.leftEyebrow, FACE_REGIONS.rightEyebrow,
     FACE_REGIONS.lips,
   ]
   for (const region of exclusions) {
@@ -89,8 +79,7 @@ function createSkinMask(keypoints, width, height) {
   }
   ctx.globalCompositeOperation = 'source-over'
 
-  // Feather the mask for smooth transitions
-  const blurRadius = Math.max(10, Math.round(width * 0.02))
+  const blurRadius = Math.max(6, Math.round(width * 0.015))
   const feathered = new OffscreenCanvas(width, height)
   const fctx = feathered.getContext('2d', { willReadFrequently: true })
   fctx.filter = `blur(${blurRadius}px)`
@@ -99,8 +88,6 @@ function createSkinMask(keypoints, width, height) {
   const imgData = fctx.getImageData(0, 0, width, height)
   const mask = new Float32Array(width * height)
   for (let i = 0; i < mask.length; i++) {
-    // Clamp: the feathered value can never exceed the hard boundary.
-    // This means blur only softens edges inward, never leaks outward.
     const featheredVal = imgData.data[i * 4] / 255
     mask[i] = hardMask[i] ? featheredVal : 0
   }
@@ -108,11 +95,18 @@ function createSkinMask(keypoints, width, height) {
 }
 
 /**
- * Skin-aware box blur: only averages pixels that are within the skin mask,
- * preventing color bleed from hair/background into the skin.
+ * Fast separable two-pass skin-aware blur: O(n * r) instead of O(n * r^2).
+ * Pass 1: horizontal blur, Pass 2: vertical blur.
+ * Only samples from skin-masked pixels.
  */
 function skinAwareBlur(data, width, height, skinMask, radius, intensity) {
   const len = width * height
+  const tmpR = new Float32Array(len)
+  const tmpG = new Float32Array(len)
+  const tmpB = new Float32Array(len)
+  const tmpW = new Float32Array(len)
+
+  // Extract original channels
   const origR = new Float32Array(len)
   const origG = new Float32Array(len)
   const origB = new Float32Array(len)
@@ -123,66 +117,92 @@ function skinAwareBlur(data, width, height, skinMask, radius, intensity) {
     origB[i] = data[pi + 2]
   }
 
-  // Simple weighted average within mask — only sample from skin pixels
-  for (let i = 0; i < len; i++) {
-    if (skinMask[i] < 0.05) continue
+  // Pass 1: Horizontal blur with running sum
+  for (let y = 0; y < height; y++) {
+    const rowOff = y * width
+    let sumR = 0, sumG = 0, sumB = 0, sumW = 0
 
-    const x = i % width
-    const y = (i - x) / width
-
-    let sumR = 0, sumG = 0, sumB = 0, weight = 0
-    const minY = Math.max(0, y - radius)
-    const maxY = Math.min(height - 1, y + radius)
-    const minX = Math.max(0, x - radius)
-    const maxX = Math.min(width - 1, x + radius)
-
-    for (let ny = minY; ny <= maxY; ny++) {
-      for (let nx = minX; nx <= maxX; nx++) {
-        const ni = ny * width + nx
-        const w = skinMask[ni]
-        if (w < 0.05) continue
-        sumR += origR[ni] * w
-        sumG += origG[ni] * w
-        sumB += origB[ni] * w
-        weight += w
-      }
+    // Initialize window [0, radius]
+    for (let x = 0; x <= Math.min(radius, width - 1); x++) {
+      const ni = rowOff + x
+      const w = skinMask[ni]
+      sumR += origR[ni] * w; sumG += origG[ni] * w; sumB += origB[ni] * w; sumW += w
     }
 
-    if (weight < 0.5) continue
+    for (let x = 0; x < width; x++) {
+      const i = rowOff + x
+      tmpR[i] = sumR; tmpG[i] = sumG; tmpB[i] = sumB; tmpW[i] = sumW
 
-    const avgR = sumR / weight
-    const avgG = sumG / weight
-    const avgB = sumB / weight
+      // Slide window: add right edge, remove left edge
+      const addX = x + radius + 1
+      if (addX < width) {
+        const ni = rowOff + addX
+        const w = skinMask[ni]
+        sumR += origR[ni] * w; sumG += origG[ni] * w; sumB += origB[ni] * w; sumW += w
+      }
+      const remX = x - radius
+      if (remX >= 0) {
+        const ni = rowOff + remX
+        const w = skinMask[ni]
+        sumR -= origR[ni] * w; sumG -= origG[ni] * w; sumB -= origB[ni] * w; sumW -= w
+      }
+    }
+  }
 
-    const blend = skinMask[i] * intensity
-    const pi = i * 4
-    data[pi] = clamp(data[pi] * (1 - blend) + avgR * blend)
-    data[pi + 1] = clamp(data[pi + 1] * (1 - blend) + avgG * blend)
-    data[pi + 2] = clamp(data[pi + 2] * (1 - blend) + avgB * blend)
+  // Pass 2: Vertical blur on the horizontal result, and apply
+  for (let x = 0; x < width; x++) {
+    let sumR = 0, sumG = 0, sumB = 0, sumW = 0
+
+    for (let y = 0; y <= Math.min(radius, height - 1); y++) {
+      const i = y * width + x
+      sumR += tmpR[i]; sumG += tmpG[i]; sumB += tmpB[i]; sumW += tmpW[i]
+    }
+
+    for (let y = 0; y < height; y++) {
+      const i = y * width + x
+      if (skinMask[i] >= 0.05 && sumW > 0.5) {
+        const avgR = sumR / sumW
+        const avgG = sumG / sumW
+        const avgB = sumB / sumW
+        const blend = skinMask[i] * intensity
+        const pi = i * 4
+        data[pi] = clamp(data[pi] * (1 - blend) + avgR * blend)
+        data[pi + 1] = clamp(data[pi + 1] * (1 - blend) + avgG * blend)
+        data[pi + 2] = clamp(data[pi + 2] * (1 - blend) + avgB * blend)
+      }
+
+      const addY = y + radius + 1
+      if (addY < height) {
+        const ni = addY * width + x
+        sumR += tmpR[ni]; sumG += tmpG[ni]; sumB += tmpB[ni]; sumW += tmpW[ni]
+      }
+      const remY = y - radius
+      if (remY >= 0) {
+        const ni = remY * width + x
+        sumR -= tmpR[ni]; sumG -= tmpG[ni]; sumB -= tmpB[ni]; sumW -= tmpW[ni]
+      }
+    }
   }
 }
 
-export function applySkinSmoothing(imageData, keypoints, amount) {
+function applySkinSmoothing(imageData, keypoints, amount, skinMask) {
   if (amount <= 0 || !keypoints?.length) return
 
   const { width, height, data } = imageData
   const intensity = amount / 100
-  const skinMask = createSkinMask(keypoints, width, height)
   if (!skinMask) return
 
-  const radius = Math.max(2, Math.round(3 + intensity * 6))
+  const radius = Math.max(2, Math.round(2 + intensity * 4))
   skinAwareBlur(data, width, height, skinMask, radius, intensity * 0.65)
 }
 
-export function applySkinToneEvenness(imageData, keypoints, amount) {
+function applySkinToneEvenness(imageData, keypoints, amount, skinMask) {
   if (amount <= 0 || !keypoints?.length) return
 
-  const { width, height, data } = imageData
+  const { data } = imageData
   const intensity = amount / 100
-  const skinMask = createSkinMask(keypoints, width, height)
   if (!skinMask) return
 
-  // Compute the average skin tone (only from well-masked skin pixels)
   let totalR = 0, totalG = 0, totalB = 0, count = 0
   for (let i = 0; i < skinMask.length; i++) {
     if (skinMask[i] > 0.6) {
@@ -199,15 +219,12 @@ export function applySkinToneEvenness(imageData, keypoints, amount) {
   const avgG = totalG / count
   const avgB = totalB / count
 
-  // Only even out pixels that deviate significantly from the average,
-  // preserving natural color while reducing uneven patches/spots.
   const blend = intensity * 0.12
   for (let i = 0; i < skinMask.length; i++) {
     if (skinMask[i] < 0.05) continue
     const pi = i * 4
     const r = data[pi], g = data[pi + 1], b = data[pi + 2]
 
-    // Only affect pixels that differ noticeably from the mean skin tone
     const deviation = Math.abs(r - avgR) + Math.abs(g - avgG) + Math.abs(b - avgB)
     if (deviation < 15) continue
 
@@ -218,16 +235,15 @@ export function applySkinToneEvenness(imageData, keypoints, amount) {
   }
 }
 
-export function applyBlemishRemoval(imageData, keypoints, amount) {
+function applyBlemishRemoval(imageData, keypoints, amount, skinMask) {
   if (amount <= 0 || !keypoints?.length) return
 
   const { width, height, data } = imageData
   const intensity = amount / 100
-  const skinMask = createSkinMask(keypoints, width, height)
   if (!skinMask) return
 
   const copy = new Uint8ClampedArray(data)
-  const radius = 3
+  const radius = 2
 
   for (let y = radius; y < height - radius; y++) {
     for (let x = radius; x < width - radius; x++) {
@@ -260,18 +276,15 @@ export function applyBlemishRemoval(imageData, keypoints, amount) {
   }
 }
 
-export function applyBrightenEyes(imageData, keypoints, amount) {
+function applyBrightenEyes(imageData, keypoints, amount) {
   if (amount <= 0 || !keypoints?.length) return
 
   const { width, height, data } = imageData
   const intensity = amount / 100
 
-  // --- Part 1: Whiten the sclera (eye whites) ---
-  // Use a tight mask around each eye opening
-  const eyeFeather = Math.max(2, Math.round(width * 0.004))
+  const eyeFeather = Math.max(1, Math.round(width * 0.004))
   const eyeMask = createMultiRegionMask(keypoints, [
-    FACE_REGIONS.leftEye,
-    FACE_REGIONS.rightEye,
+    FACE_REGIONS.leftEye, FACE_REGIONS.rightEye,
   ], width, height, eyeFeather)
 
   if (eyeMask) {
@@ -280,15 +293,10 @@ export function applyBrightenEyes(imageData, keypoints, amount) {
       const pi = i * 4
       const r = data[pi], g = data[pi + 1], b = data[pi + 2]
       const lum = 0.299 * r + 0.587 * g + 0.114 * b
-
-      // Only affect the white part of the eye (sclera), not iris/pupil/lashes.
-      // Sclera is typically lum > 100, reddish tint.
       if (lum < 80) continue
 
       const whiteness = Math.min(1, (lum - 80) / 100)
       const boost = eyeMask[i] * intensity * 0.4 * whiteness
-
-      // Brighten toward white and slightly desaturate (remove redness)
       const gray = lum
       data[pi] = clamp(r + (gray - r) * boost * 0.3 + (255 - r) * boost * 0.3)
       data[pi + 1] = clamp(g + (gray - g) * boost * 0.2 + (255 - g) * boost * 0.3)
@@ -296,20 +304,16 @@ export function applyBrightenEyes(imageData, keypoints, amount) {
     }
   }
 
-  // --- Part 2: Reduce under-eye dark circles ---
   const underEyeLeft = [111, 116, 117, 118, 119, 120, 121, 128, 245]
   const underEyeRight = [340, 345, 346, 347, 348, 349, 350, 357, 465]
-  const underFeather = Math.max(4, Math.round(width * 0.01))
+  const underFeather = Math.max(2, Math.round(width * 0.008))
   const underMask = createMultiRegionMask(keypoints, [
-    underEyeLeft,
-    underEyeRight,
+    underEyeLeft, underEyeRight,
   ], width, height, underFeather)
 
   if (underMask) {
-    // Sample the actual cheek skin tone to use as a natural lift target
     const cheekMask = createMultiRegionMask(keypoints, [
-      FACE_REGIONS.leftCheek,
-      FACE_REGIONS.rightCheek,
+      FACE_REGIONS.leftCheek, FACE_REGIONS.rightCheek,
     ], width, height, 2)
 
     let cheekR = 0, cheekG = 0, cheekB = 0, cheekN = 0
@@ -321,7 +325,6 @@ export function applyBrightenEyes(imageData, keypoints, amount) {
         cheekN++
       }
     }
-    // Fallback if cheek sampling fails
     const tR = cheekN > 0 ? cheekR / cheekN : 170
     const tG = cheekN > 0 ? cheekG / cheekN : 140
     const tB = cheekN > 0 ? cheekB / cheekN : 130
@@ -332,8 +335,6 @@ export function applyBrightenEyes(imageData, keypoints, amount) {
       const r = data[pi], g = data[pi + 1], b = data[pi + 2]
       const lum = 0.299 * r + 0.587 * g + 0.114 * b
       const targetLum = 0.299 * tR + 0.587 * tG + 0.114 * tB
-
-      // Only lift pixels darker than the cheek skin (actual dark circles)
       if (lum >= targetLum) continue
 
       const darkness = Math.min(1, (targetLum - lum) / 60)
@@ -345,16 +346,14 @@ export function applyBrightenEyes(imageData, keypoints, amount) {
   }
 }
 
-export function applyTeethWhitening(imageData, keypoints, amount) {
+function applyTeethWhitening(imageData, keypoints, amount) {
   if (amount <= 0 || !keypoints?.length) return
 
   const { width, height, data } = imageData
   const intensity = amount / 100
 
-  const feather = Math.max(2, Math.round(width * 0.004))
-  const mask = createMultiRegionMask(keypoints, [
-    FACE_REGIONS.innerLips,
-  ], width, height, feather)
+  const feather = Math.max(1, Math.round(width * 0.004))
+  const mask = createMultiRegionMask(keypoints, [FACE_REGIONS.innerLips], width, height, feather)
   if (!mask) return
 
   for (let i = 0; i < mask.length; i++) {
@@ -362,13 +361,10 @@ export function applyTeethWhitening(imageData, keypoints, amount) {
     const pi = i * 4
     const r = data[pi], g = data[pi + 1], b = data[pi + 2]
     const lum = 0.299 * r + 0.587 * g + 0.114 * b
-
-    // Only whiten pixels bright enough to be teeth (not lip or gum)
     if (lum < 70) continue
 
     const lumFactor = Math.min(1, (lum - 70) / 100)
     const blend = mask[i] * intensity * 0.55 * lumFactor
-    // Desaturate yellow tint and brighten
     data[pi] = clamp(r + (lum - r) * blend * 0.4 + 10 * blend)
     data[pi + 1] = clamp(g + (lum - g) * blend * 0.4 + 10 * blend)
     data[pi + 2] = clamp(b + (lum - b) * blend * 0.3 + 12 * blend)
@@ -377,9 +373,12 @@ export function applyTeethWhitening(imageData, keypoints, amount) {
 
 export function applyBeautyToImageData(imageData, keypoints, settings) {
   const { smooth = 0, blemish = 0, evenness = 0, brightenEyes = 0, teethWhiten = 0 } = settings
-  if (smooth > 0) applySkinSmoothing(imageData, keypoints, smooth)
-  if (blemish > 0) applyBlemishRemoval(imageData, keypoints, blemish)
-  if (evenness > 0) applySkinToneEvenness(imageData, keypoints, evenness)
+  const needsSkinMask = smooth > 0 || blemish > 0 || evenness > 0
+  const skinMask = needsSkinMask ? createSkinMask(keypoints, imageData.width, imageData.height) : null
+
+  if (smooth > 0) applySkinSmoothing(imageData, keypoints, smooth, skinMask)
+  if (blemish > 0) applyBlemishRemoval(imageData, keypoints, blemish, skinMask)
+  if (evenness > 0) applySkinToneEvenness(imageData, keypoints, evenness, skinMask)
   if (brightenEyes > 0) applyBrightenEyes(imageData, keypoints, brightenEyes)
   if (teethWhiten > 0) applyTeethWhitening(imageData, keypoints, teethWhiten)
 }
