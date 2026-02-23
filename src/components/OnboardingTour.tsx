@@ -11,19 +11,12 @@ interface TourStep {
   description: string
 }
 
-interface TargetRect {
-  top: number
-  left: number
-  width: number
-  height: number
-}
-
-const TOUR_STEPS: TourStep[] = [
+const DESKTOP_STEPS: TourStep[] = [
   {
-    target: 'filters',
-    title: 'Apply Filters',
+    target: 'ai',
+    title: 'AI Tools',
     description:
-      'Browse 165+ filters across 14 categories — from trending TikTok looks to classic film emulations.',
+      'Remove backgrounds, upscale images, transfer artistic styles, and more — no cloud needed.',
   },
   {
     target: 'beauty',
@@ -38,152 +31,192 @@ const TOUR_STEPS: TourStep[] = [
       'Transform emotions, find your celebrity lookalike, or see yourself younger or older.',
   },
   {
-    target: 'ai',
-    title: 'AI Tools',
+    target: 'filters',
+    title: 'Apply Filters',
     description:
-      'Remove backgrounds, upscale images, transfer artistic styles, and more — no cloud needed.',
+      'Browse 165+ filters across 14 categories — from trending TikTok looks to classic film emulations.',
   },
   {
     target: 'share',
-    title: 'Share',
+    title: 'Share & Export',
     description:
       'Export your creation or share a branded Before/After card on social media.',
   },
 ]
 
+const MOBILE_STEPS: TourStep[] = [
+  {
+    target: 'filters',
+    title: 'Filters',
+    description:
+      'Browse 165+ filters across 14 categories — from trending TikTok looks to classic film emulations.',
+  },
+  {
+    target: 'beauty',
+    title: 'AI Beauty',
+    description:
+      'Smooth skin, reshape features, and apply virtual makeup — all powered by AI.',
+  },
+  {
+    target: 'funai',
+    title: 'Fun AI',
+    description:
+      'Transform emotions, find your celebrity lookalike, or see yourself younger or older.',
+  },
+  {
+    target: 'ai',
+    title: 'AI Tools',
+    description:
+      'Remove backgrounds, upscale images, transfer styles — no cloud needed.',
+  },
+  {
+    target: 'share',
+    title: 'Share',
+    description:
+      'Export your creation or share on social media.',
+  },
+]
+
 const STORAGE_KEY = 'photosai-tour-completed'
-const SPOTLIGHT_PADDING = 8
-const TOOLTIP_GAP = 14
+const PAD = 8
+const GAP = 14
 
-function getVisibleRect(target: string): TargetRect | null {
-  const el = document.querySelector(`[data-tour="${target}"]`)
-  if (!el) return null
-  const r = el.getBoundingClientRect()
-  if (r.width === 0 || r.height === 0) return null
-  if (r.bottom < 0 || r.top > window.innerHeight) return null
-  if (r.right < 0 || r.left > window.innerWidth) return null
-  return { top: r.top, left: r.left, width: r.width, height: r.height }
-}
-
-function isMobileLayout(): boolean {
+function isMobile(): boolean {
   return window.innerWidth < 1024
 }
 
-export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
-  const [step, setStep] = useState(0)
-  const [rect, setRect] = useState<TargetRect | null>(null)
-  const [fading, setFading] = useState(false)
-  const [ready, setReady] = useState(false)
-  const tooltipRef = useRef<HTMLDivElement | null>(null)
-  const rafRef = useRef<number>(0)
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+function getSteps(): TourStep[] {
+  return isMobile() ? MOBILE_STEPS : DESKTOP_STEPS
+}
 
-  const finish = useCallback(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'true')
-    } catch { /* storage unavailable */ }
+function findElement(target: string): Element | null {
+  return document.querySelector(`[data-tour="${target}"]`)
+}
+
+function getScrollableParent(el: Element): Element | null {
+  let p = el.parentElement
+  while (p) {
+    const s = getComputedStyle(p)
+    if (/(auto|scroll)/.test(s.overflow + s.overflowY + s.overflowX)) return p
+    p = p.parentElement
+  }
+  return null
+}
+
+export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
+  const [stepIdx, setStepIdx] = useState(0)
+  const [spotRect, setSpotRect] = useState<DOMRect | null>(null)
+  const [show, setShow] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const steps = active ? getSteps() : []
+
+  const done = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    try { localStorage.setItem(STORAGE_KEY, 'true') } catch { /* */ }
+    setShow(false)
     onComplete()
   }, [onComplete])
 
-  const advanceStep = useCallback((from: number) => {
-    let next = from + 1
-    while (next < TOUR_STEPS.length) {
-      const el = document.querySelector(`[data-tour="${TOUR_STEPS[next].target}"]`)
-      if (el) return next
-      next++
-    }
-    return -1
-  }, [])
+  const locateAndShow = useCallback((idx: number, retries = 0) => {
+    const s = getSteps()
+    if (idx >= s.length) { done(); return }
 
-  const handleNext = useCallback(() => {
-    if (step >= TOUR_STEPS.length - 1) {
-      finish()
-      return
-    }
-    const nextStep = advanceStep(step)
-    if (nextStep < 0) {
-      finish()
-      return
-    }
-    setFading(true)
-    setReady(false)
-    setTimeout(() => {
-      setStep(nextStep)
-      setFading(false)
-    }, 200)
-  }, [step, finish, advanceStep])
-
-  const measureTarget = useCallback(() => {
-    if (!active) return
-    const current = TOUR_STEPS[step]
-    if (!current) return
-
-    const el = document.querySelector(`[data-tour="${current.target}"]`)
+    const el = findElement(s[idx].target)
     if (!el) {
-      const nextStep = advanceStep(step)
-      if (nextStep >= 0) setStep(nextStep)
-      else finish()
+      if (idx + 1 < s.length) locateAndShow(idx + 1, 0)
+      else done()
       return
     }
 
+    const scrollParent = getScrollableParent(el)
+    if (scrollParent) {
+      const parentRect = scrollParent.getBoundingClientRect()
+      const elRect = el.getBoundingClientRect()
+      const scrollOffset = elRect.top - parentRect.top + scrollParent.scrollTop
+      scrollParent.scrollTo({ top: Math.max(0, scrollOffset - 30), behavior: 'smooth' })
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
 
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
-    scrollTimerRef.current = setTimeout(() => {
-      rafRef.current = requestAnimationFrame(() => {
-        const measured = getVisibleRect(current.target)
-        setRect(measured)
-        setReady(!!measured)
-      })
-    }, 350)
-  }, [active, step, advanceStep, finish])
+    timerRef.current = setTimeout(() => {
+      const r = el.getBoundingClientRect()
+      const inView =
+        r.width > 0 &&
+        r.height > 0 &&
+        r.top < window.innerHeight &&
+        r.bottom > 0 &&
+        r.left < window.innerWidth &&
+        r.right > 0
+
+      if (inView) {
+        setSpotRect(r)
+        setStepIdx(idx)
+        setShow(true)
+      } else if (retries < 10) {
+        timerRef.current = setTimeout(() => locateAndShow(idx, retries + 1), 300)
+      } else {
+        if (idx + 1 < s.length) locateAndShow(idx + 1, 0)
+        else done()
+      }
+    }, 400)
+  }, [done])
+
+  useEffect(() => {
+    if (!active) { setShow(false); return }
+    setShow(false)
+    setStepIdx(0)
+    timerRef.current = setTimeout(() => locateAndShow(0, 0), 200)
+    return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+  }, [active, locateAndShow])
+
+  const next = useCallback(() => {
+    setShow(false)
+    timerRef.current = setTimeout(() => locateAndShow(stepIdx + 1, 0), 100)
+  }, [stepIdx, locateAndShow])
 
   useEffect(() => {
     if (!active) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') done()
+      if (e.key === 'ArrowRight' || e.key === 'Enter') {
+        if (stepIdx >= steps.length - 1) done()
+        else next()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [active, done, next, stepIdx, steps.length])
 
-    setReady(false)
-    measureTarget()
-
-    const handleResize = () => measureTarget()
-    window.addEventListener('resize', handleResize)
-    window.addEventListener('scroll', handleResize, true)
-
-    const observer = new ResizeObserver(handleResize)
-    observer.observe(document.body)
-
+  useEffect(() => {
+    if (!active || !show) return
+    const refresh = () => {
+      const s = getSteps()
+      if (stepIdx >= s.length) return
+      const el = findElement(s[stepIdx].target)
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      if (r.width > 0 && r.height > 0) setSpotRect(r)
+    }
+    window.addEventListener('resize', refresh)
+    window.addEventListener('scroll', refresh, true)
     return () => {
-      window.removeEventListener('resize', handleResize)
-      window.removeEventListener('scroll', handleResize, true)
-      observer.disconnect()
-      cancelAnimationFrame(rafRef.current)
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+      window.removeEventListener('resize', refresh)
+      window.removeEventListener('scroll', refresh, true)
     }
-  }, [active, measureTarget])
+  }, [active, show, stepIdx])
 
-  useEffect(() => {
-    if (!active) return
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') finish()
-      if (e.key === 'ArrowRight' || e.key === 'Enter') handleNext()
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [active, finish, handleNext])
+  if (!active || !show || !spotRect || stepIdx >= steps.length) return null
 
-  if (!active || !ready) return null
+  const currentStep = steps[stepIdx]
+  const isLast = stepIdx === steps.length - 1
+  const mobile = isMobile()
 
-  const currentStep = TOUR_STEPS[step]
-  if (!currentStep || !rect) return null
-
-  const isLast = step === TOUR_STEPS.length - 1
-  const mobile = typeof window !== 'undefined' && isMobileLayout()
-
-  const spotStyle: React.CSSProperties = {
+  const spot: React.CSSProperties = {
     position: 'fixed',
-    top: rect.top - SPOTLIGHT_PADDING,
-    left: rect.left - SPOTLIGHT_PADDING,
-    width: rect.width + SPOTLIGHT_PADDING * 2,
-    height: rect.height + SPOTLIGHT_PADDING * 2,
+    top: spotRect.top - PAD,
+    left: spotRect.left - PAD,
+    width: spotRect.width + PAD * 2,
+    height: spotRect.height + PAD * 2,
     borderRadius: 12,
     boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
     pointerEvents: 'none',
@@ -191,126 +224,83 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
     transition: 'all 0.3s ease',
   }
 
-  let tooltipStyle: React.CSSProperties = {
-    position: 'fixed',
-    zIndex: 72,
-    maxWidth: 340,
-    transition: 'opacity 0.2s ease, transform 0.2s ease',
-    opacity: fading ? 0 : 1,
-    transform: fading ? 'translateY(6px)' : 'translateY(0)',
-  }
+  const tw = 340
+  const cx = spotRect.left + spotRect.width / 2
+  let tLeft = Math.max(12, Math.min(cx - tw / 2, window.innerWidth - tw - 12))
 
-  let arrowPosition: 'top' | 'bottom' = 'top'
-
-  const targetCenterX = rect.left + rect.width / 2
-  const tooltipWidth = 340
-  let tooltipLeft = targetCenterX - tooltipWidth / 2
-  tooltipLeft = Math.max(12, Math.min(tooltipLeft, window.innerWidth - tooltipWidth - 12))
+  let tip: React.CSSProperties = { position: 'fixed', zIndex: 72, maxWidth: tw, width: tw }
+  let arrow: 'top' | 'bottom' = 'top'
 
   if (mobile) {
-    const tooltipTop = rect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP - 10
-    tooltipStyle = {
-      ...tooltipStyle,
-      left: tooltipLeft,
-      bottom: window.innerHeight - tooltipTop,
-    }
-    arrowPosition = 'bottom'
+    tip.left = tLeft
+    tip.bottom = window.innerHeight - (spotRect.top - PAD - GAP - 10)
+    arrow = 'bottom'
   } else {
-    const spaceBelow = window.innerHeight - (rect.top + rect.height + SPOTLIGHT_PADDING)
-    if (spaceBelow > 200) {
-      tooltipStyle = {
-        ...tooltipStyle,
-        left: tooltipLeft,
-        top: rect.top + rect.height + SPOTLIGHT_PADDING + TOOLTIP_GAP,
-      }
-      arrowPosition = 'top'
+    const below = window.innerHeight - (spotRect.bottom + PAD)
+    if (below > 220) {
+      tip.left = tLeft
+      tip.top = spotRect.bottom + PAD + GAP
+      arrow = 'top'
     } else {
-      tooltipStyle = {
-        ...tooltipStyle,
-        left: tooltipLeft,
-        bottom: window.innerHeight - rect.top + SPOTLIGHT_PADDING + TOOLTIP_GAP,
-      }
-      arrowPosition = 'bottom'
+      tip.left = tLeft
+      tip.bottom = window.innerHeight - (spotRect.top - PAD) + GAP
+      arrow = 'bottom'
     }
   }
 
-  const arrowLeft = Math.max(
-    20,
-    Math.min(
-      rect.left + rect.width / 2 - (parseFloat(String(tooltipStyle.left)) || 0),
-      320
-    )
-  )
+  const arrowX = Math.max(20, Math.min(cx - tLeft, tw - 20))
 
   return (
     <>
-      {/* Overlay backdrop — blocks interaction but does NOT dismiss */}
+      <div className="fixed inset-0 z-[70]" onClick={(e) => e.stopPropagation()} aria-hidden />
+      <div style={spot} aria-hidden />
       <div
-        className="fixed inset-0 z-[70]"
-        onClick={(e) => e.stopPropagation()}
-        aria-hidden
-      />
-
-      {/* Spotlight cutout */}
-      <div style={spotStyle} aria-hidden />
-
-      {/* Tooltip card */}
-      <div
-        ref={tooltipRef}
-        style={tooltipStyle}
-        className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5 w-[340px]"
+        ref={el => { /* noop ref */ }}
+        style={tip}
+        className="bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl p-5"
         role="dialog"
         aria-label={currentStep.title}
       >
-        {/* Arrow */}
-        {arrowPosition === 'top' && (
+        {arrow === 'top' && (
           <div
             className="absolute -top-2 w-4 h-4 bg-zinc-900 border-l border-t border-zinc-700 rotate-45"
-            style={{ left: arrowLeft }}
+            style={{ left: arrowX }}
           />
         )}
-        {arrowPosition === 'bottom' && (
+        {arrow === 'bottom' && (
           <div
             className="absolute -bottom-2 w-4 h-4 bg-zinc-900 border-r border-b border-zinc-700 rotate-45"
-            style={{ left: arrowLeft }}
+            style={{ left: arrowX }}
           />
         )}
 
-        {/* Step indicator dots */}
         <div className="flex items-center gap-1.5 mb-3">
-          {TOUR_STEPS.map((_, i) => (
+          {steps.map((_, i) => (
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === step
+                i === stepIdx
                   ? 'w-5 bg-purple-500'
-                  : i < step
+                  : i < stepIdx
                     ? 'w-1.5 bg-purple-500/50'
                     : 'w-1.5 bg-zinc-600'
               }`}
             />
           ))}
           <span className="ml-auto text-xs text-zinc-500 tabular-nums">
-            {step + 1}/{TOUR_STEPS.length}
+            {stepIdx + 1}/{steps.length}
           </span>
         </div>
 
-        <h3 className="text-base font-semibold text-white mb-1.5">
-          {currentStep.title}
-        </h3>
-        <p className="text-sm text-zinc-400 leading-relaxed mb-5">
-          {currentStep.description}
-        </p>
+        <h3 className="text-base font-semibold text-white mb-1.5">{currentStep.title}</h3>
+        <p className="text-sm text-zinc-400 leading-relaxed mb-5">{currentStep.description}</p>
 
         <div className="flex items-center justify-between">
-          <button
-            onClick={finish}
-            className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
+          <button onClick={done} className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
             Skip
           </button>
           <button
-            onClick={handleNext}
+            onClick={isLast ? done : next}
             className="px-5 py-2 text-sm font-medium bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors"
           >
             {isLast ? 'Get Started!' : 'Next'}

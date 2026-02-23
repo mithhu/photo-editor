@@ -106,7 +106,7 @@ export function BeautyPanel({ beauty, faceReshape, makeup, onUpdate, onSliderUpd
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+        <h3 data-tour="beauty" className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
           AI Beauty
         </h3>
         <button

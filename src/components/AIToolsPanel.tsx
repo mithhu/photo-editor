@@ -237,7 +237,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
     <div className="space-y-4">
       {/* Background Removal */}
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-300 mb-2">AI Tools</h3>
+        <h3 data-tour="ai" className="text-sm font-semibold text-zinc-300 mb-2">AI Tools</h3>
         <p className="text-[10px] text-zinc-500 mb-3">
           AI features run entirely in your browser. First use downloads models (~10-50 MB).
         </p>

@@ -100,7 +100,7 @@ export function FunAIPanel({ emotion, ageTransform, onUpdate, onSliderUpdate, pr
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-zinc-300">Fun AI</h3>
+        <h3 data-tour="funai" className="text-sm font-semibold text-zinc-300">Fun AI</h3>
         {processing && (
           <span className="text-xs text-purple-400 animate-pulse">Processing...</span>
         )}
