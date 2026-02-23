@@ -1,4 +1,6 @@
 import { lazy, Suspense, useState, useRef, useEffect } from 'react'
+import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { INITIAL_EDIT_STATE } from './constants'
 import { useEditHistory } from './hooks/useEditHistory'
 import { useProjectSave } from './hooks/useProjectSave'
@@ -450,6 +452,8 @@ export default function App() {
           onClose={() => setShowShortcutsOverlay(false)}
         />
       </Suspense>
+      <Analytics />
+      <SpeedInsights />
     </div>
   )
 }
