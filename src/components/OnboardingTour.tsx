@@ -55,10 +55,13 @@ const STORAGE_KEY = 'photosai-tour-completed'
 const SPOTLIGHT_PADDING = 8
 const TOOLTIP_GAP = 14
 
-function getTargetRect(target: string): TargetRect | null {
+function getVisibleRect(target: string): TargetRect | null {
   const el = document.querySelector(`[data-tour="${target}"]`)
   if (!el) return null
   const r = el.getBoundingClientRect()
+  if (r.width === 0 || r.height === 0) return null
+  if (r.bottom < 0 || r.top > window.innerHeight) return null
+  if (r.right < 0 || r.left > window.innerWidth) return null
   return { top: r.top, left: r.left, width: r.width, height: r.height }
 }
 
@@ -70,29 +73,45 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
   const [step, setStep] = useState(0)
   const [rect, setRect] = useState<TargetRect | null>(null)
   const [fading, setFading] = useState(false)
+  const [ready, setReady] = useState(false)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const rafRef = useRef<number>(0)
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const finish = useCallback(() => {
     try {
       localStorage.setItem(STORAGE_KEY, 'true')
-    } catch {
-      // storage unavailable
-    }
+    } catch { /* storage unavailable */ }
     onComplete()
   }, [onComplete])
+
+  const advanceStep = useCallback((from: number) => {
+    let next = from + 1
+    while (next < TOUR_STEPS.length) {
+      const el = document.querySelector(`[data-tour="${TOUR_STEPS[next].target}"]`)
+      if (el) return next
+      next++
+    }
+    return -1
+  }, [])
 
   const handleNext = useCallback(() => {
     if (step >= TOUR_STEPS.length - 1) {
       finish()
       return
     }
+    const nextStep = advanceStep(step)
+    if (nextStep < 0) {
+      finish()
+      return
+    }
     setFading(true)
+    setReady(false)
     setTimeout(() => {
-      setStep((s) => s + 1)
+      setStep(nextStep)
       setFading(false)
     }, 200)
-  }, [step, finish])
+  }, [step, finish, advanceStep])
 
   const measureTarget = useCallback(() => {
     if (!active) return
@@ -100,18 +119,29 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
     if (!current) return
 
     const el = document.querySelector(`[data-tour="${current.target}"]`)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+    if (!el) {
+      const nextStep = advanceStep(step)
+      if (nextStep >= 0) setStep(nextStep)
+      else finish()
+      return
     }
 
-    rafRef.current = requestAnimationFrame(() => {
-      setRect(getTargetRect(current.target))
-    })
-  }, [active, step])
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
+    scrollTimerRef.current = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        const measured = getVisibleRect(current.target)
+        setRect(measured)
+        setReady(!!measured)
+      })
+    }, 350)
+  }, [active, step, advanceStep, finish])
 
   useEffect(() => {
     if (!active) return
 
+    setReady(false)
     measureTarget()
 
     const handleResize = () => measureTarget()
@@ -126,6 +156,7 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
       window.removeEventListener('scroll', handleResize, true)
       observer.disconnect()
       cancelAnimationFrame(rafRef.current)
+      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current)
     }
   }, [active, measureTarget])
 
@@ -139,28 +170,26 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
     return () => window.removeEventListener('keydown', handleKey)
   }, [active, finish, handleNext])
 
-  if (!active) return null
+  if (!active || !ready) return null
 
   const currentStep = TOUR_STEPS[step]
-  if (!currentStep) return null
+  if (!currentStep || !rect) return null
 
   const isLast = step === TOUR_STEPS.length - 1
   const mobile = typeof window !== 'undefined' && isMobileLayout()
 
-  const spotStyle: React.CSSProperties = rect
-    ? {
-        position: 'fixed',
-        top: rect.top - SPOTLIGHT_PADDING,
-        left: rect.left - SPOTLIGHT_PADDING,
-        width: rect.width + SPOTLIGHT_PADDING * 2,
-        height: rect.height + SPOTLIGHT_PADDING * 2,
-        borderRadius: 12,
-        boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-        pointerEvents: 'none',
-        zIndex: 71,
-        transition: 'all 0.3s ease',
-      }
-    : { display: 'none' }
+  const spotStyle: React.CSSProperties = {
+    position: 'fixed',
+    top: rect.top - SPOTLIGHT_PADDING,
+    left: rect.left - SPOTLIGHT_PADDING,
+    width: rect.width + SPOTLIGHT_PADDING * 2,
+    height: rect.height + SPOTLIGHT_PADDING * 2,
+    borderRadius: 12,
+    boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+    pointerEvents: 'none',
+    zIndex: 71,
+    transition: 'all 0.3s ease',
+  }
 
   let tooltipStyle: React.CSSProperties = {
     position: 'fixed',
@@ -173,57 +202,45 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
 
   let arrowPosition: 'top' | 'bottom' = 'top'
 
-  if (rect) {
-    const targetCenterX = rect.left + rect.width / 2
-    const tooltipWidth = 340
-    let tooltipLeft = targetCenterX - tooltipWidth / 2
-    tooltipLeft = Math.max(12, Math.min(tooltipLeft, window.innerWidth - tooltipWidth - 12))
+  const targetCenterX = rect.left + rect.width / 2
+  const tooltipWidth = 340
+  let tooltipLeft = targetCenterX - tooltipWidth / 2
+  tooltipLeft = Math.max(12, Math.min(tooltipLeft, window.innerWidth - tooltipWidth - 12))
 
-    if (mobile) {
-      // On mobile, target is likely at the bottom — place tooltip above
-      const tooltipTop = rect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP - 10
+  if (mobile) {
+    const tooltipTop = rect.top - SPOTLIGHT_PADDING - TOOLTIP_GAP - 10
+    tooltipStyle = {
+      ...tooltipStyle,
+      left: tooltipLeft,
+      bottom: window.innerHeight - tooltipTop,
+    }
+    arrowPosition = 'bottom'
+  } else {
+    const spaceBelow = window.innerHeight - (rect.top + rect.height + SPOTLIGHT_PADDING)
+    if (spaceBelow > 200) {
       tooltipStyle = {
         ...tooltipStyle,
         left: tooltipLeft,
-        bottom: window.innerHeight - tooltipTop,
+        top: rect.top + rect.height + SPOTLIGHT_PADDING + TOOLTIP_GAP,
+      }
+      arrowPosition = 'top'
+    } else {
+      tooltipStyle = {
+        ...tooltipStyle,
+        left: tooltipLeft,
+        bottom: window.innerHeight - rect.top + SPOTLIGHT_PADDING + TOOLTIP_GAP,
       }
       arrowPosition = 'bottom'
-    } else {
-      const spaceBelow = window.innerHeight - (rect.top + rect.height + SPOTLIGHT_PADDING)
-      if (spaceBelow > 200) {
-        tooltipStyle = {
-          ...tooltipStyle,
-          left: tooltipLeft,
-          top: rect.top + rect.height + SPOTLIGHT_PADDING + TOOLTIP_GAP,
-        }
-        arrowPosition = 'top'
-      } else {
-        tooltipStyle = {
-          ...tooltipStyle,
-          left: tooltipLeft,
-          bottom: window.innerHeight - rect.top + SPOTLIGHT_PADDING + TOOLTIP_GAP,
-        }
-        arrowPosition = 'bottom'
-      }
-    }
-  } else {
-    tooltipStyle = {
-      ...tooltipStyle,
-      top: '50%',
-      left: '50%',
-      transform: `translate(-50%, -50%)${fading ? ' translateY(6px)' : ''}`,
     }
   }
 
-  const arrowLeft = rect
-    ? Math.max(
-        20,
-        Math.min(
-          rect.left + rect.width / 2 - (parseFloat(String(tooltipStyle.left)) || 0),
-          320
-        )
-      )
-    : 170
+  const arrowLeft = Math.max(
+    20,
+    Math.min(
+      rect.left + rect.width / 2 - (parseFloat(String(tooltipStyle.left)) || 0),
+      320
+    )
+  )
 
   return (
     <>
