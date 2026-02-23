@@ -229,7 +229,7 @@ export function OnboardingTour({ active, onComplete }: OnboardingTourProps) {
     <>
       {/* Overlay backdrop — blocks interaction but does NOT dismiss */}
       <div
-        className="fixed inset-0 z-[70] backdrop-blur-sm"
+        className="fixed inset-0 z-[70]"
         onClick={(e) => e.stopPropagation()}
         aria-hidden
       />
