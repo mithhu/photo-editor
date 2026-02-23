@@ -15,6 +15,7 @@ import { HistogramPanel } from './HistogramPanel'
 import { GradientMapPanel } from './GradientMapPanel'
 import { ChannelMixerPanel } from './ChannelMixerPanel'
 import { BeautyPanel } from './BeautyPanel'
+import { FunAIPanel } from './FunAIPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -23,7 +24,7 @@ import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
 import { usePortraitCrop } from '../hooks/usePortraitCrop'
 import { parseCubeLUT } from '../utils/lutParser'
 import { featherMask } from '../utils/magicWand'
-import type { EditState, ShapeOverlay } from '../types'
+import type { EditState, ShapeOverlay, FaceKeypoint } from '../types'
 
 interface DrawingTool {
   id: string
@@ -54,6 +55,7 @@ export interface EditorSidebarProps {
   applySliderChange: (key: string, value: number) => void
   applyNestedSliderChange: (updater: ((prev: EditState) => EditState) | Partial<EditState>) => void
   beautyProcessing: boolean
+  faceKeypoints: FaceKeypoint[] | null
   onAddText: () => void
   historyIndex: number
   historyLength: number
@@ -80,6 +82,7 @@ export function EditorSidebar({
   applySliderChange,
   applyNestedSliderChange,
   beautyProcessing,
+  faceKeypoints,
   onAddText,
   historyIndex,
   historyLength,
@@ -189,6 +192,18 @@ export function EditorSidebar({
           onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
           onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
           beautyProcessing={beautyProcessing}
+        />
+      </div>
+
+      {/* Fun AI */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <FunAIPanel
+          emotion={editState.emotion}
+          ageTransform={editState.ageTransform}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+          onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
+          processing={beautyProcessing}
+          faceKeypoints={faceKeypoints}
         />
       </div>
 

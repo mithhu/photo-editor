@@ -96,6 +96,8 @@ export const INITIAL_EDIT_STATE: EditState = {
     eyeliner: { color: '#222222', opacity: 0 },
     eyeshadow: { color: '#886699', opacity: 0 },
   },
+  emotion: { type: 'none' as const, intensity: 70 },
+  ageTransform: { offset: 0, intensity: 70 },
 }
 
 export interface FontOption {

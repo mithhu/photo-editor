@@ -218,6 +218,39 @@ export interface EditState {
   beauty: BeautySettings
   faceReshape: ReshapeSettings
   makeup: MakeupSettings
+  emotion: EmotionSettings
+  ageTransform: AgeTransformSettings
+}
+
+export type EmotionType = 'none' | 'laugh' | 'cry' | 'angry' | 'surprised' | 'sad'
+
+export interface EmotionSettings {
+  type: EmotionType
+  intensity: number
+}
+
+export interface AgeTransformSettings {
+  offset: number // -20 to +40
+  intensity: number // 0-100
+}
+
+export interface CelebrityMatch {
+  name: string
+  matchPercent: number
+  bestFeature: string
+}
+
+export interface FaceMetrics {
+  faceAspectRatio: number
+  eyeDistanceRatio: number
+  noseLengthRatio: number
+  lipFullnessRatio: number
+  jawlineWidth: number
+  foreheadRatio: number
+  eyeSizeRatio: number
+  chinRatio: number
+  eyebrowHeightRatio: number
+  mouthWidthRatio: number
 }
 
 export interface FaceKeypoint {

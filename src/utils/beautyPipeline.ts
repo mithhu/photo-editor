@@ -4,7 +4,7 @@
  * Caches face detection results so slider tweaks skip the expensive TF.js inference.
  */
 
-import type { BeautySettings, ReshapeSettings, MakeupSettings, DetectedFace } from '../types'
+import type { BeautySettings, ReshapeSettings, MakeupSettings, DetectedFace, EmotionSettings, AgeTransformSettings, FaceKeypoint } from '../types'
 import { detectFaceLandmarks } from './faceMesh'
 import { applyBeautyToImageData } from './beautyFilters'
 import { applyReshapeToImageData } from './faceReshape'
@@ -20,6 +20,14 @@ export function hasActiveReshape(reshape: ReshapeSettings | null | undefined): b
 
 export function hasActiveMakeup(makeup: MakeupSettings | null | undefined): boolean {
   return !!(makeup && (makeup.lipstick?.opacity > 0 || makeup.blush?.opacity > 0 || makeup.eyeliner?.opacity > 0 || makeup.eyeshadow?.opacity > 0))
+}
+
+export function hasActiveEmotion(emotion: EmotionSettings | null | undefined): boolean {
+  return !!(emotion && emotion.type !== 'none' && emotion.intensity > 0)
+}
+
+export function hasActiveAge(age: AgeTransformSettings | null | undefined): boolean {
+  return !!(age && age.offset !== 0 && age.intensity > 0)
 }
 
 let runId: number = 0
@@ -40,13 +48,17 @@ export async function runBeautyPipeline(
   imageElement: HTMLImageElement,
   beautySettings: BeautySettings,
   reshapeSettings: ReshapeSettings,
-  makeupSettings: MakeupSettings
+  makeupSettings: MakeupSettings,
+  emotionSettings?: EmotionSettings | null,
+  ageSettings?: AgeTransformSettings | null
 ): Promise<PipelineResult | null> {
   const doBeauty = hasActiveBeauty(beautySettings)
   const doReshape = hasActiveReshape(reshapeSettings)
   const doMakeup = hasActiveMakeup(makeupSettings)
+  const doEmotion = hasActiveEmotion(emotionSettings)
+  const doAge = hasActiveAge(ageSettings)
 
-  if (!doBeauty && !doReshape && !doMakeup) return null
+  if (!doBeauty && !doReshape && !doMakeup && !doEmotion && !doAge) return null
 
   const id = ++runId
   const width = imageElement.naturalWidth
@@ -104,6 +116,24 @@ export async function runBeautyPipeline(
     if (doMakeup) {
       applyMakeupToCanvas(workCanvas, kp, makeupSettings)
     }
+
+    if (doEmotion && emotionSettings) {
+      const { applyEmotionTransform } = await import('./emotionTransform')
+      const emotionResult = applyEmotionTransform(workCanvas, kp, emotionSettings.type, emotionSettings.intensity)
+      if (emotionResult) {
+        ctx.clearRect(0, 0, procW, procH)
+        ctx.drawImage(emotionResult, 0, 0)
+      }
+    }
+
+    if (doAge && ageSettings) {
+      const { applyAgeTransform } = await import('./ageTransform')
+      const ageResult = applyAgeTransform(workCanvas, kp, ageSettings)
+      if (ageResult) {
+        ctx.clearRect(0, 0, procW, procH)
+        ctx.drawImage(ageResult, 0, 0)
+      }
+    }
   }
 
   if (id !== runId) return null
@@ -118,4 +148,44 @@ export function cancelBeautyPipeline(): void {
 export function invalidateFaceCache(): void {
   _cachedFaces = null
   _cachedImageSrc = null
+}
+
+export function getCachedFaceKeypoints(): FaceKeypoint[] | null {
+  if (_cachedFaces && _cachedFaces.length > 0) {
+    return _cachedFaces[0].keypoints
+  }
+  return null
+}
+
+export async function detectAndCacheKeypoints(
+  imageElement: HTMLImageElement
+): Promise<FaceKeypoint[] | null> {
+  const w = imageElement.naturalWidth
+  const h = imageElement.naturalHeight
+  if (!w || !h) return null
+
+  const MAX_DIM = 512
+  const scale = Math.min(1, MAX_DIM / Math.max(w, h))
+  const procW = Math.round(w * scale)
+  const procH = Math.round(h * scale)
+
+  if (_cachedFaces && _cachedImageSrc === imageElement.src && _cachedProcW === procW && _cachedProcH === procH) {
+    return _cachedFaces[0]?.keypoints ?? null
+  }
+
+  const canvas = document.createElement('canvas')
+  canvas.width = procW
+  canvas.height = procH
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(imageElement, 0, 0, procW, procH)
+
+  const faces = await detectFaceLandmarks(canvas)
+  if (faces?.length) {
+    _cachedFaces = faces
+    _cachedImageSrc = imageElement.src
+    _cachedProcW = procW
+    _cachedProcH = procH
+    return faces[0].keypoints
+  }
+  return null
 }

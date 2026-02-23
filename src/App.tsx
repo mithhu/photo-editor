@@ -4,7 +4,7 @@ import { useEditHistory } from './hooks/useEditHistory'
 import { useProjectSave } from './hooks/useProjectSave'
 import { analyzeAndEnhance } from './utils/autoEnhance'
 import { ImageUpload, EditorHeader, ShortcutsOverlay } from './components'
-import type { EditState, TextOverlay } from './types'
+import type { EditState, TextOverlay, FaceKeypoint } from './types'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -82,12 +82,24 @@ export default function App() {
   } = useEditHistory(INITIAL_EDIT_STATE)
 
   const [beautyProcessing, setBeautyProcessing] = useState<boolean>(false)
+  const [faceKeypoints, setFaceKeypoints] = useState<FaceKeypoint[] | null>(null)
 
   const { clear, restore } = useProjectSave(imageSrc, editState, setEditState, setImageSrc)
 
   useEffect(() => {
     if (imageSrc) {
       import('./utils/faceMesh').then(m => m.loadFaceMesh())
+      const img = new Image()
+      img.onload = () => {
+        import('./utils/beautyPipeline').then(m => {
+          m.detectAndCacheKeypoints(img).then(kp => {
+            if (kp) setFaceKeypoints(kp)
+          })
+        })
+      }
+      img.src = imageSrc
+    } else {
+      setFaceKeypoints(null)
     }
   }, [imageSrc])
 
@@ -384,6 +396,7 @@ export default function App() {
               applySliderChange={applySliderChange}
               applyNestedSliderChange={applyNestedSliderChange}
               beautyProcessing={beautyProcessing}
+              faceKeypoints={faceKeypoints}
               onAddText={addTextOverlay}
               historyIndex={historyIndex}
               historyLength={historyLength}
@@ -401,6 +414,7 @@ export default function App() {
             applySliderChange={applySliderChange}
             applyNestedSliderChange={applyNestedSliderChange}
             beautyProcessing={beautyProcessing}
+            faceKeypoints={faceKeypoints}
             onAddText={addTextOverlay}
             imageSrc={imageSrc}
             onImageReplace={(newSrc: string) => { setImageSrc(newSrc) }}

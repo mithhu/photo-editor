@@ -6,7 +6,7 @@ import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyLightLeak } from '../utils/lightLeaks'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
-import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup, invalidateFaceCache, runBeautyPipeline } from '../utils/beautyPipeline'
+import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup, hasActiveEmotion, hasActiveAge, invalidateFaceCache, runBeautyPipeline } from '../utils/beautyPipeline'
 import type {
   EditState,
   TextOverlay,
@@ -311,6 +311,8 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     beauty,
     faceReshape,
     makeup,
+    emotion,
+    ageTransform,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -903,7 +905,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     throttledDraw()
   }, [throttledDraw, imageSrc])
 
-  const hasBeautyEffect = hasActiveBeauty(beauty) || hasActiveReshape(faceReshape) || hasActiveMakeup(makeup)
+  const hasBeautyEffect = hasActiveBeauty(beauty) || hasActiveReshape(faceReshape) || hasActiveMakeup(makeup) || hasActiveEmotion(emotion) || hasActiveAge(ageTransform)
   const [beautyProcessing, setBeautyProcessing] = useState<boolean>(false)
 
   useEffect(() => {
@@ -935,7 +937,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         await new Promise<void>(r => setTimeout(r, 0))
         if (cancelled) return
 
-        const result = await runBeautyPipeline(img, beauty, faceReshape, makeup)
+        const result = await runBeautyPipeline(img, beauty, faceReshape, makeup, emotion, ageTransform)
 
         if (cancelled || beautyRunIdRef.current !== myRunId) return
 
@@ -953,7 +955,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     })()
 
     return () => { cancelled = true }
-  }, [hasBeautyEffect, beauty, faceReshape, makeup])
+  }, [hasBeautyEffect, beauty, faceReshape, makeup, emotion, ageTransform])
 
   const getCanvasPoint = useCallback((e: MouseEvent | React.MouseEvent): CanvasPoint | null => {
     const canvas = canvasRef.current

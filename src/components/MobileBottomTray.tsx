@@ -10,7 +10,7 @@ import { useExposureSuggestions } from '../hooks/useExposureSuggestions'
 import { usePortraitCrop } from '../hooks/usePortraitCrop'
 import { parseCubeLUT } from '../utils/lutParser'
 import { featherMask } from '../utils/magicWand'
-import type { EditState, ShapeOverlay } from '../types'
+import type { EditState, ShapeOverlay, FaceKeypoint } from '../types'
 import type { Mask } from './MaskPanel'
 
 const HSLPanel = lazy(() => import('./HSLPanel').then((m) => ({ default: m.HSLPanel })))
@@ -23,6 +23,7 @@ const TemplatePanel = lazy(() => import('./TemplatePanel').then((m) => ({ defaul
 const StickerPanel = lazy(() => import('./StickerPanel').then((m) => ({ default: m.StickerPanel })))
 const LayerPanel = lazy(() => import('./LayerPanel').then((m) => ({ default: m.LayerPanel })))
 const BeautyPanel = lazy(() => import('./BeautyPanel').then((m) => ({ default: m.BeautyPanel })))
+const FunAIPanel = lazy(() => import('./FunAIPanel').then((m) => ({ default: m.FunAIPanel })))
 
 interface TabItem {
   id: string
@@ -41,6 +42,7 @@ export interface MobileBottomTrayProps {
   applySliderChange: (key: string, value: number) => void
   applyNestedSliderChange: (updater: ((prev: EditState) => EditState) | Partial<EditState>) => void
   beautyProcessing: boolean
+  faceKeypoints: FaceKeypoint[] | null
   onAddText: () => void
   imageSrc: string | null
   onImageReplace: (src: string) => void
@@ -51,6 +53,7 @@ export interface MobileBottomTrayProps {
 const PRIMARY_TABS: TabItem[] = [
   { id: 'filters', icon: '✦', label: 'Filters' },
   { id: 'beauty', icon: '✨', label: 'Beauty' },
+  { id: 'funai', icon: '🎭', label: 'Fun AI' },
   { id: 'ai', icon: '⚡', label: 'AI' },
   { id: 'crop', icon: '⬡', label: 'Crop' },
   { id: 'draw', icon: '✎', label: 'Draw' },
@@ -76,6 +79,7 @@ export function MobileBottomTray({
   applySliderChange,
   applyNestedSliderChange,
   beautyProcessing,
+  faceKeypoints,
   onAddText,
   imageSrc,
   onImageReplace,
@@ -1333,6 +1337,20 @@ export function MobileBottomTray({
               onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
               onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
               beautyProcessing={beautyProcessing}
+            />
+          </Suspense>
+        )
+
+      case 'funai':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <FunAIPanel
+              emotion={editState.emotion}
+              ageTransform={editState.ageTransform}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+              onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
+              processing={beautyProcessing}
+              faceKeypoints={faceKeypoints}
             />
           </Suspense>
         )
