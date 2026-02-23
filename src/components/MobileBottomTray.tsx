@@ -25,6 +25,7 @@ const LayerPanel = lazy(() => import('./LayerPanel').then((m) => ({ default: m.L
 const BeautyPanel = lazy(() => import('./BeautyPanel').then((m) => ({ default: m.BeautyPanel })))
 const FunAIPanel = lazy(() => import('./FunAIPanel').then((m) => ({ default: m.FunAIPanel })))
 const EffectsPanel = lazy(() => import('./EffectsPanel').then((m) => ({ default: m.EffectsPanel })))
+const PhotoScorePanel = lazy(() => import('./PhotoScorePanel').then((m) => ({ default: m.PhotoScorePanel })))
 
 interface TabItem {
   id: string
@@ -64,6 +65,7 @@ const PRIMARY_TABS: TabItem[] = [
 const MORE_TABS: TabItem[] = [
   { id: 'adjust', icon: '☀', label: 'Adjust' },
   { id: 'color', icon: '🎨', label: 'Color' },
+  { id: 'score', icon: '💯', label: 'Score' },
   { id: 'resize', icon: '↔', label: 'Resize' },
   { id: 'frames', icon: '▣', label: 'Frames' },
   { id: 'layers', icon: '◫', label: 'Layers' },
@@ -1387,6 +1389,13 @@ export function MobileBottomTray({
             <div className="mt-4">
               <ImageInfoPanel imageSrc={imageSrc} />
             </div>
+          </Suspense>
+        )
+
+      case 'score':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <PhotoScorePanel canvasRef={canvasRef} />
           </Suspense>
         )
 

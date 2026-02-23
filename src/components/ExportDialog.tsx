@@ -66,10 +66,11 @@ export function ExportDialog({ canvasRef, onClose }: ExportDialogProps) {
   const [resizeW, setResizeW] = useState<number>(0)
   const [resizeH, setResizeH] = useState<number>(0)
   const [lockRatio, setLockRatio] = useState<boolean>(true)
-  const [watermark, setWatermark] = useState<boolean>(false)
-  const [watermarkText, setWatermarkText] = useState<string>('PhotosAI')
+  const [showSharePrompt, setShowSharePrompt] = useState<boolean>(false)
+  const [watermark, setWatermark] = useState<boolean>(true)
+  const [watermarkText, setWatermarkText] = useState<string>('photosai.vercel.app')
   const [watermarkPosition, setWatermarkPosition] = useState<string>('bottom-right')
-  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(0.3)
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(0.25)
   const aspectRatioRef = useRef<number>(1)
   const initRef = useRef<boolean>(false)
 
@@ -193,10 +194,18 @@ export function ExportDialog({ canvasRef, onClose }: ExportDialogProps) {
       ? exportCanvas.toDataURL(mimeType, quality / 100)
       : exportCanvas.toDataURL(mimeType)
     const link = document.createElement('a')
-    link.download = `edited-${Date.now()}.${ext}`
+    link.download = `photosai-${Date.now()}.${ext}`
     link.href = dataUrl
     link.click()
-    onClose()
+    setShowSharePrompt(true)
+  }
+
+  const suggestedCaption = 'Edited with PhotosAI - free AI photo editor'
+  const suggestedHashtags = '#PhotosAI #PhotoEditing #AIPhoto #FreePhotoEditor'
+
+  const handleShareTwitter = (): void => {
+    const text = encodeURIComponent(`${suggestedCaption} ${suggestedHashtags}`)
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent('https://photosai.vercel.app')}`, '_blank')
   }
 
   return (
@@ -396,20 +405,48 @@ export function ExportDialog({ canvasRef, onClose }: ExportDialogProps) {
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleDownload}
-              className="flex-1 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-zinc-900 font-medium transition-colors"
-            >
-              Download
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+          {showSharePrompt ? (
+            <div className="space-y-3 pt-2">
+              <div className="text-center">
+                <span className="text-lg">🎉</span>
+                <h3 className="text-sm font-semibold text-zinc-200 mt-1">Photo saved! Share your creation?</h3>
+              </div>
+              <div className="bg-zinc-800/60 rounded-lg p-3 border border-zinc-700/50">
+                <p className="text-xs text-zinc-400 mb-1">Suggested caption:</p>
+                <p className="text-xs text-zinc-300">{suggestedCaption}</p>
+                <p className="text-xs text-purple-400 mt-1">{suggestedHashtags}</p>
+                <button
+                  onClick={() => { navigator.clipboard?.writeText(`${suggestedCaption}\n\n${suggestedHashtags}\nhttps://photosai.vercel.app`) }}
+                  className="mt-2 text-[10px] text-indigo-400 hover:text-indigo-300"
+                >
+                  Copy caption
+                </button>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleShareTwitter} className="flex-1 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs transition-colors">
+                  Share on X
+                </button>
+                <button onClick={onClose} className="flex-1 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-medium transition-colors">
+                  Done
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={handleDownload}
+                className="flex-1 py-2.5 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-zinc-900 font-medium transition-colors"
+              >
+                Download
+              </button>
+              <button
+                onClick={onClose}
+                className="flex-1 py-2.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
