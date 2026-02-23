@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
+import { INITIAL_EDIT_STATE } from '../constants'
 import type { EditState } from '../types'
 
 const STORAGE_KEY = 'photosai-project'
@@ -48,7 +49,7 @@ export function useProjectSave(
     const project = load()
     if (!project) return false
     setImageSrc(project.imageSrc)
-    setEditState(project.editState)
+    setEditState({ ...INITIAL_EDIT_STATE, ...project.editState })
     return true
   }, [load, setImageSrc, setEditState])
 

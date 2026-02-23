@@ -235,6 +235,7 @@ export function FunAIPanel({ emotion, ageTransform, onUpdate, onSliderUpdate, pr
             min={-20}
             max={40}
             step={1}
+            defaultValue={0}
             onChange={handleAgeOffset}
             unit="raw"
           />

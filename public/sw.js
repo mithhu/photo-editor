@@ -1,4 +1,4 @@
-const CACHE_NAME = 'photosai-v8'
+const CACHE_NAME = 'photosai-v9'
 const STATIC_ASSETS = ['/', '/index.html', '/favicon.svg']
 
 self.addEventListener('install', (event) => {
@@ -54,6 +54,23 @@ self.addEventListener('fetch', (event) => {
 
   if (request.url.includes('/api/') || request.url.includes('.wasm')) return
 
+  // Navigation requests (HTML pages): always go network-first so deploys aren't stale
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(request))
+    )
+    return
+  }
+
+  // Other assets: stale-while-revalidate
   event.respondWith(
     caches.match(request).then((cached) => {
       const fetchPromise = fetch(request)
