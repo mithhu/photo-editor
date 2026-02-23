@@ -1436,6 +1436,7 @@ export function MobileBottomTray({
           {PRIMARY_TABS.map((cat) => (
             <button
               key={cat.id}
+              data-tour={cat.id}
               onClick={() => toggleCategory(cat.id)}
               className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors min-w-[48px] ${
                 activeCategory === cat.id

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useRef, useEffect } from 'react'
+import { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 import { INITIAL_EDIT_STATE } from './constants'
@@ -6,6 +6,7 @@ import { useEditHistory } from './hooks/useEditHistory'
 import { useProjectSave } from './hooks/useProjectSave'
 import { analyzeAndEnhance } from './utils/autoEnhance'
 import { ImageUpload, EditorHeader, ShortcutsOverlay } from './components'
+import { OnboardingTour } from './components/OnboardingTour'
 import type { EditState, TextOverlay, FaceKeypoint } from './types'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -90,6 +91,9 @@ export default function App() {
 
   const [beautyProcessing, setBeautyProcessing] = useState<boolean>(false)
   const [faceKeypoints, setFaceKeypoints] = useState<FaceKeypoint[] | null>(null)
+  const [showTour, setShowTour] = useState<boolean>(false)
+
+  const handleTourComplete = useCallback(() => setShowTour(false), [])
 
   const { clear, restore } = useProjectSave(imageSrc, editState, setEditState, setImageSrc)
 
@@ -225,6 +229,11 @@ export default function App() {
     setImageSrc(src)
     setOriginalImageSrc(src)
     reset()
+    try {
+      if (!localStorage.getItem('photosai-tour-completed')) {
+        setTimeout(() => setShowTour(true), 600)
+      }
+    } catch { /* storage unavailable */ }
   }
 
   const handleAutoEnhance = (): void => {
@@ -431,6 +440,8 @@ export default function App() {
           />
         </Suspense>
       </div>
+
+      <OnboardingTour active={showTour} onComplete={handleTourComplete} />
 
       <Suspense fallback={null}>
         {showCompare && (

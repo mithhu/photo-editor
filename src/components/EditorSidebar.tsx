@@ -174,7 +174,7 @@ export function EditorSidebar({
   return (
     <aside className="w-80 flex-shrink lg:min-h-0 flex flex-col gap-6 overflow-y-auto">
       {/* AI Tools */}
-      <div>
+      <div data-tour="ai">
         <AIToolsPanel
           imageSrc={imageSrc}
           onImageReplace={onImageReplace}
@@ -184,7 +184,7 @@ export function EditorSidebar({
       </div>
 
       {/* AI Beauty */}
-      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+      <div data-tour="beauty" className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
         <BeautyPanel
           beauty={editState.beauty}
           faceReshape={editState.faceReshape}
@@ -196,7 +196,7 @@ export function EditorSidebar({
       </div>
 
       {/* Fun AI */}
-      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+      <div data-tour="funai" className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
         <FunAIPanel
           emotion={editState.emotion}
           ageTransform={editState.ageTransform}
@@ -1354,7 +1354,7 @@ export function EditorSidebar({
           )}
         </div>
 
-        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
+        <div data-tour="filters" className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800 mt-6">
           <h3 className="text-sm font-semibold text-zinc-300 mb-4">Filters</h3>
           <div className="flex gap-1 flex-wrap mb-2">
             {(['popular', 'mood', 'style', 'aesthetic', 'trending', 'portrait', 'film', 'retro', 'creative', 'glow', 'y2k', 'film-analog', 'selfie', 'viral'] as const).map((cat) => (

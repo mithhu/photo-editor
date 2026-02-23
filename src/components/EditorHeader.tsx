@@ -161,6 +161,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
           </button>
 
           <button
+            data-tour="share"
             onClick={onDownload}
             className="ml-1 px-4 py-1.5 text-xs font-semibold bg-indigo-500 hover:bg-indigo-400 text-white rounded-lg transition-colors shadow-sm shadow-indigo-500/20"
           >
@@ -171,6 +172,7 @@ export function EditorHeader({ onUndo, onRedo, canUndo, canRedo, showCompare, on
         {/* Mobile: Share button + overflow menu */}
         <div className="lg:hidden flex items-center gap-0.5">
           <button
+            data-tour="share"
             onClick={handleNativeShare}
             disabled={sharing}
             title="Share"

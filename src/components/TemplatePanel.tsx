@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { EditState } from '../types'
+import { TEXT_TEMPLATES, TEXT_TEMPLATE_CATEGORIES } from '../data/textTemplates'
+import type { TextTemplate } from '../data/textTemplates'
 
 interface BuiltInTemplate {
   id: string
@@ -274,6 +276,8 @@ interface TemplatePanelProps {
 export function TemplatePanel({ applyChange, editState }: TemplatePanelProps) {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
+  const [textTemplateCategory, setTextTemplateCategory] = useState<string>('all')
+  const [appliedTextTemplateId, setAppliedTextTemplateId] = useState<string | null>(null)
 
   const isReset = editState?.preset === 'none' && editState?.vignette === 0 && editState?.textOverlays?.length === 0
   const effectiveSelectedId = isReset ? null : selectedTemplateId
@@ -364,6 +368,34 @@ export function TemplatePanel({ applyChange, editState }: TemplatePanelProps) {
     setSelectedTemplateId(template.id)
     template.apply(applyChange)
   }
+
+  const handleTextTemplate = (template: TextTemplate): void => {
+    setAppliedTextTemplateId(template.id)
+    const newOverlays = template.overlays.map((o, i) => ({
+      id: String(Date.now() + i),
+      text: 'Your text here',
+      x: 0.5,
+      y: 0.5,
+      fontSize: 32,
+      color: '#ffffff',
+      fontFamily: 'sans-serif',
+      fontWeight: 'normal',
+      fontStyle: 'normal',
+      textShadow: true,
+      opacity: 1,
+      rotation: 0,
+      ...o,
+    }))
+    applyChange((s) => ({
+      ...s,
+      textOverlays: [...(s.textOverlays || []), ...newOverlays],
+    }))
+  }
+
+  const filteredTextTemplates =
+    textTemplateCategory === 'all'
+      ? TEXT_TEMPLATES
+      : TEXT_TEMPLATES.filter((t) => t.category === textTemplateCategory)
 
   const categories = [
     { id: 'all', label: 'All' },
@@ -503,6 +535,54 @@ export function TemplatePanel({ applyChange, editState }: TemplatePanelProps) {
             </button>
           )
         })}
+      </div>
+
+      {/* ── Text Templates ─────────────────────────────── */}
+      <div className="mt-5 pt-4 border-t border-zinc-700">
+        <h3 className="text-sm font-semibold text-zinc-300 mb-3">Text Templates</h3>
+
+        <div className="flex gap-1 mb-3 overflow-x-auto">
+          {TEXT_TEMPLATE_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              type="button"
+              onClick={() => setTextTemplateCategory(cat.id)}
+              className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+                textTemplateCategory === cat.id
+                  ? 'bg-indigo-500 text-zinc-900'
+                  : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          {filteredTextTemplates.map((template) => {
+            const isApplied = appliedTextTemplateId === template.id
+            return (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => handleTextTemplate(template)}
+                className={`p-3 rounded-lg text-center transition-all border ${
+                  isApplied
+                    ? 'bg-indigo-500/20 border-indigo-500 ring-1 ring-indigo-500/50'
+                    : 'bg-zinc-800 hover:bg-zinc-700 border-zinc-700 hover:border-indigo-500/50'
+                }`}
+              >
+                <span className="text-2xl block mb-1">{template.preview}</span>
+                <span className={`text-xs truncate block ${isApplied ? 'text-indigo-300 font-medium' : 'text-zinc-300'}`}>
+                  {template.name}
+                </span>
+                {isApplied && (
+                  <span className="block text-[9px] text-indigo-400 mt-0.5">Applied</span>
+                )}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
