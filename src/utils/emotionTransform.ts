@@ -358,37 +358,39 @@ function gatherSurprised(
 
   const faceScale = ellipse.rx * 0.01
 
-  // Widen eyes (magnify eye region)
+  // Widen eyes (magnify eye region) — stronger scale for visible effect
   for (const eyeRegion of [FACE_REGIONS.leftEye, FACE_REGIONS.rightEye]) {
     const eye = getEyeCenter(keypoints, eyeRegion)
     if (!eye) continue
-    const radius = eye.radius * 2.5
+    const radius = eye.radius * 3.0
     addRegionMagnify(dispXY, bx0, by0, bw, bh, w, h,
-      eye.x, eye.y, radius, strength * 0.12)
+      eye.x, eye.y, radius, strength * 0.2)
   }
 
   // Open mouth: pull upper lip up, lower lip down
   const upperLip = keypoints[13]
   const lowerLip = keypoints[14]
   if (upperLip && lowerLip) {
-    const radius = ellipse.rx * 0.3
-    const openAmount = faceScale * strength * 12
+    const radius = ellipse.rx * 0.35
+    const openAmount = faceScale * strength * 18
     addLandmarkDisplacement(dispXY, bx0, by0, bw, bh, w, h,
       upperLip.x, upperLip.y, 0, -openAmount, radius, 1)
     addLandmarkDisplacement(dispXY, bx0, by0, bw, bh, w, h,
-      lowerLip.x, lowerLip.y, 0, openAmount, radius, 1)
+      lowerLip.x, lowerLip.y, 0, openAmount * 1.2, radius, 1)
   }
 
-  // Raise all eyebrow points upward
+  // Raise eyebrows — use brow center rather than each point to avoid artifacts
   for (const browRegion of [FACE_REGIONS.leftEyebrow, FACE_REGIONS.rightEyebrow]) {
-    for (const idx of browRegion) {
-      const pt = keypoints[idx]
-      if (!pt) continue
-      const radius = ellipse.rx * 0.18
-      const upAmount = -faceScale * strength * 10
-      addLandmarkDisplacement(dispXY, bx0, by0, bw, bh, w, h,
-        pt.x, pt.y, 0, upAmount, radius, 1)
-    }
+    const pts = browRegion.map(i => keypoints[i]).filter(Boolean)
+    if (pts.length < 3) continue
+    let bcx = 0, bcy = 0
+    pts.forEach(p => { bcx += p.x; bcy += p.y })
+    bcx /= pts.length
+    bcy /= pts.length
+    const radius = ellipse.rx * 0.35
+    const upAmount = -faceScale * strength * 16
+    addLandmarkDisplacement(dispXY, bx0, by0, bw, bh, w, h,
+      bcx, bcy, 0, upAmount, radius, 1)
   }
 }
 

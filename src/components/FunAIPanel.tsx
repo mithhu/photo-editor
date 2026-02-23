@@ -149,6 +149,7 @@ export function FunAIPanel({ emotion, ageTransform, onUpdate, onSliderUpdate, pr
                 value={emotion.intensity}
                 min={0}
                 max={100}
+                step={1}
                 onChange={handleEmotionIntensity}
                 unit="%"
               />
@@ -233,13 +234,16 @@ export function FunAIPanel({ emotion, ageTransform, onUpdate, onSliderUpdate, pr
             value={ageTransform.offset}
             min={-20}
             max={40}
+            step={1}
             onChange={handleAgeOffset}
+            unit="raw"
           />
           <Slider
             label="Intensity"
             value={ageTransform.intensity}
             min={0}
             max={100}
+            step={1}
             onChange={handleAgeIntensity}
             unit="%"
           />

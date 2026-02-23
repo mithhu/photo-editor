@@ -134,8 +134,8 @@ function buildAgingDisplacement(
   // A) Widen jawline (sagging)
   const jawPts = FACE_REGIONS.jawline.map(i => keypoints[i]).filter(Boolean)
   if (jawPts.length > 4) {
-    const pushOut = strength * 0.04
-    const sagDown = strength * 0.03
+    const pushOut = strength * 0.07
+    const sagDown = strength * 0.05
     const padX = rx * 1.3
     const padY = ry * 0.6
     const regionCy = cy + ry * 0.3
@@ -221,12 +221,12 @@ function drawWrinkleLines(
   keypoints: FaceKeypoint[],
   strength: number
 ): void {
-  const alpha = 0.08 * strength
+  const alpha = 0.15 * strength
   if (alpha < 0.002) return
 
   ctx.save()
-  ctx.strokeStyle = `rgba(0,0,0,${clamp(alpha, 0, 0.25)})`
-  ctx.lineWidth = 1
+  ctx.strokeStyle = `rgba(0,0,0,${clamp(alpha, 0, 0.4)})`
+  ctx.lineWidth = 1.5
   ctx.lineCap = 'round'
 
   // Forehead wrinkles: horizontal wavy lines between top of head (10) and eyebrows
@@ -338,8 +338,8 @@ function applySkinTexture(
   strength: number
 ): void {
   const { data, width, height } = imageData
-  const noiseAmp = 8 * strength
-  const desatAmount = clamp(strength * 0.15, 0, 0.4)
+  const noiseAmp = 12 * strength
+  const desatAmount = clamp(strength * 0.25, 0, 0.5)
 
   for (let i = 0; i < width * height; i++) {
     if (!skinMask[i]) continue
@@ -394,7 +394,7 @@ function applyHairGrey(
   const hairLeft = Math.max(0, Math.floor(minTopX - 15))
   const hairRight = Math.min(width - 1, Math.ceil(maxTopX + 15))
 
-  const greyBlend = clamp(strength * 0.4, 0, 0.7)
+  const greyBlend = clamp(strength * 0.6, 0, 0.8)
 
   for (let y = hairTop; y <= hairBottom; y++) {
     for (let x = hairLeft; x <= hairRight; x++) {

@@ -26,7 +26,8 @@ export function Slider({ label, value, onChange, min = 0, max = 2, step = 0.01, 
   } else if (unit === '%') {
     displayValue = `${Math.round(value)}%`
   } else if (unit === 'raw') {
-    displayValue = `${Math.round(value)}`
+    const rv = Math.round(value)
+    displayValue = isSigned && rv > 0 ? `+${rv}` : `${rv}`
   } else if (isIntegerRange) {
     displayValue = `${Math.round(value)}`
   } else if (isSigned) {
