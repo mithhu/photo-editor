@@ -1,5 +1,10 @@
-import { useState, useRef, useMemo, type RefObject, type ChangeEvent } from 'react'
+import { useState, useRef, useMemo, useCallback, type RefObject, type ChangeEvent } from 'react'
 import { removeBackground } from '../utils/backgroundRemoval'
+import {
+  SOLID_COLORS, GRADIENT_PRESETS, SCENE_PRESETS,
+  replaceBackgroundSolid, replaceBackgroundGradient, replaceBackgroundScene, replaceBackgroundBlur,
+  type GradientConfig,
+} from '../utils/backgroundReplace'
 import { detectSubjects, computeSmartCrop } from '../utils/smartCrop'
 import { usePortraitCrop } from '../hooks/usePortraitCrop'
 import { applyStyleTransfer, STYLE_PRESETS } from '../utils/styleTransfer'
@@ -60,11 +65,19 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
   const [denoiseStrength, setDenoiseStrength] = useState<number>(0.5)
   const [denoiseError, setDenoiseError] = useState<string | null>(null)
 
+  const [bgRemovedUrl, setBgRemovedUrl] = useState<string | null>(null)
+  const [bgReplaceTab, setBgReplaceTab] = useState<'solid' | 'gradient' | 'scene' | 'blur'>('solid')
+  const [bgReplaceLoading, setBgReplaceLoading] = useState<boolean>(false)
+  const [blurAmount, setBlurAmount] = useState<number>(20)
+  const [customColor, setCustomColor] = useState<string>('#3b82f6')
+  const originalSrcRef = useRef<string | null>(imageSrc)
+
   const styleFileRef = useRef<HTMLInputElement>(null)
   const styleImages = useMemo(() => getStyleImages(), [])
 
   const handleRemoveBackground = async (): Promise<void> => {
     if (!imageSrc) return
+    originalSrcRef.current = imageSrc
     setBgLoading(true)
     setBgError(null)
     setBgProgress({ key: 'loading', percent: 0 })
@@ -72,6 +85,7 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
       const resultUrl = await removeBackground(imageSrc, (progress) => {
         setBgProgress(progress)
       })
+      setBgRemovedUrl(resultUrl)
       onImageReplace(resultUrl)
     } catch (err: unknown) {
       setBgError(err instanceof Error ? err.message : 'Background removal failed')
@@ -80,6 +94,36 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
       setBgProgress(null)
     }
   }
+
+  const applyBgReplace = useCallback(async (type: string, value: string | GradientConfig | { id: string; name: string; colors: string[]; angle: number }) => {
+    if (!bgRemovedUrl) return
+    setBgReplaceLoading(true)
+    try {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = rej; img.src = bgRemovedUrl })
+      const fgCanvas = document.createElement('canvas')
+      fgCanvas.width = img.naturalWidth
+      fgCanvas.height = img.naturalHeight
+      fgCanvas.getContext('2d')!.drawImage(img, 0, 0)
+
+      let result: string
+      if (type === 'solid') {
+        result = replaceBackgroundSolid(fgCanvas, value as string)
+      } else if (type === 'gradient') {
+        result = replaceBackgroundGradient(fgCanvas, value as GradientConfig)
+      } else if (type === 'scene') {
+        result = replaceBackgroundScene(fgCanvas, value as { id: string; name: string; colors: string[]; angle: number })
+      } else {
+        result = await replaceBackgroundBlur(fgCanvas, originalSrcRef.current || '', blurAmount)
+      }
+      onImageReplace(result)
+    } catch {
+      setBgError('Background replacement failed')
+    } finally {
+      setBgReplaceLoading(false)
+    }
+  }, [bgRemovedUrl, blurAmount, onImageReplace])
 
   const handleSmartCrop = async (): Promise<void> => {
     if (!imageSrc) return
@@ -229,6 +273,145 @@ export function AIToolsPanel({ imageSrc, onImageReplace, canvasRef, onApplyChang
           )}
         </div>
       </div>
+
+      {/* Background Replacement */}
+      {bgRemovedUrl && (
+        <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+          <h3 className="text-sm font-semibold text-zinc-300 mb-2">Replace Background</h3>
+          <p className="text-[10px] text-zinc-500 mb-3">Choose a new background for your image.</p>
+
+          <div className="flex gap-1 mb-3">
+            {([
+              { id: 'solid' as const, label: 'Solid' },
+              { id: 'gradient' as const, label: 'Gradient' },
+              { id: 'scene' as const, label: 'Scene' },
+              { id: 'blur' as const, label: 'Blur' },
+            ]).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setBgReplaceTab(tab.id)}
+                className={`flex-1 py-1.5 text-xs rounded-lg font-medium transition-colors ${
+                  bgReplaceTab === tab.id ? 'bg-purple-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {bgReplaceLoading && (
+            <div className="flex items-center justify-center py-3 text-xs text-purple-400 animate-pulse">Applying...</div>
+          )}
+
+          {bgReplaceTab === 'solid' && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-8 gap-1.5">
+                {SOLID_COLORS.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => applyBgReplace('solid', c.color)}
+                    disabled={bgReplaceLoading}
+                    title={c.name}
+                    className="w-full aspect-square rounded-lg border-2 border-zinc-700 hover:border-purple-500 transition-colors disabled:opacity-50"
+                    style={{ backgroundColor: c.color }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="color"
+                  value={customColor}
+                  onChange={(e) => setCustomColor(e.target.value)}
+                  className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
+                />
+                <button
+                  onClick={() => applyBgReplace('solid', customColor)}
+                  disabled={bgReplaceLoading}
+                  className="flex-1 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Apply Custom Color
+                </button>
+              </div>
+            </div>
+          )}
+
+          {bgReplaceTab === 'gradient' && (
+            <div className="grid grid-cols-4 gap-2">
+              {GRADIENT_PRESETS.map((g) => {
+                const angle = g.config.angle
+                const bgStyle = `linear-gradient(${angle}deg, ${g.config.color1}, ${g.config.color2})`
+                return (
+                  <button
+                    key={g.id}
+                    onClick={() => applyBgReplace('gradient', g.config)}
+                    disabled={bgReplaceLoading}
+                    title={g.name}
+                    className="flex flex-col items-center gap-1 group disabled:opacity-50"
+                  >
+                    <div
+                      className="w-full aspect-square rounded-lg border-2 border-zinc-700 group-hover:border-purple-500 transition-colors"
+                      style={{ background: bgStyle }}
+                    />
+                    <span className="text-[9px] text-zinc-500 group-hover:text-zinc-300">{g.name}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {bgReplaceTab === 'scene' && (
+            <div className="grid grid-cols-4 gap-2">
+              {SCENE_PRESETS.map((s) => {
+                const stops = s.colors.map((c, i) => `${c} ${(i / Math.max(1, s.colors.length - 1)) * 100}%`).join(', ')
+                const bgStyle = `linear-gradient(${s.angle}deg, ${stops})`
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => applyBgReplace('scene', s)}
+                    disabled={bgReplaceLoading}
+                    title={s.name}
+                    className="flex flex-col items-center gap-1 group disabled:opacity-50"
+                  >
+                    <div
+                      className="w-full aspect-square rounded-lg border-2 border-zinc-700 group-hover:border-purple-500 transition-colors"
+                      style={{ background: bgStyle }}
+                    />
+                    <span className="text-[9px] text-zinc-500 group-hover:text-zinc-300">{s.name}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {bgReplaceTab === 'blur' && (
+            <div className="space-y-3">
+              <p className="text-[10px] text-zinc-500">Blur the original background behind the subject.</p>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-zinc-400">Blur Amount</span>
+                  <span className="text-zinc-300">{blurAmount}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={5}
+                  max={50}
+                  step={1}
+                  value={blurAmount}
+                  onChange={(e) => setBlurAmount(parseInt(e.target.value))}
+                  className="w-full h-2 bg-zinc-700 rounded-lg appearance-none accent-purple-500 cursor-pointer"
+                />
+              </div>
+              <button
+                onClick={() => applyBgReplace('blur', '')}
+                disabled={bgReplaceLoading}
+                className="w-full py-2 text-sm bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {bgReplaceLoading ? 'Applying...' : 'Apply Blurred Background'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Smart Auto-Crop */}
       <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
