@@ -1,12 +1,16 @@
 import { useState, useCallback, type ReactNode, type ChangeEvent } from 'react'
 
+interface CellRect {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 interface CollageLayout {
   id: string
   name: string
-  cols: number
-  rows: number
-  cells: number
-  custom?: boolean
+  cells: CellRect[]
 }
 
 interface OutputSize {
@@ -17,13 +21,175 @@ interface OutputSize {
 }
 
 const COLLAGE_LAYOUTS: CollageLayout[] = [
-  { id: 'grid-2', name: '2 Photos', cols: 2, rows: 1, cells: 2 },
-  { id: 'grid-3h', name: '3 Horizontal', cols: 3, rows: 1, cells: 3 },
-  { id: 'grid-3v', name: '3 Vertical', cols: 1, rows: 3, cells: 3 },
-  { id: 'grid-4', name: '4 Grid', cols: 2, rows: 2, cells: 4 },
-  { id: 'grid-6', name: '6 Grid', cols: 3, rows: 2, cells: 6 },
-  { id: 'left-right', name: '1+2', cols: 2, rows: 2, custom: true, cells: 3 },
-  { id: 'top-bottom', name: '2+1', cols: 2, rows: 2, custom: true, cells: 3 },
+  {
+    id: 'grid-2',
+    name: '2 Photos',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 1 },
+      { x: 0.5, y: 0, w: 0.5, h: 1 },
+    ],
+  },
+  {
+    id: 'grid-3h',
+    name: '3 Horizontal',
+    cells: [
+      { x: 0, y: 0, w: 1 / 3, h: 1 },
+      { x: 1 / 3, y: 0, w: 1 / 3, h: 1 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 1 },
+    ],
+  },
+  {
+    id: 'grid-3v',
+    name: '3 Vertical',
+    cells: [
+      { x: 0, y: 0, w: 1, h: 1 / 3 },
+      { x: 0, y: 1 / 3, w: 1, h: 1 / 3 },
+      { x: 0, y: 2 / 3, w: 1, h: 1 / 3 },
+    ],
+  },
+  {
+    id: 'grid-4',
+    name: '4 Grid',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
+    ],
+  },
+  {
+    id: 'grid-6',
+    name: '6 Grid',
+    cells: [
+      { x: 0, y: 0, w: 1 / 3, h: 0.5 },
+      { x: 1 / 3, y: 0, w: 1 / 3, h: 0.5 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 0.5 },
+      { x: 0, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 1 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 2 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+    ],
+  },
+  {
+    id: 'left-right',
+    name: '1+2',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 1 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0.5, w: 0.5, h: 0.5 },
+    ],
+  },
+  {
+    id: 'top-bottom',
+    name: '2+1',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 1, h: 0.5 },
+    ],
+  },
+  {
+    id: '5-grid',
+    name: '5 Grid',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 0.5 },
+      { x: 0.5, y: 0, w: 0.5, h: 0.5 },
+      { x: 0, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 1 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+      { x: 2 / 3, y: 0.5, w: 1 / 3, h: 0.5 },
+    ],
+  },
+  {
+    id: '5-focus',
+    name: '5 Focus',
+    cells: [
+      { x: 0, y: 0, w: 0.6, h: 1 },
+      { x: 0.6, y: 0, w: 0.4, h: 0.25 },
+      { x: 0.6, y: 0.25, w: 0.4, h: 0.25 },
+      { x: 0.6, y: 0.5, w: 0.4, h: 0.25 },
+      { x: 0.6, y: 0.75, w: 0.4, h: 0.25 },
+    ],
+  },
+  {
+    id: '6-mosaic',
+    name: '6 Mosaic',
+    cells: [
+      { x: 0, y: 0, w: 0.5, h: 1 / 3 },
+      { x: 0.5, y: 0, w: 0.5, h: 1 / 3 },
+      { x: 0, y: 1 / 3, w: 0.5, h: 1 / 3 },
+      { x: 0.5, y: 1 / 3, w: 0.5, h: 1 / 3 },
+      { x: 0, y: 2 / 3, w: 0.5, h: 1 / 3 },
+      { x: 0.5, y: 2 / 3, w: 0.5, h: 1 / 3 },
+    ],
+  },
+  {
+    id: '3-hero',
+    name: '3 Hero',
+    cells: [
+      { x: 0, y: 0, w: 1, h: 0.6 },
+      { x: 0, y: 0.6, w: 0.5, h: 0.4 },
+      { x: 0.5, y: 0.6, w: 0.5, h: 0.4 },
+    ],
+  },
+  {
+    id: '4-cinema',
+    name: '4 Cinema',
+    cells: [
+      { x: 0, y: 0, w: 0.25, h: 1 },
+      { x: 0.25, y: 0, w: 0.25, h: 1 },
+      { x: 0.5, y: 0, w: 0.25, h: 1 },
+      { x: 0.75, y: 0, w: 0.25, h: 1 },
+    ],
+  },
+  {
+    id: 'diagonal-2',
+    name: 'Top Heavy',
+    cells: [
+      { x: 0, y: 0, w: 1, h: 0.65 },
+      { x: 0, y: 0.65, w: 1, h: 0.35 },
+    ],
+  },
+  {
+    id: '9-grid',
+    name: '9 Grid',
+    cells: [
+      { x: 0, y: 0, w: 1 / 3, h: 1 / 3 },
+      { x: 1 / 3, y: 0, w: 1 / 3, h: 1 / 3 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 1 / 3 },
+      { x: 0, y: 1 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 1 / 3, y: 1 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 2 / 3, y: 1 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 0, y: 2 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 1 / 3, y: 2 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 2 / 3, y: 2 / 3, w: 1 / 3, h: 1 / 3 },
+    ],
+  },
+  {
+    id: '3-vert',
+    name: '3 Strips',
+    cells: [
+      { x: 0, y: 0, w: 1 / 3, h: 1 },
+      { x: 1 / 3, y: 0, w: 1 / 3, h: 1 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 1 },
+    ],
+  },
+  {
+    id: '4-quad-focus',
+    name: '4 Quad Focus',
+    cells: [
+      { x: 0, y: 0, w: 2 / 3, h: 2 / 3 },
+      { x: 2 / 3, y: 0, w: 1 / 3, h: 1 / 3 },
+      { x: 2 / 3, y: 1 / 3, w: 1 / 3, h: 1 / 3 },
+      { x: 0, y: 2 / 3, w: 2 / 3, h: 1 / 3 },
+    ],
+  },
+  {
+    id: '2-unequal',
+    name: '2 Unequal',
+    cells: [
+      { x: 0, y: 0, w: 0.65, h: 1 },
+      { x: 0.65, y: 0, w: 0.35, h: 1 },
+    ],
+  },
 ]
 
 const OUTPUT_SIZES: OutputSize[] = [
@@ -79,42 +245,14 @@ function drawImageCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x:
   ctx.restore()
 }
 
-async function drawCustomLayout(ctx: CanvasRenderingContext2D, layoutId: string, images: Record<number, string>, canvasW: number, canvasH: number, gap: number, radius: number): Promise<void> {
-  if (layoutId === 'left-right') {
-    const leftW = (canvasW - gap * 3) * 0.5
-    const rightW = (canvasW - gap * 3) * 0.5
-    const halfH = (canvasH - gap * 3) / 2
-
-    if (images[0]) {
-      const img = await loadImage(images[0])
-      drawImageCover(ctx, img, gap, gap, leftW, canvasH - gap * 2, radius)
-    }
-    if (images[1]) {
-      const img = await loadImage(images[1])
-      drawImageCover(ctx, img, leftW + gap * 2, gap, rightW, halfH, radius)
-    }
-    if (images[2]) {
-      const img = await loadImage(images[2])
-      drawImageCover(ctx, img, leftW + gap * 2, halfH + gap * 2, rightW, halfH, radius)
-    }
-  } else if (layoutId === 'top-bottom') {
-    const topH = (canvasH - gap * 3) * 0.5
-    const bottomH = (canvasH - gap * 3) * 0.5
-    const halfW = (canvasW - gap * 3) / 2
-
-    if (images[0]) {
-      const img = await loadImage(images[0])
-      drawImageCover(ctx, img, gap, gap, halfW, topH, radius)
-    }
-    if (images[1]) {
-      const img = await loadImage(images[1])
-      drawImageCover(ctx, img, halfW + gap * 2, gap, halfW, topH, radius)
-    }
-    if (images[2]) {
-      const img = await loadImage(images[2])
-      drawImageCover(ctx, img, gap, topH + gap * 2, canvasW - gap * 2, bottomH, radius)
-    }
-  }
+function computeCellPixels(cell: CellRect, canvasW: number, canvasH: number, gap: number): { px: number; py: number; pw: number; ph: number } {
+  const usableW = canvasW - gap * 2
+  const usableH = canvasH - gap * 2
+  const px = gap + cell.x * usableW + (cell.x > 0 ? gap * 0.5 : 0)
+  const py = gap + cell.y * usableH + (cell.y > 0 ? gap * 0.5 : 0)
+  const pw = cell.w * usableW - (cell.x > 0 ? gap * 0.5 : 0) - (cell.x + cell.w < 1 ? gap * 0.5 : 0)
+  const ph = cell.h * usableH - (cell.y > 0 ? gap * 0.5 : 0) - (cell.y + cell.h < 1 ? gap * 0.5 : 0)
+  return { px, py, pw, ph }
 }
 
 interface CollageBuilderProps {
@@ -147,7 +285,15 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
     input.click()
   }, [])
 
-  const filledCount = Object.keys(images).filter((k) => Number(k) < layout.cells).length
+  const removeImage = useCallback((cellIndex: number): void => {
+    setImages((prev) => {
+      const next = { ...prev }
+      delete next[cellIndex]
+      return next
+    })
+  }, [])
+
+  const filledCount = Object.keys(images).filter((k) => Number(k) < layout.cells.length).length
   const canCreate = filledCount > 0
 
   const createCollage = useCallback(async (): Promise<void> => {
@@ -161,25 +307,11 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
       ctx.fillStyle = bgColor
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-      const { cols, rows, cells, custom, id } = layout
-
-      if (custom) {
-        await drawCustomLayout(ctx, id, images, canvas.width, canvas.height, gap, radius)
-      } else {
-        const cellW = (canvas.width - gap * (cols + 1)) / cols
-        const cellH = (canvas.height - gap * (rows + 1)) / rows
-
-        for (let i = 0; i < cells; i++) {
-          const col = i % cols
-          const row = Math.floor(i / cols)
-          const x = gap + col * (cellW + gap)
-          const y = gap + row * (cellH + gap)
-
-          if (images[i]) {
-            const img = await loadImage(images[i])
-            drawImageCover(ctx, img, x, y, cellW, cellH, radius)
-          }
-        }
+      for (let i = 0; i < layout.cells.length; i++) {
+        if (!images[i]) continue
+        const { px, py, pw, ph } = computeCellPixels(layout.cells[i], canvas.width, canvas.height, gap)
+        const img = await loadImage(images[i])
+        drawImageCover(ctx, img, px, py, pw, ph, radius)
       }
 
       onComplete(canvas.toDataURL('image/png'))
@@ -192,12 +324,24 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
     (index: number): ReactNode => {
       if (images[index]) {
         return (
-          <img
-            src={images[index]}
-            alt=""
-            className="w-full h-full object-cover"
-            style={{ borderRadius: `${radius}px` }}
-          />
+          <div className="relative w-full h-full group/cell">
+            <img
+              src={images[index]}
+              alt=""
+              className="w-full h-full object-cover"
+              style={{ borderRadius: `${radius}px` }}
+            />
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                removeImage(index)
+              }}
+              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 text-white text-xs flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity hover:bg-red-500/90"
+              title="Remove image"
+            >
+              ×
+            </button>
+          </div>
         )
       }
       return (
@@ -209,133 +353,63 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
         </div>
       )
     },
-    [images, radius],
+    [images, radius, removeImage],
   )
 
   const renderPreviewCells = (): ReactNode => {
-    const { cols, cells: count, custom, id } = layout
-
-    if (custom) {
-      if (id === 'left-right') {
-        return (
-          <div
-            className="grid h-full"
-            style={{
-              gridTemplateColumns: '1fr 1fr',
-              gridTemplateRows: '1fr 1fr',
-              gap: `${gap}px`,
-              backgroundColor: bgColor,
-              padding: `${gap}px`,
-            }}
-          >
-            <div
-              className="row-span-2 cursor-pointer overflow-hidden"
-              onClick={() => handleCellClick(0)}
-            >
-              {renderCell(0)}
-            </div>
-            <div className="cursor-pointer overflow-hidden" onClick={() => handleCellClick(1)}>
-              {renderCell(1)}
-            </div>
-            <div className="cursor-pointer overflow-hidden" onClick={() => handleCellClick(2)}>
-              {renderCell(2)}
-            </div>
-          </div>
-        )
-      }
-      if (id === 'top-bottom') {
-        return (
-          <div
-            className="grid h-full"
-            style={{
-              gridTemplateColumns: '1fr 1fr',
-              gridTemplateRows: '1fr 1fr',
-              gap: `${gap}px`,
-              backgroundColor: bgColor,
-              padding: `${gap}px`,
-            }}
-          >
-            <div className="cursor-pointer overflow-hidden" onClick={() => handleCellClick(0)}>
-              {renderCell(0)}
-            </div>
-            <div className="cursor-pointer overflow-hidden" onClick={() => handleCellClick(1)}>
-              {renderCell(1)}
-            </div>
-            <div
-              className="col-span-2 cursor-pointer overflow-hidden"
-              onClick={() => handleCellClick(2)}
-            >
-              {renderCell(2)}
-            </div>
-          </div>
-        )
-      }
-    }
-
-    const cells: ReactNode[] = []
-    for (let i = 0; i < count; i++) {
-      cells.push(
-        <div
-          key={i}
-          className="cursor-pointer overflow-hidden"
-          onClick={() => handleCellClick(i)}
-        >
-          {renderCell(i)}
-        </div>,
-      )
-    }
+    const g = gap
     return (
       <div
-        className="grid h-full"
-        style={{
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gap: `${gap}px`,
-          backgroundColor: bgColor,
-          padding: `${gap}px`,
-        }}
+        className="relative w-full h-full"
+        style={{ backgroundColor: bgColor }}
       >
-        {cells}
+        {layout.cells.map((cell, i) => {
+          const gapBefore = (x: number) => (x > 0 ? g / 2 : g)
+          const gapAfter = (x: number, w: number) => (x + w < 1 ? g / 2 : g)
+
+          const leftPx = gapBefore(cell.x)
+          const topPx = gapBefore(cell.y)
+          const rightPx = gapAfter(cell.x, cell.w)
+          const bottomPx = gapAfter(cell.y, cell.h)
+
+          return (
+            <div
+              key={i}
+              className="absolute cursor-pointer overflow-hidden"
+              style={{
+                left: `calc(${cell.x * 100}% + ${leftPx}px)`,
+                top: `calc(${cell.y * 100}% + ${topPx}px)`,
+                width: `calc(${cell.w * 100}% - ${leftPx + rightPx}px)`,
+                height: `calc(${cell.h * 100}% - ${topPx + bottomPx}px)`,
+              }}
+              onClick={() => handleCellClick(i)}
+            >
+              {renderCell(i)}
+            </div>
+          )
+        })}
       </div>
     )
   }
 
   const renderLayoutThumbnail = (l: CollageLayout): ReactNode => {
     const isActive = layout.id === l.id
-    if (l.custom) {
-      if (l.id === 'left-right') {
-        return (
-          <div
-            className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
-            style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', padding: '2px' }}
-          >
-            <div className="row-span-2 bg-zinc-500 rounded-sm" />
-            <div className="bg-zinc-500 rounded-sm" />
-            <div className="bg-zinc-500 rounded-sm" />
-          </div>
-        )
-      }
-      return (
-        <div
-          className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
-          style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '2px', padding: '2px' }}
-        >
-          <div className="bg-zinc-500 rounded-sm" />
-          <div className="bg-zinc-500 rounded-sm" />
-          <div className="col-span-2 bg-zinc-500 rounded-sm" />
-        </div>
-      )
-    }
-
-    const cells: ReactNode[] = []
-    for (let i = 0; i < l.cells; i++) {
-      cells.push(<div key={i} className="bg-zinc-500 rounded-sm" />)
-    }
     return (
       <div
-        className={`grid h-10 rounded border-2 transition-colors ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
-        style={{ gridTemplateColumns: `repeat(${l.cols}, 1fr)`, gap: '2px', padding: '2px' }}
+        className={`relative h-10 rounded border-2 transition-colors overflow-hidden ${isActive ? 'border-indigo-500' : 'border-zinc-600 hover:border-zinc-500'}`}
       >
-        {cells}
+        {l.cells.map((cell, i) => (
+          <div
+            key={i}
+            className="absolute bg-zinc-500 rounded-sm"
+            style={{
+              left: `${cell.x * 100 + 4}%`,
+              top: `${cell.y * 100 + 4}%`,
+              width: `${cell.w * 100 - 8}%`,
+              height: `${cell.h * 100 - 8}%`,
+            }}
+          />
+        ))}
       </div>
     )
   }
@@ -389,7 +463,7 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
             <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
               Layout
             </h3>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto pr-1">
               {COLLAGE_LAYOUTS.map((l) => (
                 <button
                   key={l.id}
@@ -401,7 +475,7 @@ export function CollageBuilder({ onComplete, onBack }: CollageBuilderProps): Rea
                   title={l.name}
                 >
                   {renderLayoutThumbnail(l)}
-                  <span className="text-[10px] text-zinc-500 mt-0.5 block text-center">
+                  <span className="text-[10px] text-zinc-500 mt-0.5 block text-center truncate">
                     {l.name}
                   </span>
                 </button>

@@ -220,6 +220,13 @@ export interface EditState {
   makeup: MakeupSettings
   emotion: EmotionSettings
   ageTransform: AgeTransformSettings
+  effectOverlay: EffectOverlay
+}
+
+export interface EffectOverlay {
+  type: string
+  intensity: number
+  seed: number
 }
 
 export type EmotionType = 'none' | 'laugh' | 'cry' | 'angry' | 'surprised' | 'sad'

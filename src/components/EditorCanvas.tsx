@@ -4,6 +4,7 @@ import { getCropRegion } from '../utils/cropUtils'
 import { CropOverlay } from './CropOverlay'
 import { useThrottledDraw } from '../hooks/useThrottledDraw'
 import { applyLightLeak } from '../utils/lightLeaks'
+import { drawEffectOverlay } from '../utils/effectOverlays'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
 import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup, hasActiveEmotion, hasActiveAge, invalidateFaceCache, runBeautyPipeline } from '../utils/beautyPipeline'
@@ -313,6 +314,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     makeup,
     emotion,
     ageTransform,
+    effectOverlay,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -367,6 +369,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
   const hasSelectiveColor = !isComparing && selectiveColor?.enabled
   const hasGrain = !isComparing && grain && (grain.amount ?? 0) > 0
   const hasLightLeak = !isComparing && lightLeak && lightLeak.type !== 'none' && (lightLeak.intensity ?? 0) > 0
+  const hasEffectOverlay = !isComparing && effectOverlay && effectOverlay.type !== 'none' && (effectOverlay.intensity ?? 0) > 0
   const hasLUT = !isComparing && !!lut
   const hasGradientMap = !isComparing && gradientMap?.enabled
   const hasResize = !isComparing && resize && (resize.width > 0 || resize.height > 0)
@@ -430,10 +433,17 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       }
       ctx.putImageData(maskData, 0, 0)
     }
+    if (hasEffectOverlay) {
+      drawEffectOverlay(ctx, canvas.width, canvas.height, {
+        type: effectOverlay.type as import('../utils/effectOverlays').EffectOverlayType,
+        intensity: effectOverlay.intensity,
+        seed: effectOverlay.seed,
+      })
+    }
     if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
       drawFrame(ctx, displayW, displayH, frame)
     }
-  }, [isComparing, hasLightLeak, lightLeak, masks, frame])
+  }, [isComparing, hasLightLeak, lightLeak, masks, frame, hasEffectOverlay, effectOverlay])
 
   const displaySizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
 

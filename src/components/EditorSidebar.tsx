@@ -16,6 +16,7 @@ import { GradientMapPanel } from './GradientMapPanel'
 import { ChannelMixerPanel } from './ChannelMixerPanel'
 import { BeautyPanel } from './BeautyPanel'
 import { FunAIPanel } from './FunAIPanel'
+import { EffectsPanel } from './EffectsPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -204,6 +205,15 @@ export function EditorSidebar({
           onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
           processing={beautyProcessing}
           faceKeypoints={faceKeypoints}
+        />
+      </div>
+
+      {/* Effects Overlays */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <EffectsPanel
+          effectOverlay={editState.effectOverlay}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+          onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
         />
       </div>
 
