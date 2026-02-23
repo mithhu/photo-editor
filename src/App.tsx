@@ -285,7 +285,7 @@ export default function App() {
 
   if (!imageSrc) {
     return (
-      <div className="min-h-dvh flex flex-col items-center justify-center p-6">
+      <div className="min-h-dvh flex flex-col items-center justify-center p-6 safe-area-top">
         {uploadLoading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm">
             <div className="text-center">
@@ -348,7 +348,7 @@ export default function App() {
     }))
 
   return (
-    <div className="h-dvh flex flex-col overflow-hidden">
+    <div className="h-dvh flex flex-col overflow-hidden safe-area-top">
       {swRegistration && (
         <div className="flex items-center justify-center gap-3 px-4 py-2 bg-indigo-500 text-zinc-900 text-sm font-medium">
           <span>A new version is available!</span>
