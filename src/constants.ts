@@ -253,6 +253,58 @@ export const FILTER_PRESETS: FilterPresetConfig[] = [
   { id: 'duotone-blue', name: 'Duotone Blue', category: 'creative', ops: [{ type: 'grayscale', value: 1 }, { type: 'sepia', value: 1 }, { type: 'hue-rotate', value: -40 }, { type: 'saturate', value: 1.5 }] },
   { id: 'duotone-purple', name: 'Duotone Purple', category: 'creative', ops: [{ type: 'grayscale', value: 1 }, { type: 'sepia', value: 1 }, { type: 'hue-rotate', value: -60 }, { type: 'saturate', value: 1.3 }] },
   { id: 'radioactive', name: 'Radioactive', category: 'creative', ops: [{ type: 'hue-rotate', value: 60 }, { type: 'saturate', value: 1.6 }, { type: 'contrast', value: 1.3 }, { type: 'brightness', value: 0.95 }] },
+
+  // ── Glow ──
+  { id: 'glow-aura', name: 'Aura Glow', category: 'glow', ops: [{ type: 'brightness', value: 1.12 }, { type: 'contrast', value: 0.88 }, { type: 'sepia', value: 0.12 }, { type: 'saturate', value: 1.05 }] },
+  { id: 'glow-neon-aura', name: 'Neon Aura', category: 'glow', ops: [{ type: 'saturate', value: 1.4 }, { type: 'brightness', value: 1.1 }, { type: 'hue-rotate', value: 15 }, { type: 'contrast', value: 1.05 }] },
+  { id: 'glow-soft', name: 'Soft Glow', category: 'glow', ops: [{ type: 'contrast', value: 0.8 }, { type: 'brightness', value: 1.15 }, { type: 'saturate', value: 0.85 }, { type: 'sepia', value: 0.06 }] },
+  { id: 'glow-angel-light', name: 'Angel Light', category: 'glow', ops: [{ type: 'brightness', value: 1.2 }, { type: 'contrast', value: 0.78 }, { type: 'sepia', value: 0.1 }, { type: 'saturate', value: 0.9 }] },
+  { id: 'glow-halo', name: 'Halo', category: 'glow', ops: [{ type: 'brightness', value: 1.1 }, { type: 'contrast', value: 0.9 }, { type: 'sepia', value: 0.08 }, { type: 'saturate', value: 0.95 }] },
+  { id: 'glow-luminous', name: 'Luminous', category: 'glow', ops: [{ type: 'brightness', value: 1.08 }, { type: 'saturate', value: 1.15 }, { type: 'contrast', value: 0.9 }, { type: 'sepia', value: 0.05 }] },
+  { id: 'glow-fairy-dust', name: 'Fairy Dust', category: 'glow', ops: [{ type: 'brightness', value: 1.12 }, { type: 'hue-rotate', value: 10 }, { type: 'contrast', value: 0.88 }, { type: 'saturate', value: 1.05 }] },
+  { id: 'glow-radiance', name: 'Radiance', category: 'glow', ops: [{ type: 'brightness', value: 1.1 }, { type: 'sepia', value: 0.12 }, { type: 'saturate', value: 1.15 }, { type: 'contrast', value: 0.95 }] },
+
+  // ── Y2K ──
+  { id: 'y2k-cyber-pink', name: 'Cyber Pink', category: 'y2k', ops: [{ type: 'hue-rotate', value: 20 }, { type: 'saturate', value: 1.55 }, { type: 'brightness', value: 1.08 }, { type: 'contrast', value: 1.1 }] },
+  { id: 'y2k-digital-lavender', name: 'Digital Lavender', category: 'y2k', ops: [{ type: 'hue-rotate', value: -25 }, { type: 'saturate', value: 1.4 }, { type: 'brightness', value: 1.06 }, { type: 'contrast', value: 1.05 }] },
+  { id: 'y2k-bubblegum', name: 'Bubblegum', category: 'y2k', ops: [{ type: 'hue-rotate', value: 12 }, { type: 'saturate', value: 1.5 }, { type: 'brightness', value: 1.1 }, { type: 'contrast', value: 0.92 }] },
+  { id: 'y2k-chrome', name: 'Chrome', category: 'y2k', ops: [{ type: 'contrast', value: 1.35 }, { type: 'saturate', value: 0.75 }, { type: 'brightness', value: 1.08 }, { type: 'sepia', value: 0.05 }] },
+  { id: 'y2k-pixel-pop', name: 'Pixel Pop', category: 'y2k', ops: [{ type: 'saturate', value: 1.65 }, { type: 'contrast', value: 1.3 }, { type: 'brightness', value: 1.02 }] },
+  { id: 'y2k-electric-blue', name: 'Electric Blue', category: 'y2k', ops: [{ type: 'hue-rotate', value: -30 }, { type: 'saturate', value: 1.45 }, { type: 'contrast', value: 1.2 }, { type: 'brightness', value: 1.03 }] },
+  { id: 'y2k-candy', name: 'Candy', category: 'y2k', ops: [{ type: 'saturate', value: 1.5 }, { type: 'brightness', value: 1.08 }, { type: 'hue-rotate', value: 8 }, { type: 'contrast', value: 1.08 }] },
+  { id: 'y2k-holographic', name: 'Holographic', category: 'y2k', ops: [{ type: 'saturate', value: 1.45 }, { type: 'hue-rotate', value: 25 }, { type: 'brightness', value: 1.05 }, { type: 'contrast', value: 1.1 }] },
+
+  // ── Film Analog ──
+  { id: 'film-analog-kodak-gold', name: 'Kodak Gold', category: 'film-analog', ops: [{ type: 'sepia', value: 0.22 }, { type: 'saturate', value: 0.88 }, { type: 'brightness', value: 1.08 }, { type: 'contrast', value: 1.02 }] },
+  { id: 'film-analog-fuji-superia', name: 'Fuji Superia', category: 'film-analog', ops: [{ type: 'hue-rotate', value: 12 }, { type: 'saturate', value: 1.1 }, { type: 'contrast', value: 0.95 }, { type: 'brightness', value: 1.04 }] },
+  { id: 'film-analog-disposable', name: 'Disposable', category: 'film-analog', ops: [{ type: 'contrast', value: 0.85 }, { type: 'sepia', value: 0.15 }, { type: 'saturate', value: 0.82 }, { type: 'brightness', value: 1.06 }] },
+  { id: 'film-analog-expired', name: 'Expired Film', category: 'film-analog', ops: [{ type: 'contrast', value: 0.78 }, { type: 'sepia', value: 0.35 }, { type: 'saturate', value: 0.65 }, { type: 'brightness', value: 1.05 }] },
+  { id: 'film-analog-polaroid-fade', name: 'Polaroid Fade', category: 'film-analog', ops: [{ type: 'contrast', value: 0.82 }, { type: 'sepia', value: 0.18 }, { type: 'brightness', value: 1.12 }, { type: 'saturate', value: 0.85 }] },
+  { id: 'film-analog-cinestill', name: 'CineStill', category: 'film-analog', ops: [{ type: 'hue-rotate', value: 8 }, { type: 'sepia', value: 0.12 }, { type: 'brightness', value: 0.9 }, { type: 'contrast', value: 1.25 }, { type: 'saturate', value: 1.1 }] },
+  { id: 'film-analog-tri-x-400', name: 'Tri-X 400', category: 'film-analog', ops: [{ type: 'grayscale', value: 1 }, { type: 'contrast', value: 1.35 }, { type: 'brightness', value: 0.98 }] },
+  { id: 'film-analog-ektachrome', name: 'Ektachrome', category: 'film-analog', ops: [{ type: 'saturate', value: 1.5 }, { type: 'hue-rotate', value: -12 }, { type: 'contrast', value: 1.2 }, { type: 'brightness', value: 1.02 }] },
+
+  // ── Selfie ──
+  { id: 'selfie-glass-skin', name: 'Glass Skin', category: 'selfie', ops: [{ type: 'brightness', value: 1.12 }, { type: 'contrast', value: 0.85 }, { type: 'sepia', value: 0.08 }, { type: 'saturate', value: 0.95 }] },
+  { id: 'selfie-soft-focus', name: 'Soft Focus', category: 'selfie', ops: [{ type: 'contrast', value: 0.78 }, { type: 'brightness', value: 1.15 }, { type: 'saturate', value: 0.88 }] },
+  { id: 'selfie-peach-glow', name: 'Peach Glow', category: 'selfie', ops: [{ type: 'sepia', value: 0.12 }, { type: 'brightness', value: 1.1 }, { type: 'saturate', value: 1.12 }, { type: 'contrast', value: 0.95 }] },
+  { id: 'selfie-rose-tint', name: 'Rose Tint', category: 'selfie', ops: [{ type: 'hue-rotate', value: 5 }, { type: 'saturate', value: 1.15 }, { type: 'brightness', value: 1.08 }, { type: 'contrast', value: 0.98 }] },
+  { id: 'selfie-sun-kissed', name: 'Sun Kissed', category: 'selfie', ops: [{ type: 'sepia', value: 0.18 }, { type: 'brightness', value: 1.1 }, { type: 'saturate', value: 1.18 }, { type: 'contrast', value: 1.02 }] },
+  { id: 'selfie-porcelain', name: 'Porcelain', category: 'selfie', ops: [{ type: 'brightness', value: 1.14 }, { type: 'contrast', value: 0.8 }, { type: 'saturate', value: 0.8 }, { type: 'sepia', value: 0.04 }] },
+  { id: 'selfie-honey', name: 'Honey', category: 'selfie', ops: [{ type: 'sepia', value: 0.2 }, { type: 'saturate', value: 1.2 }, { type: 'contrast', value: 1.08 }, { type: 'brightness', value: 1.06 }] },
+  { id: 'selfie-dewy', name: 'Dewy', category: 'selfie', ops: [{ type: 'brightness', value: 1.1 }, { type: 'contrast', value: 0.88 }, { type: 'sepia', value: 0.06 }, { type: 'saturate', value: 1.1 }] },
+
+  // ── Viral ──
+  { id: 'viral-that-girl', name: 'That Girl', category: 'viral', ops: [{ type: 'brightness', value: 1.1 }, { type: 'sepia', value: 0.06 }, { type: 'saturate', value: 1.08 }, { type: 'contrast', value: 1.05 }] },
+  { id: 'viral-coquette', name: 'Coquette', category: 'viral', ops: [{ type: 'hue-rotate', value: 6 }, { type: 'contrast', value: 0.88 }, { type: 'brightness', value: 1.12 }, { type: 'saturate', value: 0.92 }] },
+  { id: 'viral-mob-wife', name: 'Mob Wife', category: 'viral', ops: [{ type: 'brightness', value: 0.88 }, { type: 'contrast', value: 1.3 }, { type: 'saturate', value: 0.78 }, { type: 'sepia', value: 0.15 }] },
+  { id: 'viral-vanilla-girl', name: 'Vanilla Girl', category: 'viral', ops: [{ type: 'brightness', value: 1.18 }, { type: 'contrast', value: 0.82 }, { type: 'sepia', value: 0.1 }, { type: 'saturate', value: 0.8 }] },
+  { id: 'viral-old-money', name: 'Old Money', category: 'viral', ops: [{ type: 'saturate', value: 0.72 }, { type: 'sepia', value: 0.18 }, { type: 'contrast', value: 1.12 }, { type: 'brightness', value: 1.02 }] },
+  { id: 'viral-clean-girl', name: 'Clean Girl', category: 'viral', ops: [{ type: 'brightness', value: 1.08 }, { type: 'contrast', value: 1.12 }, { type: 'saturate', value: 0.95 }] },
+  { id: 'viral-coastal-cowgirl', name: 'Coastal Cowgirl', category: 'viral', ops: [{ type: 'sepia', value: 0.12 }, { type: 'brightness', value: 1.08 }, { type: 'saturate', value: 1.15 }, { type: 'contrast', value: 1.02 }] },
+  { id: 'viral-tomato-girl', name: 'Tomato Girl', category: 'viral', ops: [{ type: 'hue-rotate', value: -8 }, { type: 'saturate', value: 1.4 }, { type: 'brightness', value: 1.08 }, { type: 'contrast', value: 1.05 }] },
+  { id: 'viral-quiet-luxury', name: 'Quiet Luxury', category: 'viral', ops: [{ type: 'saturate', value: 0.75 }, { type: 'hue-rotate', value: -8 }, { type: 'contrast', value: 1.1 }, { type: 'brightness', value: 1.04 }] },
+  { id: 'viral-dark-feminine', name: 'Dark Feminine', category: 'viral', ops: [{ type: 'brightness', value: 0.85 }, { type: 'contrast', value: 1.28 }, { type: 'saturate', value: 0.82 }, { type: 'sepia', value: 0.14 }] },
 ]
 
 export interface FramePresetConfig {

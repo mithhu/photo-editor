@@ -625,7 +625,7 @@ export function MobileBottomTray({
             <div>
               <h4 className="text-[10px] font-medium text-zinc-500/70 uppercase tracking-wider mb-1.5">Filters</h4>
               <div className="flex gap-1 flex-wrap mb-1.5">
-                {['popular', 'mood', 'style', 'aesthetic', 'trending', 'portrait', 'film', 'retro', 'creative'].map((cat) => (
+                {['popular', 'mood', 'style', 'aesthetic', 'trending', 'portrait', 'film', 'retro', 'creative', 'glow', 'y2k', 'film-analog', 'selfie', 'viral'].map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setFilterTab(cat)}

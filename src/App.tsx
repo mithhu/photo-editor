@@ -25,6 +25,9 @@ const MobileBottomTray = lazy(() =>
 const ShareModal = lazy(() =>
   import('./components/ShareModal').then((m) => ({ default: m.ShareModal }))
 )
+const BeforeAfterCard = lazy(() =>
+  import('./components/BeforeAfterCard').then((m) => ({ default: m.BeforeAfterCard }))
+)
 const ExportDialog = lazy(() =>
   import('./components/ExportDialog').then((m) => ({ default: m.ExportDialog }))
 )
@@ -55,7 +58,9 @@ export default function App() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [uploadLoading, setUploadLoading] = useState<boolean>(false)
   const [showShareModal, setShowShareModal] = useState<boolean>(false)
+  const [showBeforeAfter, setShowBeforeAfter] = useState<boolean>(false)
   const [showExportDialog, setShowExportDialog] = useState<boolean>(false)
+  const [originalImageSrc, setOriginalImageSrc] = useState<string | null>(null)
   const [showCompare, setShowCompare] = useState<boolean>(false)
   const [showShortcutsOverlay, setShowShortcutsOverlay] = useState<boolean>(false)
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
@@ -218,6 +223,7 @@ export default function App() {
 
   const handleImageLoad = (src: string): void => {
     setImageSrc(src)
+    setOriginalImageSrc(src)
     reset()
   }
 
@@ -439,6 +445,14 @@ export default function App() {
           <ShareModal
             canvasRef={canvasRef}
             onClose={() => setShowShareModal(false)}
+            onBeforeAfter={() => { setShowShareModal(false); setShowBeforeAfter(true) }}
+          />
+        )}
+        {showBeforeAfter && originalImageSrc && (
+          <BeforeAfterCard
+            originalSrc={originalImageSrc}
+            canvasRef={canvasRef}
+            onClose={() => setShowBeforeAfter(false)}
           />
         )}
         {showExportDialog && (

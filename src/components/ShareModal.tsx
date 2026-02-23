@@ -70,9 +70,10 @@ function CheckIcon(): React.JSX.Element {
 interface ShareModalProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   onClose: () => void
+  onBeforeAfter?: () => void
 }
 
-export function ShareModal({ canvasRef, onClose }: ShareModalProps) {
+export function ShareModal({ canvasRef, onClose, onBeforeAfter }: ShareModalProps) {
   const [copied, setCopied] = useState<boolean>(false)
   const [instaCopied, setInstaCopied] = useState<boolean>(false)
   const [twitterCopied, setTwitterCopied] = useState<boolean>(false)
@@ -165,6 +166,26 @@ export function ShareModal({ canvasRef, onClose }: ShareModalProps) {
         {error && (
           <div className="mx-5 mb-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
             {error}
+          </div>
+        )}
+
+        {onBeforeAfter && (
+          <div className="px-3 pb-2">
+            <button
+              onClick={onBeforeAfter}
+              className={`${btnClass} bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/30 hover:to-pink-600/30 text-purple-300 border border-purple-500/30 rounded-lg`}
+            >
+              <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="12" y1="3" x2="12" y2="21" />
+                <path d="M7 8l-2 0M7 12l-2 0M7 16l-2 0" />
+                <path d="M17 8l2 0M17 12l2 0M17 16l2 0" />
+              </svg>
+              <div className="flex flex-col">
+                <span className="font-medium">Before / After Card</span>
+                <span className="text-xs text-purple-400/70">Create a branded comparison image</span>
+              </div>
+            </button>
           </div>
         )}
 
