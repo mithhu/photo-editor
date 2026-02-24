@@ -170,7 +170,13 @@ export async function detectAndCacheKeypoints(
   const procH = Math.round(h * scale)
 
   if (_cachedFaces && _cachedImageSrc === imageElement.src && _cachedProcW === procW && _cachedProcH === procH) {
-    return _cachedFaces[0]?.keypoints ?? null
+    const kps = _cachedFaces[0]?.keypoints
+    if (!kps) return null
+    return kps.map((kp) => ({
+      ...kp,
+      x: (kp.x / procW) * w,
+      y: (kp.y / procH) * h,
+    }))
   }
 
   const canvas = document.createElement('canvas')
@@ -185,7 +191,11 @@ export async function detectAndCacheKeypoints(
     _cachedImageSrc = imageElement.src
     _cachedProcW = procW
     _cachedProcH = procH
-    return faces[0].keypoints
+    return faces[0].keypoints.map((kp) => ({
+      ...kp,
+      x: (kp.x / procW) * w,
+      y: (kp.y / procH) * h,
+    }))
   }
   return null
 }
