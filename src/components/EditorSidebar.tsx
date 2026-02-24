@@ -18,6 +18,7 @@ import { BeautyPanel } from './BeautyPanel'
 import { FunAIPanel } from './FunAIPanel'
 import { EffectsPanel } from './EffectsPanel'
 import { PhotoScorePanel } from './PhotoScorePanel'
+import { FaceStickersPanel } from './FaceStickersPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -211,6 +212,15 @@ export function EditorSidebar({
           onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
           processing={beautyProcessing}
           faceKeypoints={faceKeypoints}
+        />
+      </div>
+
+      {/* Face Stickers */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <FaceStickersPanel
+          faceStickers={editState.faceStickers ?? []}
+          faceKeypoints={faceKeypoints}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
         />
       </div>
 

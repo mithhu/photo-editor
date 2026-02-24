@@ -99,6 +99,7 @@ export const INITIAL_EDIT_STATE: EditState = {
   emotion: { type: 'none' as const, intensity: 70 },
   ageTransform: { offset: 0, intensity: 70 },
   effectOverlay: { type: 'none', intensity: 50, seed: 42 },
+  faceStickers: [],
 }
 
 export interface FontOption {

@@ -399,6 +399,7 @@ export default function App() {
             editState={editState}
             canvasRef={canvasRef}
             isComparing={false}
+            faceKeypoints={faceKeypoints}
             onZoomPanChange={(v: Partial<EditState>) => applyChange((s: EditState) => ({ ...s, ...v }))}
             onApplyChange={applyChange}
             onImageReplace={(newSrc: string) => { setImageSrc(newSrc) }}

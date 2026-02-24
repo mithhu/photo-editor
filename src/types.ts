@@ -221,6 +221,19 @@ export interface EditState {
   emotion: EmotionSettings
   ageTransform: AgeTransformSettings
   effectOverlay: EffectOverlay
+  faceStickers: FaceStickerInstance[]
+}
+
+export interface FaceStickerInstance {
+  id: string
+  stickerId: string
+  emoji: string
+  anchor: string
+  offsetY: number
+  scale: number
+  rotation: number
+  manualX?: number
+  manualY?: number
 }
 
 export interface EffectOverlay {

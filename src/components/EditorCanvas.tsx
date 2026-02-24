@@ -8,10 +8,13 @@ import { drawEffectOverlay } from '../utils/effectOverlays'
 import { renderWithWebGL } from '../utils/webglRenderer'
 import { magicWandSelect, drawSelectionOverlay } from '../utils/magicWand'
 import { hasActiveBeauty, hasActiveReshape, hasActiveMakeup, hasActiveEmotion, hasActiveAge, invalidateFaceCache, runBeautyPipeline } from '../utils/beautyPipeline'
+import { computeStickerPosition } from '../utils/faceStickerPlacement'
 import type {
   EditState,
   TextOverlay,
   ShapeOverlay,
+  FaceKeypoint,
+  FaceStickerInstance,
   Frame,
   BrushStroke,
 } from '../types'
@@ -21,6 +24,7 @@ interface EditorCanvasProps {
   editState: EditState
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   isComparing: boolean
+  faceKeypoints?: FaceKeypoint[] | null
   onZoomPanChange: ((val: { zoom: number; panX: number; panY: number }) => void) | null
   onApplyChange: ((updater: (s: EditState) => EditState) => void) | null
   onImageReplace: ((dataUrl: string) => void) | null
@@ -233,7 +237,7 @@ function InlineTextEditor({ textOverlays, editingTextId, onSave, onCancel }: Inl
   )
 }
 
-export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZoomPanChange, onApplyChange, onImageReplace, onBeautyProcessingChange }: EditorCanvasProps) {
+export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, faceKeypoints, onZoomPanChange, onApplyChange, onImageReplace, onBeautyProcessingChange }: EditorCanvasProps) {
   const imageRef = useRef<HTMLImageElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isDrawing, setIsDrawing] = useState<boolean>(false)
@@ -315,6 +319,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
     emotion,
     ageTransform,
     effectOverlay,
+    faceStickers,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -780,6 +785,37 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
       })
     }
 
+    if (faceStickers?.length && imageDims) {
+      faceStickers.forEach((sticker: FaceStickerInstance) => {
+        const pos = computeStickerPosition(sticker, faceKeypoints || [], imageDims.w, imageDims.h)
+        if (!pos) {
+          const cx = 0.5 * displayW
+          const cy = 0.5 * displayH
+          const fontSize = Math.max(16, sticker.scale * 50)
+          ctx.save()
+          ctx.translate(cx, cy)
+          ctx.rotate((sticker.rotation * Math.PI) / 180)
+          ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(sticker.emoji, 0, 0)
+          ctx.restore()
+          return
+        }
+        const sx = pos.x * displayW
+        const sy = pos.y * displayH
+        const fontSize = Math.max(16, pos.size * (displayW / imageDims.w))
+        ctx.save()
+        ctx.translate(sx, sy)
+        ctx.rotate((pos.rotation * Math.PI) / 180)
+        ctx.font = `${fontSize}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillText(sticker.emoji, 0, 0)
+        ctx.restore()
+      })
+    }
+
     if (textOverlays?.length) {
       textOverlays.forEach((t) => {
         if (layerVisibility?.[t.id] === false) return
@@ -892,7 +928,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, onZo
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift, faceStickers, faceKeypoints, imageDims])
 
   const beautyResultRef = useRef<HTMLCanvasElement | null>(null)
   const beautyRunIdRef = useRef<number>(0)

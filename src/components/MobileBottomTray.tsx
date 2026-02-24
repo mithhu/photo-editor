@@ -26,6 +26,7 @@ const BeautyPanel = lazy(() => import('./BeautyPanel').then((m) => ({ default: m
 const FunAIPanel = lazy(() => import('./FunAIPanel').then((m) => ({ default: m.FunAIPanel })))
 const EffectsPanel = lazy(() => import('./EffectsPanel').then((m) => ({ default: m.EffectsPanel })))
 const PhotoScorePanel = lazy(() => import('./PhotoScorePanel').then((m) => ({ default: m.PhotoScorePanel })))
+const FaceStickersPanel = lazy(() => import('./FaceStickersPanel').then((m) => ({ default: m.FaceStickersPanel })))
 
 interface TabItem {
   id: string
@@ -56,6 +57,7 @@ const PRIMARY_TABS: TabItem[] = [
   { id: 'filters', icon: '✦', label: 'Filters' },
   { id: 'beauty', icon: '✨', label: 'Beauty' },
   { id: 'funai', icon: '🎭', label: 'Fun AI' },
+  { id: 'stickers', icon: '🎪', label: 'Stickers' },
   { id: 'effects', icon: '🌟', label: 'Effects' },
   { id: 'ai', icon: '⚡', label: 'AI' },
   { id: 'crop', icon: '⬡', label: 'Crop' },
@@ -1355,6 +1357,17 @@ export function MobileBottomTray({
               onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
               processing={beautyProcessing}
               faceKeypoints={faceKeypoints}
+            />
+          </Suspense>
+        )
+
+      case 'stickers':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <FaceStickersPanel
+              faceStickers={editState.faceStickers ?? []}
+              faceKeypoints={faceKeypoints}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
             />
           </Suspense>
         )
