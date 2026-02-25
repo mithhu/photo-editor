@@ -44,7 +44,7 @@ interface CanvasPoint {
 }
 
 interface DragState {
-  type: 'text' | 'shape'
+  type: 'text' | 'shape' | 'face-sticker'
   id: string | number
   offsetX: number
   offsetY: number
@@ -1129,8 +1129,22 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
       }
     }
 
+    if (faceStickers?.length && imageDims) {
+      for (let i = faceStickers.length - 1; i >= 0; i--) {
+        const sticker = faceStickers[i]
+        const pos = computeStickerPosition(sticker, faceKeypoints || [], imageDims.w, imageDims.h)
+        const sx = pos ? pos.x : 0.5
+        const sy = pos ? pos.y : 0.5
+        const stickerSize = pos ? pos.size / imageDims.w : 0.05
+        const hitR = Math.max(stickerSize * 0.6, 30 / displayW)
+        if (Math.abs(pt.x - sx) < hitR && Math.abs(pt.y - sy) < hitR) {
+          return { type: 'face-sticker', id: sticker.id, offsetX: pt.x - sx, offsetY: pt.y - sy }
+        }
+      }
+    }
+
     return null
-  }, [canvasRef, textOverlays, shapeOverlays, layerVisibility])
+  }, [canvasRef, textOverlays, shapeOverlays, layerVisibility, faceStickers, faceKeypoints, imageDims])
 
   const handlePickColor = useCallback((e: React.MouseEvent | MouseEvent) => {
     const canvas = canvasRef.current
@@ -1251,6 +1265,13 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
             ...s,
             textOverlays: (s.textOverlays || []).map((item) =>
               item.id === d.id ? { ...item, x: newX, y: newY } : item
+            ),
+          }))
+        } else if (d.type === 'face-sticker') {
+          onApplyChange((s) => ({
+            ...s,
+            faceStickers: (s.faceStickers || []).map((item) =>
+              item.id === d.id ? { ...item, manualX: newX, manualY: newY } : item
             ),
           }))
         } else {
@@ -1441,6 +1462,13 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
           ...s,
           textOverlays: (s.textOverlays || []).map((item) =>
             item.id === d.id ? { ...item, x: newX, y: newY } : item
+          ),
+        }))
+      } else if (d.type === 'face-sticker') {
+        onApplyChange((s) => ({
+          ...s,
+          faceStickers: (s.faceStickers || []).map((item) =>
+            item.id === d.id ? { ...item, manualX: newX, manualY: newY } : item
           ),
         }))
       } else {

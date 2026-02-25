@@ -1,7 +1,7 @@
 import type { FaceKeypoint, FaceStickerInstance } from '../types'
 import { FACE_REGIONS } from './faceMesh'
 
-interface StickerPosition {
+export interface StickerPosition {
   x: number
   y: number
   size: number
@@ -13,16 +13,19 @@ function avg(points: { x: number; y: number }[]): { x: number; y: number } {
   return { x: sum.x / points.length, y: sum.y / points.length }
 }
 
-function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
+function distance(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y)
+}
+
+function getFaceWidth(kp: FaceKeypoint[]): number {
+  if (kp.length < 468) return 0
+  return distance(kp[234], kp[454])
 }
 
 function getAnchorPosition(
   anchor: string,
   kp: FaceKeypoint[],
-  imgW: number,
-  imgH: number
-): { x: number; y: number; faceWidth: number } | null {
+): { x: number; y: number } | null {
   if (kp.length < 468) return null
 
   const leftEye = avg(FACE_REGIONS.leftEye.map((i) => kp[i]))
@@ -33,45 +36,25 @@ function getAnchorPosition(
   const forehead = kp[10]
   const leftCheek = avg(FACE_REGIONS.leftCheek.map((i) => kp[i]))
   const rightCheek = avg(FACE_REGIONS.rightCheek.map((i) => kp[i]))
-  const eyeCenter = { x: (leftEye.x + rightEye.x) / 2, y: (leftEye.y + rightEye.y) / 2 }
-  const faceCenter = { x: (forehead.x + chin.x) / 2, y: (forehead.y + chin.y) / 2 }
-
-  const faceWidth = dist(kp[234], kp[454])
-
-  let pos: { x: number; y: number }
 
   switch (anchor) {
     case 'eyes':
-      pos = eyeCenter
-      break
+      return { x: (leftEye.x + rightEye.x) / 2, y: (leftEye.y + rightEye.y) / 2 }
     case 'forehead':
-      pos = forehead
-      break
+      return forehead
     case 'nose':
-      pos = nose
-      break
+      return nose
     case 'mouth':
-      pos = mouth
-      break
+      return mouth
     case 'chin':
-      pos = chin
-      break
+      return chin
     case 'left-cheek':
-      pos = leftCheek
-      break
+      return leftCheek
     case 'right-cheek':
-      pos = rightCheek
-      break
+      return rightCheek
     case 'full-face':
     default:
-      pos = faceCenter
-      break
-  }
-
-  return {
-    x: pos.x / imgW,
-    y: pos.y / imgH,
-    faceWidth: faceWidth / imgW,
+      return { x: (forehead.x + chin.x) / 2, y: (forehead.y + chin.y) / 2 }
   }
 }
 
@@ -81,25 +64,32 @@ export function computeStickerPosition(
   imgW: number,
   imgH: number
 ): StickerPosition | null {
+  const hasFace = keypoints.length >= 468
+  const faceW = hasFace ? getFaceWidth(keypoints) : 0
+  const faceWidthNorm = faceW / imgW
+
   if (sticker.manualX !== undefined && sticker.manualY !== undefined) {
+    const sizeNorm = hasFace ? faceWidthNorm * sticker.scale : sticker.scale * 0.15
     return {
       x: sticker.manualX,
       y: sticker.manualY,
-      size: sticker.scale * 60,
+      size: sizeNorm * imgW,
       rotation: sticker.rotation,
     }
   }
 
-  const anchorPos = getAnchorPosition(sticker.anchor, keypoints, imgW, imgH)
-  if (!anchorPos) return null
+  if (!hasFace) return null
 
-  const baseSizeFraction = anchorPos.faceWidth * sticker.scale
-  const size = baseSizeFraction * imgW
+  const anchor = getAnchorPosition(sticker.anchor, keypoints)
+  if (!anchor) return null
+
+  const sizePixels = faceW * sticker.scale
+  const yOffset = sticker.offsetY * faceW
 
   return {
-    x: anchorPos.x,
-    y: anchorPos.y + sticker.offsetY * anchorPos.faceWidth,
-    size,
+    x: anchor.x / imgW,
+    y: (anchor.y + yOffset) / imgH,
+    size: sizePixels,
     rotation: sticker.rotation,
   }
 }
