@@ -19,6 +19,7 @@ import { FunAIPanel } from './FunAIPanel'
 import { EffectsPanel } from './EffectsPanel'
 import { PhotoScorePanel } from './PhotoScorePanel'
 import { FaceStickersPanel } from './FaceStickersPanel'
+import { MoodQuotesPanel } from './MoodQuotesPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -221,6 +222,16 @@ export function EditorSidebar({
           faceStickers={editState.faceStickers ?? []}
           faceKeypoints={faceKeypoints}
           onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+        />
+      </div>
+
+      {/* Mood Quotes */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <MoodQuotesPanel
+          canvasRef={canvasRef}
+          faceKeypoints={faceKeypoints}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+          textOverlays={editState.textOverlays ?? []}
         />
       </div>
 

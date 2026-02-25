@@ -27,6 +27,7 @@ const FunAIPanel = lazy(() => import('./FunAIPanel').then((m) => ({ default: m.F
 const EffectsPanel = lazy(() => import('./EffectsPanel').then((m) => ({ default: m.EffectsPanel })))
 const PhotoScorePanel = lazy(() => import('./PhotoScorePanel').then((m) => ({ default: m.PhotoScorePanel })))
 const FaceStickersPanel = lazy(() => import('./FaceStickersPanel').then((m) => ({ default: m.FaceStickersPanel })))
+const MoodQuotesPanel = lazy(() => import('./MoodQuotesPanel').then((m) => ({ default: m.MoodQuotesPanel })))
 
 interface TabItem {
   id: string
@@ -65,6 +66,7 @@ const PRIMARY_TABS: TabItem[] = [
 ]
 
 const MORE_TABS: TabItem[] = [
+  { id: 'quotes', icon: '💬', label: 'Quotes' },
   { id: 'adjust', icon: '☀', label: 'Adjust' },
   { id: 'color', icon: '🎨', label: 'Color' },
   { id: 'score', icon: '💯', label: 'Score' },
@@ -1409,6 +1411,18 @@ export function MobileBottomTray({
         return (
           <Suspense fallback={<PanelLoader />}>
             <PhotoScorePanel canvasRef={canvasRef} />
+          </Suspense>
+        )
+
+      case 'quotes':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <MoodQuotesPanel
+              canvasRef={canvasRef}
+              faceKeypoints={faceKeypoints}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+              textOverlays={editState.textOverlays ?? []}
+            />
           </Suspense>
         )
 
