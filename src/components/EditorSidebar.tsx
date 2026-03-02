@@ -20,6 +20,9 @@ import { EffectsPanel } from './EffectsPanel'
 import { PhotoScorePanel } from './PhotoScorePanel'
 import { FaceStickersPanel } from './FaceStickersPanel'
 import { MoodQuotesPanel } from './MoodQuotesPanel'
+import { ColorSplashPanel } from './ColorSplashPanel'
+import { MirrorEffectPanel } from './MirrorEffectPanel'
+import { DateStampPanel } from './DateStampPanel'
 import { FILTER_PRESETS, INITIAL_EDIT_STATE, TEXT_OVERLAY_FONTS, FRAME_PRESETS, LIGHT_LEAK_PRESETS } from '../constants'
 import { CROP_RATIOS } from '../utils/cropUtils'
 import { FILM_EMULATIONS } from '../utils/filmEmulation'
@@ -241,6 +244,31 @@ export function EditorSidebar({
           effectOverlay={editState.effectOverlay}
           onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
           onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
+        />
+      </div>
+
+      {/* Color Splash */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <ColorSplashPanel
+          colorSplash={editState.colorSplash}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+          onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
+        />
+      </div>
+
+      {/* Mirror Effects */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <MirrorEffectPanel
+          mirrorEffect={editState.mirrorEffect}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+        />
+      </div>
+
+      {/* Date Stamp */}
+      <div className="bg-zinc-900/80 rounded-xl p-4 border border-zinc-800">
+        <DateStampPanel
+          dateStamp={editState.dateStamp}
+          onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
         />
       </div>
 

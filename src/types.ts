@@ -222,6 +222,29 @@ export interface EditState {
   ageTransform: AgeTransformSettings
   effectOverlay: EffectOverlay
   faceStickers: FaceStickerInstance[]
+  colorSplash: ColorSplash
+  mirrorEffect: MirrorEffect
+  dateStamp: DateStamp
+}
+
+export interface ColorSplash {
+  enabled: boolean
+  hue: number
+  range: number
+  saturation: number
+}
+
+export interface MirrorEffect {
+  type: 'none' | 'horizontal' | 'vertical' | 'quad' | 'kaleidoscope'
+}
+
+export interface DateStamp {
+  enabled: boolean
+  format: string
+  text: string
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left'
+  color: string
+  style: 'film' | 'digital' | 'minimal' | 'retro' | 'polaroid'
 }
 
 export interface FaceStickerInstance {

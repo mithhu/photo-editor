@@ -100,6 +100,9 @@ export const INITIAL_EDIT_STATE: EditState = {
   ageTransform: { offset: 0, intensity: 70 },
   effectOverlay: { type: 'none', intensity: 50, seed: 42 },
   faceStickers: [],
+  colorSplash: { enabled: false, hue: 0, range: 30, saturation: 1 },
+  mirrorEffect: { type: 'none' },
+  dateStamp: { enabled: false, format: 'date', text: '', position: 'bottom-right', color: '#ff6b00', style: 'film' },
 }
 
 export interface FontOption {

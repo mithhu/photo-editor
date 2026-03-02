@@ -28,6 +28,9 @@ const EffectsPanel = lazy(() => import('./EffectsPanel').then((m) => ({ default:
 const PhotoScorePanel = lazy(() => import('./PhotoScorePanel').then((m) => ({ default: m.PhotoScorePanel })))
 const FaceStickersPanel = lazy(() => import('./FaceStickersPanel').then((m) => ({ default: m.FaceStickersPanel })))
 const MoodQuotesPanel = lazy(() => import('./MoodQuotesPanel').then((m) => ({ default: m.MoodQuotesPanel })))
+const ColorSplashPanel = lazy(() => import('./ColorSplashPanel').then((m) => ({ default: m.ColorSplashPanel })))
+const MirrorEffectPanel = lazy(() => import('./MirrorEffectPanel').then((m) => ({ default: m.MirrorEffectPanel })))
+const DateStampPanel = lazy(() => import('./DateStampPanel').then((m) => ({ default: m.DateStampPanel })))
 
 interface TabItem {
   id: string
@@ -67,6 +70,9 @@ const PRIMARY_TABS: TabItem[] = [
 
 const MORE_TABS: TabItem[] = [
   { id: 'quotes', icon: '💬', label: 'Quotes' },
+  { id: 'splash', icon: '🎯', label: 'Splash' },
+  { id: 'mirror', icon: '🪞', label: 'Mirror' },
+  { id: 'datestamp', icon: '📅', label: 'Date' },
   { id: 'adjust', icon: '☀', label: 'Adjust' },
   { id: 'color', icon: '🎨', label: 'Color' },
   { id: 'score', icon: '💯', label: 'Score' },
@@ -1422,6 +1428,37 @@ export function MobileBottomTray({
               faceKeypoints={faceKeypoints}
               onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
               textOverlays={editState.textOverlays ?? []}
+            />
+          </Suspense>
+        )
+
+      case 'splash':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <ColorSplashPanel
+              colorSplash={editState.colorSplash}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+              onSliderUpdate={(changes: ((prev: EditState) => EditState) | Partial<EditState>) => applyNestedSliderChange(changes)}
+            />
+          </Suspense>
+        )
+
+      case 'mirror':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <MirrorEffectPanel
+              mirrorEffect={editState.mirrorEffect}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
+            />
+          </Suspense>
+        )
+
+      case 'datestamp':
+        return (
+          <Suspense fallback={<PanelLoader />}>
+            <DateStampPanel
+              dateStamp={editState.dateStamp}
+              onUpdate={(changes: Partial<EditState>) => applyChange(changes)}
             />
           </Suspense>
         )

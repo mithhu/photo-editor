@@ -320,6 +320,9 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
     ageTransform,
     effectOverlay,
     faceStickers,
+    colorSplash,
+    mirrorEffect,
+    dateStamp,
   } = editState
 
   const p = perspective ?? { horizontal: 0, vertical: 0, rotation: 0 }
@@ -445,10 +448,85 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
         seed: effectOverlay.seed,
       })
     }
+    if (!isComparing && colorSplash?.enabled) {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const d = imgData.data
+      const targetHue = colorSplash.hue
+      const range = colorSplash.range
+      const boost = colorSplash.saturation ?? 1
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b)
+        const delta = mx - mn
+        let h = 0
+        if (delta > 0) {
+          if (mx === r) h = 60 * (((g - b) / delta) % 6)
+          else if (mx === g) h = 60 * ((b - r) / delta + 2)
+          else h = 60 * ((r - g) / delta + 4)
+          if (h < 0) h += 360
+        }
+        const sat = mx > 0 ? delta / mx : 0
+        let hueDiff = Math.abs(h - targetHue)
+        if (hueDiff > 180) hueDiff = 360 - hueDiff
+        if (hueDiff > range || sat < 0.08) {
+          const gray = Math.round((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]))
+          d[i] = gray
+          d[i + 1] = gray
+          d[i + 2] = gray
+        } else if (boost !== 1) {
+          const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+          d[i] = Math.min(255, Math.max(0, gray + (d[i] - gray) * boost))
+          d[i + 1] = Math.min(255, Math.max(0, gray + (d[i + 1] - gray) * boost))
+          d[i + 2] = Math.min(255, Math.max(0, gray + (d[i + 2] - gray) * boost))
+        }
+      }
+      ctx.putImageData(imgData, 0, 0)
+    }
+    if (!isComparing && mirrorEffect?.type && mirrorEffect.type !== 'none') {
+      const tmp = document.createElement('canvas')
+      tmp.width = canvas.width
+      tmp.height = canvas.height
+      const tctx = tmp.getContext('2d')!
+      tctx.drawImage(canvas, 0, 0)
+      const w = canvas.width, hh = canvas.height
+      ctx.clearRect(0, 0, w, hh)
+      if (mirrorEffect.type === 'horizontal') {
+        ctx.drawImage(tmp, 0, 0, w / 2, hh, 0, 0, w / 2, hh)
+        ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1)
+        ctx.drawImage(tmp, 0, 0, w / 2, hh, 0, 0, w / 2, hh)
+        ctx.restore()
+      } else if (mirrorEffect.type === 'vertical') {
+        ctx.drawImage(tmp, 0, 0, w, hh / 2, 0, 0, w, hh / 2)
+        ctx.save(); ctx.translate(0, hh); ctx.scale(1, -1)
+        ctx.drawImage(tmp, 0, 0, w, hh / 2, 0, 0, w, hh / 2)
+        ctx.restore()
+      } else if (mirrorEffect.type === 'quad') {
+        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1)
+        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.restore()
+        ctx.save(); ctx.translate(0, hh); ctx.scale(1, -1)
+        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.restore()
+        ctx.save(); ctx.translate(w, hh); ctx.scale(-1, -1)
+        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.restore()
+      } else if (mirrorEffect.type === 'kaleidoscope') {
+        const cx = w / 2, cy = hh / 2
+        for (let i = 0; i < 8; i++) {
+          ctx.save()
+          ctx.translate(cx, cy)
+          ctx.rotate((i * Math.PI) / 4)
+          if (i % 2 === 1) ctx.scale(-1, 1)
+          ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, -hh / 2, w / 2, hh / 2)
+          ctx.restore()
+        }
+      }
+    }
     if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
       drawFrame(ctx, displayW, displayH, frame)
     }
-  }, [isComparing, hasLightLeak, lightLeak, masks, frame, hasEffectOverlay, effectOverlay])
+  }, [isComparing, hasLightLeak, lightLeak, masks, frame, hasEffectOverlay, effectOverlay, colorSplash, mirrorEffect])
 
   const displaySizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
 
@@ -843,6 +921,66 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
         ctx.restore()
       })
     }
+
+    if (!isComparing && dateStamp?.enabled) {
+      const now = new Date()
+      let stampText = ''
+      if (dateStamp.format === 'custom' && dateStamp.text) {
+        stampText = dateStamp.text
+      } else {
+        const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate()
+        const hh = now.getHours(), mm = now.getMinutes()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        switch (dateStamp.style) {
+          case 'film':
+            stampText = dateStamp.format === 'datetime'
+              ? `'${String(y).slice(2)}  ${pad(m)}  ${pad(d)}  ${pad(hh)}:${pad(mm)}`
+              : `'${String(y).slice(2)}  ${pad(m)}  ${pad(d)}`
+            break
+          case 'digital':
+            stampText = dateStamp.format === 'datetime'
+              ? `${y}-${pad(m)}-${pad(d)} ${pad(hh)}:${pad(mm)}`
+              : `${y}-${pad(m)}-${pad(d)}`
+            break
+          case 'minimal':
+            stampText = `${pad(d)}.${pad(m)}.${String(y).slice(2)}`
+            break
+          case 'retro': {
+            const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+            stampText = dateStamp.format === 'datetime'
+              ? `${months[m - 1]} ${pad(d)} ${y}  ${pad(hh)}:${pad(mm)}`
+              : `${months[m - 1]} ${pad(d)} ${y}`
+            break
+          }
+          case 'polaroid':
+            stampText = `${pad(m)}/${pad(d)}/${String(y).slice(2)}`
+            break
+          default:
+            stampText = `${y}-${pad(m)}-${pad(d)}`
+        }
+      }
+      const fontSize = Math.max(12, Math.min(displayW, displayH) * 0.035)
+      const margin = fontSize * 1.2
+      ctx.save()
+      ctx.font = `${dateStamp.style === 'film' || dateStamp.style === 'retro' ? 'bold ' : ''}${fontSize}px ${
+        dateStamp.style === 'digital' || dateStamp.style === 'minimal' ? '"Courier New", monospace' :
+        dateStamp.style === 'film' ? '"Helvetica Neue", Helvetica, sans-serif' :
+        'Georgia, serif'
+      }`
+      ctx.fillStyle = dateStamp.color || '#ff6b00'
+      ctx.globalAlpha = dateStamp.style === 'film' ? 0.85 : 0.9
+      ctx.textBaseline = dateStamp.position.startsWith('top') ? 'top' : 'bottom'
+      ctx.textAlign = dateStamp.position.endsWith('right') ? 'right' : 'left'
+      if (dateStamp.style === 'film') {
+        ctx.shadowColor = 'rgba(0,0,0,0.4)'
+        ctx.shadowBlur = 2
+      }
+      const x = dateStamp.position.endsWith('right') ? displayW - margin : margin
+      const y = dateStamp.position.startsWith('top') ? margin : displayH - margin
+      ctx.fillText(stampText, x, y)
+      ctx.restore()
+    }
+
     if (drawingMode === 'heal' && healSource) {
       const srcX = healSource.x * displayW
       const srcY = healSource.y * displayH
@@ -928,7 +1066,7 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
         rCtx.drawImage(tmpCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height, 0, 0, canvas.width, canvas.height)
       }
     }
-  }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift, faceStickers, faceKeypoints, imageDims])
+  }, [rotation, flipH, flipV, cropRatio, customCrop, needsPixelPass, warmth, tint, vibrance, clarity, dehaze, canvasRef, textOverlays, shapeOverlays, layerVisibility, containerSize, brushStrokes, isComparing, hasHSL, hsl, hasCurves, curves, colorGrade, splitTone, hasColorGrade, hasSplitTone, hasFilmEmulation, filmEmulation, filmIntensity, drawingMode, healSource, healCursor, brushSize, p.horizontal, p.vertical, p.rotation, hasSelectiveColor, selectiveColor, hasLUT, lut, hasResize, resize, hasGradientMap, gradientMap, hasChromaticAberration, chromaticAberration, hasSharpen, sharpen, hasGlitch, glitch, hasOilPaint, oilPaint, hasPosterize, posterize, hasSolarize, solarize, hasEmboss, emboss, hasChannelMixer, channelMixer, drawPostPixel, brightness, contrast, saturation, exposure, highlights, shadows, vignette, selectionMask, preset, hasGrain, grain, filmGrain, hasTiltShift, tiltShift, faceStickers, faceKeypoints, imageDims, dateStamp])
 
   const beautyResultRef = useRef<HTMLCanvasElement | null>(null)
   const beautyRunIdRef = useRef<number>(0)
