@@ -483,45 +483,50 @@ export function EditorCanvas({ imageSrc, editState, canvasRef, isComparing, face
       ctx.putImageData(imgData, 0, 0)
     }
     if (!isComparing && mirrorEffect?.type && mirrorEffect.type !== 'none') {
+      const pw = canvas.width, ph = canvas.height
       const tmp = document.createElement('canvas')
-      tmp.width = canvas.width
-      tmp.height = canvas.height
+      tmp.width = pw
+      tmp.height = ph
       const tctx = tmp.getContext('2d')!
       tctx.drawImage(canvas, 0, 0)
-      const w = canvas.width, hh = canvas.height
-      ctx.clearRect(0, 0, w, hh)
+      ctx.save()
+      ctx.setTransform(1, 0, 0, 1, 0, 0)
+      ctx.clearRect(0, 0, pw, ph)
+      const hw = pw / 2, hh = ph / 2
       if (mirrorEffect.type === 'horizontal') {
-        ctx.drawImage(tmp, 0, 0, w / 2, hh, 0, 0, w / 2, hh)
-        ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1)
-        ctx.drawImage(tmp, 0, 0, w / 2, hh, 0, 0, w / 2, hh)
+        ctx.drawImage(tmp, 0, 0, hw, ph, 0, 0, hw, ph)
+        ctx.save(); ctx.translate(pw, 0); ctx.scale(-1, 1)
+        ctx.drawImage(tmp, 0, 0, hw, ph, 0, 0, hw, ph)
         ctx.restore()
       } else if (mirrorEffect.type === 'vertical') {
-        ctx.drawImage(tmp, 0, 0, w, hh / 2, 0, 0, w, hh / 2)
-        ctx.save(); ctx.translate(0, hh); ctx.scale(1, -1)
-        ctx.drawImage(tmp, 0, 0, w, hh / 2, 0, 0, w, hh / 2)
+        ctx.drawImage(tmp, 0, 0, pw, hh, 0, 0, pw, hh)
+        ctx.save(); ctx.translate(0, ph); ctx.scale(1, -1)
+        ctx.drawImage(tmp, 0, 0, pw, hh, 0, 0, pw, hh)
         ctx.restore()
       } else if (mirrorEffect.type === 'quad') {
-        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
-        ctx.save(); ctx.translate(w, 0); ctx.scale(-1, 1)
-        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.drawImage(tmp, 0, 0, hw, hh, 0, 0, hw, hh)
+        ctx.save(); ctx.translate(pw, 0); ctx.scale(-1, 1)
+        ctx.drawImage(tmp, 0, 0, hw, hh, 0, 0, hw, hh)
         ctx.restore()
-        ctx.save(); ctx.translate(0, hh); ctx.scale(1, -1)
-        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.save(); ctx.translate(0, ph); ctx.scale(1, -1)
+        ctx.drawImage(tmp, 0, 0, hw, hh, 0, 0, hw, hh)
         ctx.restore()
-        ctx.save(); ctx.translate(w, hh); ctx.scale(-1, -1)
-        ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, 0, w / 2, hh / 2)
+        ctx.save(); ctx.translate(pw, ph); ctx.scale(-1, -1)
+        ctx.drawImage(tmp, 0, 0, hw, hh, 0, 0, hw, hh)
         ctx.restore()
       } else if (mirrorEffect.type === 'kaleidoscope') {
-        const cx = w / 2, cy = hh / 2
+        const cx = hw, cy = hh
+        const r = Math.max(pw, ph)
         for (let i = 0; i < 8; i++) {
           ctx.save()
           ctx.translate(cx, cy)
           ctx.rotate((i * Math.PI) / 4)
           if (i % 2 === 1) ctx.scale(-1, 1)
-          ctx.drawImage(tmp, 0, 0, w / 2, hh / 2, 0, -hh / 2, w / 2, hh / 2)
+          ctx.drawImage(tmp, 0, 0, hw, hh, 0, -hh, r, r)
           ctx.restore()
         }
       }
+      ctx.restore()
     }
     if (!isComparing && frame && frame.type !== 'none' && (frame.width > 0 || frame.type === 'shadow')) {
       drawFrame(ctx, displayW, displayH, frame)
